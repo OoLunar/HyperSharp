@@ -1,0 +1,22 @@
+name: Regenerate Resource Files
+
+on:
+  push:
+    paths:
+      - ".github/workflows/resources.yml"
+      - "res/**"
+      - "tools/generate-assets.sh"
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  regenerate-assets:
+    if: "!contains(format('{0} {1}', github.event.head_commit.message, github.event.pull_request.title), '[ci-skip]') && github.event.repository.name == 'DSharpPlus.Template'"
+    name: Regenerate Resource Files
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Generate Assets
+        run: tools/generate-assets.sh

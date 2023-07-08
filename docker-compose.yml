@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  @RepositoryNameLower:
+    build: .
+    #image: ghcr.io/@RepositoryFullNameLower:latest
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./logs:/src/logs
+      - ./res/config.json:/src/config.json

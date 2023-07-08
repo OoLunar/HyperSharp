@@ -1,0 +1,15 @@
+{
+    "discord": {
+        "debug_guild_id": "",
+        "token": "",
+        "prefixes": [
+            ">>"
+        ]
+    },
+    "logging": {
+        "level": "Debug",
+        "overrides": {
+            "DSharpPlus": "Information"
+        }
+    }
+}

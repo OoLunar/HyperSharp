@@ -1,0 +1,18 @@
+on:
+  push:
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  new-template:
+    name: Replace Variables
+    runs-on: self-hosted
+    if: "!contains(format('{0} {1}', github.event.head_commit.message, github.event.pull_request.title), '[ci-skip]') && github.event.repository.name != 'DSharpPlus.Template'"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Execute Script
+        run: tools/replace-variables.sh "${{ github.repository }}" "${{ github.event.repository.description }}"
+      - name: Update Files
+        run: git push
