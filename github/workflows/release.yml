@@ -40,5 +40,5 @@ jobs:
           push: true
           build-args: VERSION=${{ steps.previoustag.outputs.tag }}
           tags: |
-            ghcr.io/@RepositoryFullNameLower:latest
-            ghcr.io/@RepositoryFullNameLower:${{ steps.previoustag.outputs.tag }}
+            ghcr.io/oolunar/hypersharp:latest
+            ghcr.io/oolunar/hypersharp:${{ steps.previoustag.outputs.tag }}

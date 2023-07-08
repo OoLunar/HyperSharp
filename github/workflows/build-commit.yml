@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - "src/**"
-      - "@RepositoryName.sln"
+      - "HyperSharp.sln"
 
 env:
   DOTNET_NOLOGO: 1
@@ -27,4 +27,4 @@ jobs:
       - name: Build Project
         run: dotnet build
       - name: Build Dockerfile
-        run: docker build -t @RepositoryFullNameLower:latest .
+        run: docker build -t oolunar/hypersharp:latest .

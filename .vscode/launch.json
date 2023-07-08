@@ -6,7 +6,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/bin/Debug/net8.0/@RepositoryName.dll",
+            "program": "${workspaceFolder}/src/bin/Debug/net8.0/HyperSharp.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",

@@ -5,13 +5,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
-    <Authors>@RepositoryOwner</Authors>
-    <Description>@RepositoryDescription</Description>
-    <PackageId>@RepositoryOwner.@RepositoryName</PackageId>
+    <Authors>OoLunar</Authors>
+    <Description>A C# implementation of the HTTP 1.1 protocol.</Description>
+    <PackageId>OoLunar.HyperSharp</PackageId>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/@RepositoryFullName</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/@RepositoryFullName</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/OoLunar/HyperSharp</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/OoLunar/HyperSharp</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
