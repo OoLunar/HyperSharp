@@ -1,27 +1,24 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using DSharpPlus;
-using DSharpPlus.CommandAll;
-using DSharpPlus.CommandAll.Parsers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using OoLunar.HyperSharp.Events;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Tests
 {
     public sealed class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
             IServiceCollection services = new ServiceCollection();
-            services.AddSingleton(services => new ConfigurationBuilder()
+            services.AddSingleton<IConfiguration>(services => new ConfigurationBuilder()
                 .AddJsonFile("config.json", true, true)
 #if DEBUG
                 .AddJsonFile("config.debug.json", true, true)
@@ -29,11 +26,11 @@ namespace OoLunar.HyperSharp
                 .AddEnvironmentVariables("HyperSharp_")
                 .Build());
 
-            services.AddSerilog((services, loggerConfiguration) =>
+            services.AddLogging(logger =>
             {
-                const string loggingFormat = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u4}] {SourceContext}: {Message:lj}{NewLine}{Exception}";
-                IConfiguration configuration = services.GetRequiredService<IConfiguration>();
-                loggerConfiguration
+                const string loggingFormat = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u4}] {SourceCont`t}: {Message:lj}{NewLine}{Exception}";
+                IConfiguration configuration = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
+                LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
                     .MinimumLevel.Is(configuration.GetValue("logging:level", LogEventLevel.Debug))
                     .WriteTo.Console(outputTemplate: loggingFormat, formatProvider: CultureInfo.InvariantCulture, theme: new AnsiConsoleTheme(new Dictionary<ConsoleThemeStyle, string>
                     {
@@ -71,50 +68,37 @@ namespace OoLunar.HyperSharp
 
                     loggerConfiguration.MinimumLevel.Override(logOverride.Key, logEventLevel);
                 }
+
+                logger.AddSerilog(loggerConfiguration.CreateLogger());
             });
 
-            Assembly currentAssembly = typeof(Program).Assembly;
-            services.AddSingleton((services) =>
-            {
-                DiscordEventManager eventManager = new(services);
-                eventManager.GatherEventHandlers(currentAssembly);
-                return eventManager;
-            });
-
-            services.AddSingleton(async services =>
+            services.AddHyperSharp((services, hyperConfiguration) =>
             {
                 IConfiguration configuration = services.GetRequiredService<IConfiguration>();
-                DiscordEventManager eventManager = services.GetRequiredService<DiscordEventManager>();
-                DiscordShardedClient shardedClient = new(new DiscordConfiguration()
+                string? host = configuration.GetValue("listening:address", "localhost")?.Trim();
+                if (string.IsNullOrWhiteSpace(host))
                 {
-                    Token = configuration.GetValue<string>("discord:token")!,
-                    Intents = eventManager.Intents,
-                    LoggerFactory = services.GetRequiredService<ILoggerFactory>()
-                });
-
-                eventManager.RegisterEventHandlers(shardedClient);
-                IReadOnlyDictionary<int, CommandAllExtension> commandAllShards = await shardedClient.UseCommandAllAsync(new CommandAllConfiguration()
-                {
-#if DEBUG
-                    DebugGuildId = configuration.GetValue<ulong?>("discord:debug_guild_id"),
-#endif
-                    PrefixParser = new PrefixParser(configuration.GetSection("discord:prefixes").Get<string[]>() ?? new[] { ">>" })
-                });
-
-                foreach (CommandAllExtension commandAll in commandAllShards.Values)
-                {
-                    commandAll.CommandManager.AddCommands(commandAll, currentAssembly);
-                    commandAll.ArgumentConverterManager.AddArgumentConverters(currentAssembly);
-                    eventManager.RegisterEventHandlers(commandAll);
+                    throw new ArgumentException("The listening address cannot be null or whitespace.", nameof(host));
                 }
 
-                return shardedClient;
+                if (!IPAddress.TryParse(host, out IPAddress? address))
+                {
+                    IPAddress[] addresses = Dns.GetHostAddresses(host);
+                    address = addresses.Length != 0 ? addresses[0] : throw new InvalidOperationException("The listening address could not be resolved to an IP address.");
+                }
+
+                hyperConfiguration.ListeningEndpoint = new IPEndPoint(address, configuration.GetValue("listening:port", 8080));
             });
 
+            services.AddSingleton(new HttpClient() { DefaultRequestHeaders = { { "User-Agent", $"HyperSharp/{typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion} Github" } } });
             IServiceProvider serviceProvider = services.BuildServiceProvider();
-            DiscordShardedClient discordShardedClient = serviceProvider.GetRequiredService<DiscordShardedClient>();
-            await discordShardedClient.StartAsync();
-            await Task.Delay(-1);
+
+            serviceProvider.GetRequiredService<HyperServer>().Run();
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
+            HttpClient httpClient = serviceProvider.GetRequiredService<HttpClient>();
+            HyperConfiguration hyperConfiguration = serviceProvider.GetRequiredService<HyperConfiguration>();
+            HttpResponseMessage response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
         }
     }
 }
