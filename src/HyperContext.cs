@@ -21,12 +21,12 @@ namespace OoLunar.HyperSharp
         public HttpMethod Method { get; init; }
         public Uri Route { get; init; }
         public Version Version { get; init; }
-        public IReadOnlyDictionary<string, IReadOnlyList<string>> Headers { get; init; }
+        public HyperHeaderCollection Headers { get; init; }
         public PipeReader Body { get; init; }
         private PipeWriter Response { get; init; }
         public bool HasResponded { get; private set; }
 
-        public HyperContext(HttpMethod method, Uri route, Version version, IReadOnlyDictionary<string, IReadOnlyList<string>> headers, PipeReader body, PipeWriter response)
+        public HyperContext(HttpMethod method, Uri route, Version version, HyperHeaderCollection headers, PipeReader body, PipeWriter response)
         {
             Version = version ?? throw new ArgumentNullException(nameof(version));
             Method = method ?? throw new ArgumentNullException(nameof(method));

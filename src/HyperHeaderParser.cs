@@ -1,11 +1,9 @@
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using FluentResults;
@@ -22,7 +20,7 @@ namespace OoLunar.HyperSharp
             }
             ArgumentNullException.ThrowIfNull(networkStream);
 
-            Dictionary<string, List<string>> headers = new(StringComparer.OrdinalIgnoreCase);
+            HyperHeaderCollection headers = new();
             PipeReader pipeReader = PipeReader.Create(networkStream);
             ReadResult readResult = await pipeReader.ReadAsync();
             if (readResult.Buffer.Length == 0)
@@ -58,13 +56,7 @@ namespace OoLunar.HyperSharp
                 }
 
                 pipeReader.AdvanceTo(sequencePosition);
-                if (!headers.TryGetValue(headerResult.Value.Name, out List<string>? headerList))
-                {
-                    headerList = new();
-                    headers.Add(headerResult.Value.Name, headerList);
-                }
-                headerList.Add(headerResult.Value.Value);
-
+                headers.AddHeaderValue(headerResult.Value.Name, headerResult.Value.Value);
                 readResult = await pipeReader.ReadAsync();
             }
 
@@ -75,7 +67,7 @@ namespace OoLunar.HyperSharp
                 requestLineResult.Value.Method,
                 requestLineResult.Value.Route,
                 requestLineResult.Value.Version,
-                Unsafe.As<Dictionary<string, List<string>>, IReadOnlyDictionary<string, IReadOnlyList<string>>>(ref headers),
+                headers,
                 pipeReader,
                 PipeWriter.Create(networkStream)
             ));

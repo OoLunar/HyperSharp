@@ -13,7 +13,6 @@ namespace OoLunar.HyperSharp
 
     public sealed class HyperServer
     {
-        public event HyperServerStartedEventArgs Started;
         private readonly HyperConfiguration Configuration;
         private readonly ILogger<HyperServer> Logger;
 
@@ -40,7 +39,6 @@ namespace OoLunar.HyperSharp
         {
             TcpListener listener = new(Configuration.ListeningEndpoint);
             listener.Start();
-            //Started(this);
             while (!cancellationToken.IsCancellationRequested)
             {
                 TcpClient client = await listener.AcceptTcpClientAsync(cancellationToken);
@@ -61,7 +59,10 @@ namespace OoLunar.HyperSharp
                 }
 
                 // TODO: Route the request
-                await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.NotFound));
+                await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.NotFound, new HyperHeaderCollection()
+                {
+                    ["X-Testing"] = new[] { "Hello world!" }
+                }));
             }
         }
     }

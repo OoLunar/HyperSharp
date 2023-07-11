@@ -99,6 +99,8 @@ namespace OoLunar.HyperSharp.Tests
             HttpClient httpClient = serviceProvider.GetRequiredService<HttpClient>();
             HyperConfiguration hyperConfiguration = serviceProvider.GetRequiredService<HyperConfiguration>();
             HttpResponseMessage response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
+
+            await Task.Delay(-1);
         }
     }
 }
