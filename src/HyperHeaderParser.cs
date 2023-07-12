@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Http;
@@ -12,6 +13,21 @@ namespace OoLunar.HyperSharp
 {
     public sealed class HyperHeaderParser
     {
+        // https://www.rfc-editor.org/rfc/rfc9110#section-9.1
+        // All HTTP methods are case-sensitive.
+        private static readonly KeyValuePair<byte[], HttpMethod>[] HttpMethods = new KeyValuePair<byte[], HttpMethod>[]
+        {
+            new("GET"u8.ToArray(), HttpMethod.Get),
+            new("HEAD"u8.ToArray(), HttpMethod.Head),
+            new("POST"u8.ToArray(), HttpMethod.Post),
+            new("PUT"u8.ToArray(), HttpMethod.Put),
+            new("DELETE"u8.ToArray(), HttpMethod.Delete),
+            new("CONNECT"u8.ToArray(), HttpMethod.Connect),
+            new("OPTIONS"u8.ToArray(), HttpMethod.Options),
+            new("TRACE"u8.ToArray(), HttpMethod.Trace),
+            new("PATCH"u8.ToArray(), HttpMethod.Patch),
+        };
+
         public static async Task<Result<HyperContext>> TryParseHeadersAsync(int maxHeaderSize, NetworkStream networkStream)
         {
             if (maxHeaderSize < 1)
@@ -29,10 +45,10 @@ namespace OoLunar.HyperSharp
             }
 
             SequencePosition sequencePosition = default;
-            Result<(HttpMethod Method, Uri Route, Version Version)> requestLineResult = TryParseRequestLine(readResult, maxHeaderSize, ref sequencePosition);
-            if (requestLineResult.IsFailed)
+            Result<(HttpMethod Method, Uri Route, Version Version)> startLineResult = TryParseStartLine(readResult, maxHeaderSize, ref sequencePosition);
+            if (startLineResult.IsFailed)
             {
-                return Result.Fail(requestLineResult.Errors);
+                return Result.Fail(startLineResult.Errors);
             }
 
             pipeReader.AdvanceTo(sequencePosition);
@@ -64,50 +80,58 @@ namespace OoLunar.HyperSharp
             // In the case of malicious input, this could potentially lead to an infinite loop if the end of the headers is never found.
             // TODO: Check if the last position is the end of the buffer, and if not, return an error
             return Result.Ok(new HyperContext(
-                requestLineResult.Value.Method,
-                requestLineResult.Value.Route,
-                requestLineResult.Value.Version,
+                startLineResult.Value.Method,
+                startLineResult.Value.Route,
+                startLineResult.Value.Version,
                 headers,
                 pipeReader,
                 PipeWriter.Create(networkStream)
             ));
         }
 
-        private static Result<(HttpMethod Method, Uri Route, Version Version)> TryParseRequestLine(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition)
+        private static Result<(HttpMethod Method, Uri Route, Version Version)> TryParseStartLine(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition)
         {
             SequenceReader<byte> sequenceReader = new(result.Buffer);
-            if (!sequenceReader.TryReadTo(out ReadOnlySpan<byte> requestLine, "\r\n"u8, advancePastDelimiter: true))
+            if (!sequenceReader.TryReadTo(out ReadOnlySpan<byte> startLine, "\r\n"u8, advancePastDelimiter: true))
             {
-                return Result.Fail("Invalid data in request line.");
+                return Result.Fail("Invalid data in the start line.");
             }
-            else if (requestLine.Length > maxHeaderSize)
+            else if (startLine.Length > maxHeaderSize)
             {
-                return Result.Fail("Request line length exceeds max header size.");
-            }
-
-            // Split the request line into method, path, and version
-            int firstSpaceIndex = requestLine.IndexOf((byte)' ');
-            int lastSpaceIndex = requestLine.LastIndexOf((byte)' ');
-            HttpMethod httpMethod;
-            try
-            {
-                // Unfortunately, HttpMethod doesn't have a TryParse method, so we have to use the constructor
-                httpMethod = new(Encoding.ASCII.GetString(requestLine[..firstSpaceIndex]));
-            }
-            catch (Exception)
-            {
-                return Result.Fail("Invalid HTTP method passed.");
+                return Result.Fail("Start line length exceeds max header size.");
             }
 
+            // Split the start line into method, path, and version
+            int firstSpaceIndex = startLine.IndexOf((byte)' ');
+            int lastSpaceIndex = startLine.LastIndexOf((byte)' ');
             if (firstSpaceIndex == -1
                 || lastSpaceIndex == -1
-                || firstSpaceIndex == lastSpaceIndex
-                || !Uri.TryCreate(Encoding.ASCII.GetString(requestLine[(firstSpaceIndex + 1)..lastSpaceIndex]), UriKind.Absolute, out Uri? httpRoute))
+                || firstSpaceIndex == lastSpaceIndex)
+            {
+                return Result.Fail("Invalid start line data.");
+            }
+
+            HttpMethod? httpMethod = null;
+            foreach (KeyValuePair<byte[], HttpMethod> httpMethodPair in HttpMethods)
+            {
+                if (startLine[..firstSpaceIndex].SequenceEqual(httpMethodPair.Key))
+                {
+                    httpMethod = httpMethodPair.Value;
+                    break;
+                }
+            }
+
+            if (httpMethod is null)
+            {
+                return Result.Fail("Invalid HTTP method specified.");
+            }
+
+            if (!Uri.TryCreate(Encoding.ASCII.GetString(startLine[(firstSpaceIndex + 1)..lastSpaceIndex]), UriKind.Absolute, out Uri? httpRoute))
             {
                 return Result.Fail("Invalid route specified.");
             }
 
-            Version httpVersion = Encoding.ASCII.GetString(requestLine[(lastSpaceIndex + 1)..]).ToLowerInvariant() switch
+            Version httpVersion = Encoding.ASCII.GetString(startLine[(lastSpaceIndex + 1)..]).ToLowerInvariant() switch
             {
                 "http/1.0" => HttpVersion.Version10,
                 "http/1.1" => HttpVersion.Version11,
@@ -132,7 +156,7 @@ namespace OoLunar.HyperSharp
             }
             else if (header.Length > maxHeaderSize)
             {
-                return Result.Fail("Request line length exceeds max header size.");
+                return Result.Fail("Header line length exceeds max header size.");
             }
             else if (header.Length == 0)
             {
@@ -147,32 +171,11 @@ namespace OoLunar.HyperSharp
                 return Result.Fail("Invalid header data.");
             }
 
-            // Check for invalid characters in the header name
-            string name = Encoding.ASCII.GetString(header[..separatorIndex]).Trim();
-            if (!IsToken(name))
-            {
-                return Result.Fail("Invalid header name.");
-            }
-
             sequencePosition = sequenceReader.Position;
             return Result.Ok((
-                name,
-                Encoding.ASCII.GetString(header[(separatorIndex + 1)..]).Trim()
+                name: Encoding.ASCII.GetString(header[..separatorIndex]).Trim(),
+                value: Encoding.ASCII.GetString(header[(separatorIndex + 1)..]).Trim()
             ));
-        }
-
-        private static bool IsToken(string value)
-        {
-            foreach (char c in value)
-            {
-                // Check for non-token characters (non-printable ASCII or any of the separators)
-                if (c is < (char)0x20 or >= (char)0x7F || "()<>@,;:\\\"/[]?={}".Contains(c))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
     }
 }
