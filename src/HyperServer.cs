@@ -1,11 +1,11 @@
 using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentResults;
-using System.Linq;
 using Microsoft.Extensions.Logging;
-using System.Net;
+using OoLunar.HyperSharp.Parsing;
 
 namespace OoLunar.HyperSharp
 {
@@ -50,19 +50,17 @@ namespace OoLunar.HyperSharp
                     continue;
                 }
 
-                // Invoke all header responders in parallel
-                // It is the responder's job to respond and close the stream if necessary
-                await Task.WhenAll(Configuration.HeaderResponders.Select(responder => responder.RespondAsync(context.Value)));
-                if (context.Value.HasResponded)
+                Logger.LogTrace("Received request: {Method} {Route} {Version}", context.Value.Method, context.Value.Route, context.Value.Version);
+                Result<HyperStatus> status = await Configuration.Responders(context.Value);
+                if (status.IsFailed)
                 {
-                    continue;
+                    Logger.LogDebug("Failed to respond: {Errors}", status.Errors);
+                    await context.Value.RespondAsync(status.ValueOrDefault == default ? new HyperStatus(HttpStatusCode.NotFound) : status.Value);
                 }
-
-                // TODO: Route the request
-                await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.NotFound, new HyperHeaderCollection()
+                else
                 {
-                    ["X-Testing"] = new[] { "Hello world!" }
-                }));
+                    await context.Value.RespondAsync(status.Value == default ? new HyperStatus(HttpStatusCode.OK) : status.Value);
+                }
             }
         }
     }

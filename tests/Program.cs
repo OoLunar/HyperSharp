@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
@@ -88,6 +88,7 @@ namespace OoLunar.HyperSharp.Tests
                 }
 
                 hyperConfiguration.ListeningEndpoint = new IPEndPoint(address, configuration.GetValue("listening:port", 8080));
+                hyperConfiguration.AddResponders(typeof(Program).Assembly);
             });
 
             services.AddSingleton(new HttpClient() { DefaultRequestHeaders = { { "User-Agent", $"HyperSharp/{typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion} Github" } } });

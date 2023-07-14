@@ -10,7 +10,7 @@ namespace OoLunar.HyperSharp
             IServiceProvider serviceProvider = services.BuildServiceProvider();
             HyperConfigurationBuilder configurationBuilder = new();
             configurate(serviceProvider, configurationBuilder);
-            services.AddSingleton(new HyperConfiguration(serviceProvider, configurationBuilder));
+            services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
             services.AddSingleton<HyperServer>();
             return services;
         }
@@ -19,7 +19,7 @@ namespace OoLunar.HyperSharp
         {
             HyperConfigurationBuilder configurationBuilder = new();
             configurate(configurationBuilder);
-            services.AddSingleton(new HyperConfiguration(services.BuildServiceProvider(), configurationBuilder));
+            services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
             services.AddSingleton<HyperServer>();
             return services;
         }

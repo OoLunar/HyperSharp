@@ -1,8 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
-using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
+using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp
 {
@@ -10,32 +11,18 @@ namespace OoLunar.HyperSharp
     {
         public IPEndPoint ListeningEndpoint { get; init; }
         public int MaxHeaderSize { get; init; }
-        public IReadOnlyList<IHeaderResponder> HeaderResponders { get; init; }
+        public Func<HyperContext, Task<Result<HyperStatus>>> Responders { get; init; }
 
-        internal HyperConfiguration(IServiceProvider serviceProvider, HyperConfigurationBuilder builder)
+        internal HyperConfiguration(IServiceCollection serviceDescriptors, HyperConfigurationBuilder builder)
         {
+            ArgumentNullException.ThrowIfNull(serviceDescriptors, nameof(serviceDescriptors));
             ArgumentNullException.ThrowIfNull(builder, nameof(builder));
-            ILogger<HyperConfiguration> logger = serviceProvider.GetRequiredService<ILogger<HyperConfiguration>>();
-            List<IHeaderResponder> headerResponders = new();
-            foreach (Type type in builder.HeaderResponders)
-            {
-                if (typeof(IHeaderResponder).IsAssignableTo(type))
-                {
-                    headerResponders.Add(ActivatorUtilities.CreateInstance<IHeaderResponder>(serviceProvider, type));
-                    continue;
-                }
-
-                logger.LogError("Type '{Type}' does not inherit from {HeaderResponder}.", type, typeof(IHeaderResponder));
-            }
-
-            if (headerResponders.Count != builder.HeaderResponders.Count)
-            {
-                throw new InvalidOperationException("Invalid header responders registered. See logs for more detail.");
-            }
 
             ListeningEndpoint = builder.ListeningEndpoint;
             MaxHeaderSize = builder.MaxHeaderSize;
-            HeaderResponders = headerResponders.AsReadOnly();
+            ResponderLocator responderLocator = new(serviceDescriptors);
+            responderLocator.LocateResponders(builder.Responders);
+            Responders = responderLocator.CompileResponderPath();
         }
     }
 }

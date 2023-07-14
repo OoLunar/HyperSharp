@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FluentResults;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Parsing
 {
     public sealed class HyperHeaderParser
     {

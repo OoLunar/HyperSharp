@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Parsing
 {
     public sealed class HyperHeaderCollection : IReadOnlyDictionary<string, IReadOnlyList<string>>
     {
