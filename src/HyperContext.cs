@@ -37,7 +37,7 @@ namespace OoLunar.HyperSharp
             Response = response ?? throw new ArgumentNullException(nameof(response));
         }
 
-        public async Task RespondAsync(HyperStatus status)
+        public async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null)
         {
             // Write request line
             await Response.WriteAsync(HttpVersions[Version]);
@@ -72,7 +72,7 @@ namespace OoLunar.HyperSharp
             // Write body
             if (status.Body is not null)
             {
-                await JsonSerializer.SerializeAsync(Response.AsStream(), status.Body, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                await JsonSerializer.SerializeAsync(Response.AsStream(), status.Body, serializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web));
             }
 
             await Response.CompleteAsync();
