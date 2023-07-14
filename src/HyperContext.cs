@@ -24,58 +24,61 @@ namespace OoLunar.HyperSharp
         public Version Version { get; init; }
         public HyperHeaderCollection Headers { get; init; }
         public PipeReader Body { get; init; }
-        private PipeWriter Response { get; init; }
+
+        public Dictionary<string, string> Metadata { get; init; } = new();
         public bool HasResponded { get; private set; }
 
-        public HyperContext(HttpMethod method, Uri route, Version version, HyperHeaderCollection headers, PipeReader body, PipeWriter response)
+        private PipeWriter Responder { get; init; }
+
+        public HyperContext(HttpMethod method, Uri route, Version version, HyperHeaderCollection headers, PipeReader body, PipeWriter responder)
         {
             Version = version ?? throw new ArgumentNullException(nameof(version));
             Method = method ?? throw new ArgumentNullException(nameof(method));
             Route = route ?? throw new ArgumentNullException(nameof(route));
             Headers = headers ?? throw new ArgumentNullException(nameof(headers));
             Body = body ?? throw new ArgumentNullException(nameof(body));
-            Response = response ?? throw new ArgumentNullException(nameof(response));
+            Responder = responder ?? throw new ArgumentNullException(nameof(responder));
         }
 
         public async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null)
         {
             // Write request line
-            await Response.WriteAsync(HttpVersions[Version]);
-            await Response.WriteAsync(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
-            await Response.WriteAsync("\r\n"u8.ToArray());
+            await Responder.WriteAsync(HttpVersions[Version]);
+            await Responder.WriteAsync(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
+            await Responder.WriteAsync("\r\n"u8.ToArray());
 
             // Write headers
             if (status.Headers is not null)
             {
                 foreach (KeyValuePair<string, IReadOnlyList<string>> header in status.Headers)
                 {
-                    await Response.WriteAsync(Encoding.ASCII.GetBytes(header.Key));
-                    await Response.WriteAsync(": "u8.ToArray());
+                    await Responder.WriteAsync(Encoding.ASCII.GetBytes(header.Key));
+                    await Responder.WriteAsync(": "u8.ToArray());
                     if (header.Value.Count == 1)
                     {
-                        await Response.WriteAsync(Encoding.ASCII.GetBytes(header.Value[0]));
+                        await Responder.WriteAsync(Encoding.ASCII.GetBytes(header.Value[0]));
                     }
                     else
                     {
                         foreach (string value in header.Value)
                         {
-                            await Response.WriteAsync(Encoding.ASCII.GetBytes(value));
-                            await Response.WriteAsync(", "u8.ToArray());
+                            await Responder.WriteAsync(Encoding.ASCII.GetBytes(value));
+                            await Responder.WriteAsync(", "u8.ToArray());
                         }
                     }
 
-                    await Response.WriteAsync("\r\n"u8.ToArray());
+                    await Responder.WriteAsync("\r\n"u8.ToArray());
                 }
             }
-            await Response.WriteAsync("\r\n"u8.ToArray());
+            await Responder.WriteAsync("\r\n"u8.ToArray());
 
             // Write body
             if (status.Body is not null)
             {
-                await JsonSerializer.SerializeAsync(Response.AsStream(), status.Body, serializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                await JsonSerializer.SerializeAsync(Responder.AsStream(), status.Body, serializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web));
             }
 
-            await Response.CompleteAsync();
+            await Responder.CompleteAsync();
             HasResponded = true;
         }
     }
