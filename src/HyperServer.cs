@@ -55,11 +55,14 @@ namespace OoLunar.HyperSharp
                 if (status.IsFailed)
                 {
                     Logger.LogDebug("Failed to respond: {Errors}", status.Errors);
-                    await context.Value.RespondAsync(status.ValueOrDefault == default ? new HyperStatus(HttpStatusCode.NotFound) : status.Value);
+                    if (!context.Value.HasResponded)
+                    {
+                        await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.NotFound));
+                    }
                 }
-                else
+                else if (context.IsSuccess && !context.Value.HasResponded)
                 {
-                    await context.Value.RespondAsync(status.Value == default ? new HyperStatus(HttpStatusCode.OK) : status.Value);
+                    await context.Value.RespondAsync(context.ValueOrDefault != default ? status.Value : new HyperStatus(HttpStatusCode.OK));
                 }
             }
         }
