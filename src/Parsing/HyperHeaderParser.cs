@@ -37,7 +37,7 @@ namespace OoLunar.HyperSharp.Parsing
             ArgumentNullException.ThrowIfNull(networkStream);
 
             HyperHeaderCollection headers = new();
-            PipeReader pipeReader = PipeReader.Create(networkStream);
+            PipeReader pipeReader = PipeReader.Create(networkStream, new StreamPipeReaderOptions(leaveOpen: true));
             ReadResult readResult = await pipeReader.ReadAsync();
             if (readResult.Buffer.Length == 0)
             {
@@ -65,13 +65,14 @@ namespace OoLunar.HyperSharp.Parsing
                 {
                     return Result.Fail(headerResult.Errors);
                 }
+                pipeReader.AdvanceTo(sequencePosition);
+
                 // End of headers
-                else if (headerResult.Value == default)
+                if (headerResult.Value == default)
                 {
                     break;
                 }
 
-                pipeReader.AdvanceTo(sequencePosition);
                 headers.AddHeaderValue(headerResult.Value.Name, headerResult.Value.Value);
                 readResult = await pipeReader.ReadAsync();
             }
@@ -85,7 +86,7 @@ namespace OoLunar.HyperSharp.Parsing
                 startLineResult.Value.Version,
                 headers,
                 pipeReader,
-                PipeWriter.Create(networkStream)
+                PipeWriter.Create(networkStream, new StreamPipeWriterOptions(leaveOpen: true))
             ));
         }
 
@@ -161,6 +162,8 @@ namespace OoLunar.HyperSharp.Parsing
             else if (header.Length == 0)
             {
                 // We've reached the end of the headers
+                // Skip the next two bytes (\r\n)
+                sequencePosition = sequenceReader.Position;
                 return Result.Ok();
             }
 
