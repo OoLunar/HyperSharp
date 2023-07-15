@@ -62,7 +62,7 @@ namespace OoLunar.HyperSharp
                 }
                 else if (context.IsSuccess && !context.Value.HasResponded)
                 {
-                    await context.Value.RespondAsync(context.ValueOrDefault != default ? status.Value : new HyperStatus(HttpStatusCode.OK));
+                    await context.Value.RespondAsync(context.Value != default ? status.Value : new HyperStatus(HttpStatusCode.OK));
                 }
             }
         }

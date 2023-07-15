@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading.Tasks;
 using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
-using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp
 {
@@ -20,9 +19,9 @@ namespace OoLunar.HyperSharp
 
             ListeningEndpoint = builder.ListeningEndpoint;
             MaxHeaderSize = builder.MaxHeaderSize;
-            ResponderLocator responderLocator = new(serviceDescriptors);
-            responderLocator.LocateResponders(builder.Responders);
-            Responders = responderLocator.CompileResponderPath();
+            ResponderSearcher responderLocator = new();
+            responderLocator.RegisterResponders(builder.Responders);
+            Responders = responderLocator.CompileTreeDelegate(serviceDescriptors.BuildServiceProvider());
         }
     }
 }

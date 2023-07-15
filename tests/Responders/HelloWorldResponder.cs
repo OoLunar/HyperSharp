@@ -10,6 +10,8 @@ namespace OoLunar.HyperSharp.Tests.Responders
         public string[] Implements { get; init; } = Array.Empty<string>();
         public string[] DependsOn { get; init; } = Array.Empty<string>();
 
+        public HelloWorldResponder() { }
+
         public Task<Result<HyperStatus>> RespondAsync(HyperContext context) => Task.FromResult(Result.Ok(new HyperStatus(HttpStatusCode.OK, new()
         {
             ["X-Test"] = new[] { "Hello, World!" }
