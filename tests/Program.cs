@@ -75,19 +75,19 @@ namespace OoLunar.HyperSharp.Tests
             services.AddHyperSharp((services, hyperConfiguration) =>
             {
                 IConfiguration configuration = services.GetRequiredService<IConfiguration>();
-                string? host = configuration.GetValue("listening:address", "localhost")?.Trim();
+                string? host = configuration.GetValue("server:address", "localhost")?.Trim();
                 if (string.IsNullOrWhiteSpace(host))
                 {
-                    throw new ArgumentException("The listening address cannot be null or whitespace.", nameof(host));
+                    throw new ArgumentException("The server address cannot be null or whitespace.", nameof(host));
                 }
 
                 if (!IPAddress.TryParse(host, out IPAddress? address))
                 {
                     IPAddress[] addresses = Dns.GetHostAddresses(host);
-                    address = addresses.Length != 0 ? addresses[0] : throw new InvalidOperationException("The listening address could not be resolved to an IP address.");
+                    address = addresses.Length != 0 ? addresses[0] : throw new InvalidOperationException("The server address could not be resolved to an IP address.");
                 }
 
-                hyperConfiguration.ListeningEndpoint = new IPEndPoint(address, configuration.GetValue("listening:port", 8080));
+                hyperConfiguration.ListeningEndpoint = new IPEndPoint(address, configuration.GetValue("server:port", 8080));
                 hyperConfiguration.AddResponders(typeof(Program).Assembly);
             });
 

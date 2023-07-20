@@ -6,10 +6,11 @@
             ">>"
         ]
     },
+    "server": {
+        "address": "10.13.13.2",
+        "port": 8080
+    },
     "logging": {
-        "level": "Debug",
-        "overrides": {
-            "DSharpPlus": "Information"
-        }
+        "level": "Debug"
     }
 }
