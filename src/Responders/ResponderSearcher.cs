@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
+using OoLunar.HyperSharp.Errors;
 using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp
@@ -61,23 +62,22 @@ namespace OoLunar.HyperSharp
             {
                 if (branch.Key.IsAbstract || !branch.Key.GetInterfaces().Contains(typeof(IResponder)))
                 {
-                    errors.Add(new Error($"Invalid dependency: Responder {branch.Key.Name} is not a responder."));
+                    errors.Add(new ResponderInvalidTypeError(branch.Key, branch.Key));
                 }
 
                 foreach (Twig twig in branch.Value.Dependencies)
                 {
-                    // TODO: Create own error types which inherit from IError.
                     if (twig.Type.IsAbstract || !twig.Type.GetInterfaces().Contains(typeof(IResponder)))
                     {
-                        errors.Add(new Error($"Invalid dependency: Responder {branch.Key.Name} depends on {twig.Type.Name}, which is not a responder."));
+                        errors.Add(new ResponderInvalidTypeError(branch.Key, twig.Type));
                     }
                     else if (!_dependencies.ContainsKey(twig.Type))
                     {
-                        errors.Add(new Error($"Missing dependency: Responder {branch.Key.Name} depends on {twig.Type.Name}, which is not registered."));
+                        errors.Add(new ResponderMissingDependencyError(branch.Key, twig.Type));
                     }
                     else if (CheckRecursiveDependency(branch.Key, twig.Type))
                     {
-                        errors.Add(new Error($"Recursive dependency detected: Responder {branch.Key.Name} depends on {twig.Type.Name}, which depends on {branch.Key.Name}."));
+                        errors.Add(new ResponderRecursiveDependencyError(branch.Key, twig.Type));
                     }
                 }
             }
@@ -98,22 +98,20 @@ namespace OoLunar.HyperSharp
                 CompileBranchDelegate(branch, serviceProvider);
             }
 
-            List<Func<HyperContext, Task<Result<HyperStatus>>>> branchDelegates = new();
-            foreach (Twig branch in _dependencies.Values)
-            {
-                if (!branch.IsDependancy)
-                {
-                    branchDelegates.Add(_compiledDelegates[branch]);
-                }
-            }
+            // Select all branches that are not dependencies
+            Dictionary<Twig, Func<HyperContext, Task<Result<HyperStatus>>>> branchDelegates = _dependencies
+                .Where(branch => !branch.Value.IsDependancy)
+                .ToDictionary(branch => branch.Value, branch => branch.Value.CompiledDelegate!);
 
             return async context =>
             {
+                Twig branch = null!;
                 List<IError> errors = new();
                 try
                 {
-                    foreach (Func<HyperContext, Task<Result<HyperStatus>>> branchDelegate in branchDelegates)
+                    foreach ((Twig twig, Func<HyperContext, Task<Result<HyperStatus>>> branchDelegate) in branchDelegates)
                     {
+                        branch = twig;
                         Result<HyperStatus> result = await branchDelegate(context);
                         if (result.IsFailed)
                         {
@@ -127,10 +125,10 @@ namespace OoLunar.HyperSharp
                 }
                 catch (Exception error)
                 {
-                    errors.Add(new Error(error.Message).CausedBy(error));
+                    return Result.Fail(new ResponderExecutionFailedError(branch, error));
                 }
 
-                return Result.Fail(new Error("No responder succeeded.").CausedBy(errors));
+                return Result.Fail(new ResponderExecutionFailedError().CausedBy(errors));
             };
         }
 
@@ -169,7 +167,7 @@ namespace OoLunar.HyperSharp
                 return Result.Fail(errors);
             }
 
-            _compiledDelegates[branch] = branchDelegate;
+            _compiledDelegates[branch] = branch.CompiledDelegate = branchDelegate;
             return branchDelegate;
         }
 
