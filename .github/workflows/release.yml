@@ -19,6 +19,8 @@ jobs:
     name: Publish Release
     runs-on: "self-hosted"
     if: "!contains(format('{0} {1}', github.event.head_commit.message, github.event.pull_request.title), '[ci-skip]') && contains(github.event.release.target_commitish, 'master') && github.event_name == 'release'"
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -28,6 +30,7 @@ jobs:
           dotnet-version: 8
       - name: Publish NuGet packages
         run: |
+          ${{ github.event.release.target_commitish }}
           mkdir build
           dotnet pack -c Release -o build /p:Version=${{ github.event.release.tag_name }}
           dotnet nuget push "build/*" -k ${{ secrets.NUGET_ORG_API_KEY }} -s https://api.nuget.org/v3/index.json
