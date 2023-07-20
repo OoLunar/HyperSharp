@@ -28,6 +28,7 @@ namespace OoLunar.HyperSharp.Parsing
         public IEnumerable<IReadOnlyList<string>> Values => Headers.Values;
         public int Count => Headers.Count;
 
+        // TODO: Store values as ASCII bytes instead of strings, possibly expose as IReadOnlyList<byte[]> via new methods
         private readonly Dictionary<string, List<string>> Headers;
 
         public HyperHeaderCollection() => Headers = new();
@@ -51,6 +52,7 @@ namespace OoLunar.HyperSharp.Parsing
 
         public IEnumerator<KeyValuePair<string, IReadOnlyList<string>>> GetEnumerator()
         {
+            SetHeader("Date", DateTime.UtcNow.ToString("R"));
             foreach (KeyValuePair<string, List<string>> header in Headers)
             {
                 yield return new KeyValuePair<string, IReadOnlyList<string>>(header.Key, header.Value.AsReadOnly());
@@ -70,6 +72,7 @@ namespace OoLunar.HyperSharp.Parsing
                 throw new ArgumentException("Header value is invalid.", nameof(value));
             }
 
+            name = NormalizeHeaderName(name);
             if (!Headers.TryGetValue(name, out List<string>? values))
             {
                 values = new();
@@ -97,6 +100,7 @@ namespace OoLunar.HyperSharp.Parsing
                 newValues.Add(value.Trim());
             }
 
+            name = NormalizeHeaderName(name);
             if (!Headers.TryGetValue(name, out List<string>? oldValues))
             {
                 Headers[name] = newValues;
@@ -106,8 +110,9 @@ namespace OoLunar.HyperSharp.Parsing
             oldValues.AddRange(newValues);
         }
 
-        public void SetHeader(string name, IEnumerable<string> values) => Headers[name] = new List<string>(values);
-        public void RemoveHeader(string name) => Headers.Remove(name);
+        public void SetHeader(string name, IEnumerable<string> values) => Headers[NormalizeHeaderName(name)] = new List<string>(values);
+        public void SetHeader(string name, string value) => Headers[NormalizeHeaderName(name)] = new List<string>() { value };
+        public void RemoveHeader(string name) => Headers.Remove(NormalizeHeaderName(name));
 
         public static bool IsValidHeaderName(string value)
         {
@@ -145,6 +150,30 @@ namespace OoLunar.HyperSharp.Parsing
             }
 
             return true;
+        }
+
+        public static string NormalizeHeaderName(string value) => NormalizeHeaderName(value.AsSpan());
+        public static string NormalizeHeaderName(ReadOnlySpan<char> value)
+        {
+            if (value.IsEmpty)
+            {
+                return string.Empty;
+            }
+
+            Span<char> chars = value.ToArray();
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] == '-' || value[i] == '_')
+                {
+                    chars[i + 1] = char.ToUpperInvariant(value[i + 1]);
+                }
+                else if (i == 0)
+                {
+                    chars[0] = char.ToUpperInvariant(value[0]);
+                }
+            }
+
+            return chars.ToString();
         }
     }
 }
