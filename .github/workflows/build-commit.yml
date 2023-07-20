@@ -3,6 +3,7 @@ name: Build Commit
 on:
   push:
     paths:
+      - ".github/workflows/build-commit.yml"
       - "src/**"
       - "HyperSharp.sln"
 
@@ -13,7 +14,7 @@ env:
   DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
 
 jobs:
-  build-commit:
+  build_commit:
     name: Build Commit ${{ github.sha }}
     runs-on: self-hosted
     if: "!contains(format('{0} {1}', github.event.head_commit.message, github.event.pull_request.title), '[ci-skip]')"
@@ -26,5 +27,3 @@ jobs:
           dotnet-version: 8
       - name: Build Project
         run: dotnet build
-      - name: Build Dockerfile
-        run: docker build -t oolunar/hypersharp:latest .
