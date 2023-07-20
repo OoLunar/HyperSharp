@@ -8,18 +8,26 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using OoLunar.HyperSharp.Json;
 using OoLunar.HyperSharp.Parsing;
 
 namespace OoLunar.HyperSharp
 {
-    public sealed class HyperContext
+    [DebuggerDisplay("{ToString(),nq}")]
+    public class HyperContext
     {
-        [DebuggerDisplay("{ToString(),nq}")]
-        private static readonly FrozenDictionary<Version, byte[]> HttpVersions = new Dictionary<Version, byte[]>()
+        private static readonly string ServerName;
+        private static readonly FrozenDictionary<Version, byte[]> HttpVersions;
+
+        static HyperContext()
         {
-            [HttpVersion.Version10] = "HTTP/1.0 "u8.ToArray(),
-            [HttpVersion.Version11] = "HTTP/1.1 "u8.ToArray(),
-        }.ToFrozenDictionary();
+            ServerName = "HyperSharp";
+            HttpVersions = new Dictionary<Version, byte[]>()
+            {
+                [HttpVersion.Version10] = "HTTP/1.0 "u8.ToArray(),
+                [HttpVersion.Version11] = "HTTP/1.1 "u8.ToArray(),
+            }.ToFrozenDictionary();
+        }
 
         public HttpMethod Method { get; init; }
         public Uri Route { get; init; }
@@ -42,42 +50,46 @@ namespace OoLunar.HyperSharp
             ResponseWriter = responseWriter ?? throw new ArgumentNullException(nameof(responseWriter));
         }
 
-        public async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null)
+        public virtual async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null)
         {
             // Write request line
             await ResponseWriter.WriteAsync(HttpVersions[Version]);
             await ResponseWriter.WriteAsync(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
             await ResponseWriter.WriteAsync("\r\n"u8.ToArray());
 
-            // Write headers
-            if (status.Headers is not null)
-            {
-                foreach (KeyValuePair<string, IReadOnlyList<string>> header in status.Headers)
-                {
-                    await ResponseWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Key));
-                    await ResponseWriter.WriteAsync(": "u8.ToArray());
-                    if (header.Value.Count == 1)
-                    {
-                        await ResponseWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Value[0]));
-                    }
-                    else
-                    {
-                        foreach (string value in header.Value)
-                        {
-                            await ResponseWriter.WriteAsync(Encoding.ASCII.GetBytes(value));
-                            await ResponseWriter.WriteAsync(", "u8.ToArray());
-                        }
-                    }
+            // Serialize body ahead of time due to headers
+            byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? HyperSerializationOptions.Default);
 
-                    await ResponseWriter.WriteAsync("\r\n"u8.ToArray());
+            // Write headers
+            status.Headers.SetHeader("Server", ServerName);
+            status.Headers.SetHeader("Content-Type", "application/json; charset=utf-8");
+            status.Headers.AddHeaderValue("Content-Length", content.Length.ToString());
+
+            foreach (KeyValuePair<string, IReadOnlyList<string>> header in status.Headers)
+            {
+                await ResponseWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Key));
+                await ResponseWriter.WriteAsync(": "u8.ToArray());
+                if (header.Value.Count == 1)
+                {
+                    await ResponseWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Value[0]));
                 }
+                else
+                {
+                    foreach (string value in header.Value)
+                    {
+                        await ResponseWriter.WriteAsync(Encoding.ASCII.GetBytes(value));
+                        await ResponseWriter.WriteAsync(", "u8.ToArray());
+                    }
+                }
+
+                await ResponseWriter.WriteAsync("\r\n"u8.ToArray());
             }
             await ResponseWriter.WriteAsync("\r\n"u8.ToArray());
 
             // Write body
-            if (status.Body is not null)
+            if (content.Length != 0)
             {
-                await JsonSerializer.SerializeAsync(ResponseWriter.AsStream(true), status.Body, serializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                await ResponseWriter.WriteAsync(content);
             }
 
             await ResponseWriter.CompleteAsync();

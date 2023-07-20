@@ -1,10 +1,13 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentResults;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OoLunar.HyperSharp.Json;
 using OoLunar.HyperSharp.Parsing;
 
 namespace OoLunar.HyperSharp
@@ -15,11 +18,13 @@ namespace OoLunar.HyperSharp
     {
         private readonly HyperConfiguration Configuration;
         private readonly ILogger<HyperServer> Logger;
+        private readonly JsonSerializerOptions JsonSerializerOptions;
 
-        public HyperServer(HyperConfiguration configuration, ILogger<HyperServer> logger)
+        public HyperServer(HyperConfiguration configuration, ILogger<HyperServer> logger, IOptionsSnapshot<JsonSerializerOptions>? jsonSerializerOptions = null)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            JsonSerializerOptions = jsonSerializerOptions?.Get("HyperSharp") ?? HyperSerializationOptions.Default;
         }
 
         public void Run(CancellationToken cancellationToken = default)
@@ -42,7 +47,7 @@ namespace OoLunar.HyperSharp
             while (!cancellationToken.IsCancellationRequested)
             {
                 TcpClient client = await listener.AcceptTcpClientAsync(cancellationToken);
-                NetworkStream clientStream = client.GetStream();
+                using NetworkStream clientStream = client.GetStream();
                 Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, clientStream);
                 if (context.IsFailed)
                 {
@@ -50,19 +55,19 @@ namespace OoLunar.HyperSharp
                     continue;
                 }
 
-                Logger.LogTrace("Received request: {Method} {Route} {Version}", context.Value.Method, context.Value.Route, context.Value.Version);
+                Logger.LogTrace("Received request: {Request}", context.Value);
                 Result<HyperStatus> status = await Configuration.Responders(context.Value);
                 if (status.IsFailed)
                 {
-                    Logger.LogDebug("Failed to respond: {Errors}", status.Errors);
+                    Logger.LogWarning("Failed to respond: {Errors}", status.Errors);
                     if (!context.Value.HasResponded)
                     {
-                        await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.NotFound));
+                        await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.NotFound), JsonSerializerOptions);
                     }
                 }
                 else if (context.IsSuccess && !context.Value.HasResponded)
                 {
-                    await context.Value.RespondAsync(context.Value != default ? status.Value : new HyperStatus(HttpStatusCode.OK));
+                    await context.Value.RespondAsync(context.Value != default ? status.Value : new HyperStatus(HttpStatusCode.OK), JsonSerializerOptions);
                 }
             }
         }

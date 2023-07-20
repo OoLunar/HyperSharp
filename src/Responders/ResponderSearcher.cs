@@ -11,7 +11,8 @@ namespace OoLunar.HyperSharp
 {
     public class ResponderSearcher
     {
-        private readonly Dictionary<Type, Type[]> _dependencies = new();
+        private readonly Dictionary<Type, Twig> _dependencies = new();
+        private readonly Dictionary<Twig, Func<HyperContext, Task<Result<HyperStatus>>>> _compiledDelegates = new();
 
         public void RegisterResponders(Assembly assembly) => RegisterResponders(assembly.GetTypes());
         public void RegisterResponders(IEnumerable<Type> types)
@@ -23,103 +24,171 @@ namespace OoLunar.HyperSharp
                     continue;
                 }
 
-                List<Type> implements = new() { type };
-                IEnumerable<Type> dependsOnAttributes = type
-                    .GetCustomAttributes<DependsOnAttribute>(inherit: true)
-                    .SelectMany(attribute => attribute.Dependencies);
+                RegisterResponder(type);
+            }
+        }
 
-                foreach (Type dependsOnType in dependsOnAttributes)
+        private void RegisterResponder(Type type)
+        {
+            if (_dependencies.ContainsKey(type))
+            {
+                return; // Responder already registered
+            }
+
+            IEnumerable<Type> dependsOnAttributes = type
+                .GetCustomAttributes<DependsOnAttribute>(inherit: true)
+                .SelectMany(attribute => attribute.Dependencies);
+
+            List<Twig> twigDependencies = new();
+            foreach (Type? dependencyType in dependsOnAttributes)
+            {
+                if (!_dependencies.ContainsKey(dependencyType))
                 {
-                    implements.Add(dependsOnType);
+                    RegisterResponder(dependencyType); // Register dependent twigs recursively
                 }
 
-                _dependencies[type] = implements.Distinct().ToArray();
+                twigDependencies.Add(_dependencies[dependencyType]);
             }
+
+            Twig twig = new(type, twigDependencies.ToArray());
+            _dependencies[type] = twig;
         }
 
         public Result ValidateResponders()
         {
             List<IError> errors = new();
-            foreach (KeyValuePair<Type, Type[]> branch in _dependencies)
+            foreach (KeyValuePair<Type, Twig> branch in _dependencies)
             {
                 if (branch.Key.IsAbstract || !branch.Key.GetInterfaces().Contains(typeof(IResponder)))
                 {
                     errors.Add(new Error($"Invalid dependency: Responder {branch.Key.Name} is not a responder."));
                 }
 
-                foreach (Type twig in branch.Value)
+                foreach (Twig twig in branch.Value.Dependencies)
                 {
                     // TODO: Create own error types which inherit from IError.
-                    if (twig.IsAbstract || !twig.GetInterfaces().Contains(typeof(IResponder)))
+                    if (twig.Type.IsAbstract || !twig.Type.GetInterfaces().Contains(typeof(IResponder)))
                     {
-                        errors.Add(new Error($"Invalid dependency: Responder {branch.Key.Name} depends on {twig.Name}, which is not a responder."));
+                        errors.Add(new Error($"Invalid dependency: Responder {branch.Key.Name} depends on {twig.Type.Name}, which is not a responder."));
                     }
-                    else if (!_dependencies.TryGetValue(twig, out Type[]? twigs))
+                    else if (!_dependencies.ContainsKey(twig.Type))
                     {
-                        errors.Add(new Error($"Missing dependency: Responder {branch.Key.Name} depends on {twig.Name}, which is not registered."));
+                        errors.Add(new Error($"Missing dependency: Responder {branch.Key.Name} depends on {twig.Type.Name}, which is not registered."));
                     }
-                    else if (twigs.Contains(branch.Key))
+                    else if (CheckRecursiveDependency(branch.Key, twig.Type))
                     {
-                        errors.Add(new Error($"Recursive dependency detected: Responder {branch.Key.Name} depends on {twig.Name}, which depends on {branch.Key.Name}."));
+                        errors.Add(new Error($"Recursive dependency detected: Responder {branch.Key.Name} depends on {twig.Type.Name}, which depends on {branch.Key.Name}."));
                     }
                 }
             }
 
-            return Result.Ok();
+            return errors.Count != 0 ? Result.Fail(errors) : Result.Ok();
         }
 
         public Func<HyperContext, Task<Result<HyperStatus>>> CompileTreeDelegate(IServiceProvider serviceProvider)
         {
-            List<Func<HyperContext, Task<Result<HyperStatus>>>> branchDelegates = new();
-            foreach (KeyValuePair<Type, Type[]> branch in _dependencies)
+            // Mark branches as dependencies if they are referenced by other branches
+            foreach (Twig branch in _dependencies.Values)
             {
-                branchDelegates.Add(CompileBranchDelegate(branch.Key, branch.Value, serviceProvider));
+                foreach (Twig twig in branch.Dependencies)
+                {
+                    twig.IsDependancy = true;
+                }
+
+                CompileBranchDelegate(branch, serviceProvider);
+            }
+
+            List<Func<HyperContext, Task<Result<HyperStatus>>>> branchDelegates = new();
+            foreach (Twig branch in _dependencies.Values)
+            {
+                if (!branch.IsDependancy)
+                {
+                    branchDelegates.Add(_compiledDelegates[branch]);
+                }
             }
 
             return async context =>
             {
                 List<IError> errors = new();
-                foreach (Func<HyperContext, Task<Result<HyperStatus>>> branchDelegate in branchDelegates)
+                try
                 {
-                    Result<HyperStatus> result = await branchDelegate(context);
-                    if (result.IsSuccess)
+                    foreach (Func<HyperContext, Task<Result<HyperStatus>>> branchDelegate in branchDelegates)
                     {
-                        return result;
+                        Result<HyperStatus> result = await branchDelegate(context);
+                        if (result.IsFailed)
+                        {
+                            errors.AddRange(result.Errors);
+                        }
+                        else if (result.Value != default)
+                        {
+                            return result;
+                        }
                     }
-
-                    errors.AddRange(result.Errors);
+                }
+                catch (Exception error)
+                {
+                    errors.Add(new Error(error.Message).CausedBy(error));
                 }
 
                 return Result.Fail(new Error("No responder succeeded.").CausedBy(errors));
             };
         }
 
-        public static Func<HyperContext, Task<Result<HyperStatus>>> CompileBranchDelegate(Type branch, Type[] twigs, IServiceProvider serviceProvider)
+        private Func<HyperContext, Task<Result<HyperStatus>>> CompileBranchDelegate(Twig branch, IServiceProvider serviceProvider)
         {
-            List<Func<HyperContext, Task<Result<HyperStatus>>>> twigDelegates = new();
-            foreach (Type twig in twigs)
+            if (_compiledDelegates.TryGetValue(branch, out Func<HyperContext, Task<Result<HyperStatus>>>? compiledDelegate))
             {
-                twigDelegates.Add(((IResponder)ActivatorUtilities.CreateInstance(serviceProvider, twig)).RespondAsync);
+                return compiledDelegate;
+            }
+
+            List<Func<HyperContext, Task<Result<HyperStatus>>>> twigDelegates = new();
+            foreach (Twig twig in branch.Dependencies)
+            {
+                twigDelegates.Add(CompileBranchDelegate(twig, serviceProvider));
             }
 
             // Add the branch delegate last so that it's only called when all other twigs succeed.
-            twigDelegates.Add(((IResponder)ActivatorUtilities.CreateInstance(serviceProvider, branch)).RespondAsync);
+            twigDelegates.Add(((IResponder)ActivatorUtilities.CreateInstance(serviceProvider, branch.Type)).RespondAsync);
 
-            return async context =>
+            async Task<Result<HyperStatus>> branchDelegate(HyperContext context)
             {
                 List<IError> errors = new();
                 foreach (Func<HyperContext, Task<Result<HyperStatus>>> twigDelegate in twigDelegates)
                 {
                     Result<HyperStatus> result = await twigDelegate(context);
-                    if (result.IsSuccess)
+                    if (result.IsFailed)
+                    {
+                        errors.AddRange(result.Errors);
+                    }
+                    else if (result.Value != default)
                     {
                         return result;
                     }
-                    errors.AddRange(result.Errors);
                 }
 
                 return Result.Fail(errors);
-            };
+            }
+
+            _compiledDelegates[branch] = branchDelegate;
+            return branchDelegate;
+        }
+
+        private bool CheckRecursiveDependency(Type branch, Type twig)
+        {
+            if (twig == branch)
+            {
+                return true;
+            }
+
+            foreach (Twig dependency in _dependencies[twig].Dependencies)
+            {
+                if (CheckRecursiveDependency(branch, dependency.Type))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
