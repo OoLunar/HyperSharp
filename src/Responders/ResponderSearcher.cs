@@ -20,7 +20,7 @@ namespace OoLunar.HyperSharp
         {
             foreach (Type type in types)
             {
-                if (type.IsAbstract || !type.GetInterfaces().Contains(typeof(IResponder)))
+                if (type.IsAbstract || !type.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
                 {
                     continue;
                 }
@@ -60,14 +60,14 @@ namespace OoLunar.HyperSharp
             List<IError> errors = new();
             foreach (KeyValuePair<Type, Twig<TInput, TOutput>> branch in _dependencies)
             {
-                if (branch.Key.IsAbstract || !branch.Key.GetInterfaces().Contains(typeof(IResponder)))
+                if (branch.Key.IsAbstract || !branch.Key.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
                 {
                     errors.Add(new ResponderInvalidTypeError(branch.Key, branch.Key));
                 }
 
                 foreach (Twig<TInput, TOutput> twig in branch.Value.Dependencies)
                 {
-                    if (twig.Type.IsAbstract || !twig.Type.GetInterfaces().Contains(typeof(IResponder)))
+                    if (twig.Type.IsAbstract || !twig.Type.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
                     {
                         errors.Add(new ResponderInvalidTypeError(branch.Key, twig.Type));
                     }
@@ -146,7 +146,7 @@ namespace OoLunar.HyperSharp
             }
 
             // Add the branch delegate last so that it's only called when all other twigs succeed.
-            twigDelegates.Add(ActivatorUtilities.CreateInstance<IResponder<TInput, TOutput>>(serviceProvider, branch.Type).RespondAsync);
+            twigDelegates.Add(((IResponder<TInput, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, branch.Type)).RespondAsync);
 
             async Task<Result<TOutput>> branchDelegate(TInput context)
             {
