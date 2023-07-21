@@ -4,14 +4,14 @@ using FluentResults;
 
 namespace OoLunar.HyperSharp.Responders
 {
-    public sealed class Twig
+    public sealed class Twig<TInput, TResult>
     {
         public Type Type { get; init; }
-        public Twig[] Dependencies { get; init; }
+        public Twig<TInput, TResult>[] Dependencies { get; init; }
         public bool IsDependancy { get; internal set; }
-        public Func<HyperContext, Task<Result<HyperStatus>>>? CompiledDelegate { get; internal set; }
+        public Func<TInput, Task<Result<TResult>>>? CompiledDelegate { get; internal set; }
 
-        public Twig(Type type, Twig[] dependencies)
+        public Twig(Type type, Twig<TInput, TResult>[] dependencies)
         {
             Type = type;
             Dependencies = dependencies;

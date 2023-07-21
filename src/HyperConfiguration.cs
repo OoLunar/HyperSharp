@@ -19,7 +19,7 @@ namespace OoLunar.HyperSharp
 
             ListeningEndpoint = builder.ListeningEndpoint;
             MaxHeaderSize = builder.MaxHeaderSize;
-            ResponderSearcher responderLocator = new();
+            ResponderSearcher<HyperContext, HyperStatus> responderLocator = new();
             responderLocator.RegisterResponders(builder.Responders);
             Responders = responderLocator.CompileTreeDelegate(serviceDescriptors.BuildServiceProvider());
         }

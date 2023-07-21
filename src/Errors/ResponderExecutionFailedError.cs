@@ -4,12 +4,13 @@ using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp.Errors
 {
-    public sealed class ResponderExecutionFailedError : Error
+    public sealed class ResponderExecutionFailedError<TInput, TOutput> : Error
+        where TOutput : class
     {
-        public Twig? ResponderBranch => Metadata.TryGetValue(nameof(ResponderBranch), out object? branch) ? branch as Twig : null;
+        public Twig<TInput, TOutput>? ResponderBranch => Metadata.TryGetValue(nameof(ResponderBranch), out object? branch) ? branch as Twig<TInput, TOutput> : null;
         public Exception? Exception => Metadata.TryGetValue(nameof(Exception), out object? exception) ? exception as Exception : null;
 
-        public ResponderExecutionFailedError(Twig? responderBranch = null, Exception? exception = null)
+        public ResponderExecutionFailedError(Twig<TInput, TOutput>? responderBranch = null, Exception? exception = null)
         {
             // Sometimes I wish there was a cleaner way to do this.
             // A bunch of if else statements looks ugly.

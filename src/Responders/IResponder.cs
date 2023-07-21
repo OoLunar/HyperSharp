@@ -7,6 +7,12 @@ namespace OoLunar.HyperSharp
     {
         string[] Implements { get; init; }
 
-        Task<Result<HyperStatus>> RespondAsync(HyperContext context);
+        Task<Result> RespondAsync(object context);
+    }
+
+    public interface IResponder<TInput, TOutput> : IResponder
+    {
+        Task<Result<TOutput>> RespondAsync(TInput context);
+        async Task<Result> IResponder.RespondAsync(object context) => (Result)(ResultBase)await RespondAsync((TInput)context);
     }
 }

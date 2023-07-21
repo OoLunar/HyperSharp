@@ -5,7 +5,7 @@ using FluentResults;
 
 namespace OoLunar.HyperSharp.Tests.Responders
 {
-    public sealed class HelloWorldResponder : IResponder
+    public sealed class HelloWorldResponder : IResponder<HyperContext, HyperStatus>
     {
         public string[] Implements { get; init; } = Array.Empty<string>();
         public string[] DependsOn { get; init; } = Array.Empty<string>();

@@ -6,7 +6,7 @@ using OoLunar.HyperSharp.Parsing;
 namespace OoLunar.HyperSharp
 {
     [DebuggerDisplay("{ToString(),nq}")]
-    public readonly record struct HyperStatus
+    public record HyperStatus
     {
         public HttpStatusCode Code { get; init; }
         public HyperHeaderCollection Headers { get; init; }
