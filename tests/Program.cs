@@ -15,7 +15,7 @@ namespace OoLunar.HyperSharp.Tests
 {
     public sealed class Program
     {
-        public static async Task<int> Main()
+        public static async Task Main()
         {
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton<IConfiguration>(services => new ConfigurationBuilder()
@@ -72,6 +72,7 @@ namespace OoLunar.HyperSharp.Tests
                 logger.AddSerilog(loggerConfiguration.CreateLogger());
             });
 
+            services.ConfigureHyperJsonConverters();
             services.AddHyperSharp((services, hyperConfiguration) =>
             {
                 IConfiguration configuration = services.GetRequiredService<IConfiguration>();
@@ -94,13 +95,21 @@ namespace OoLunar.HyperSharp.Tests
             services.AddSingleton(new HttpClient() { DefaultRequestHeaders = { { "User-Agent", $"HyperSharp/{typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion} Github" } } });
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
-            serviceProvider.GetRequiredService<HyperServer>().Run();
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            HyperServer server = serviceProvider.GetRequiredService<HyperServer>();
+            server.Run();
 
             HttpClient httpClient = serviceProvider.GetRequiredService<HttpClient>();
             HyperConfiguration hyperConfiguration = serviceProvider.GetRequiredService<HyperConfiguration>();
             HttpResponseMessage response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
-            return response.IsSuccessStatusCode ? 0 : 1;
+            response.EnsureSuccessStatusCode();
+
+            response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
+            response.EnsureSuccessStatusCode();
+
+            response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
+            response.EnsureSuccessStatusCode();
+
+            await server.StopAsync();
         }
     }
 }

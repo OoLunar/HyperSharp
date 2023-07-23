@@ -1,16 +1,9 @@
 {
-    "discord": {
-        "debug_guild_id": "",
-        "token": "",
-        "prefixes": [
-            ">>"
-        ]
-    },
     "server": {
-        "address": "10.13.13.2",
+        "address": "127.0.0.1",
         "port": 8080
     },
     "logging": {
-        "level": "Debug"
+        "level": "Verbose"
     }
 }
