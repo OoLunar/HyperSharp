@@ -1,11 +1,12 @@
 using System.Threading.Tasks;
 using FluentResults;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Responders
 {
     public interface IResponder
     {
         string[] Implements { get; init; }
+        ResponderPriority Priority { get; init; }
 
         Task<Result> RespondAsync(object context);
     }

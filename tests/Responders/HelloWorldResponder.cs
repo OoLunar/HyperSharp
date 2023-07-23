@@ -2,13 +2,14 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using FluentResults;
+using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp.Tests.Responders
 {
     public sealed class HelloWorldResponder : IResponder<HyperContext, HyperStatus>
     {
         public string[] Implements { get; init; } = Array.Empty<string>();
-        public string[] DependsOn { get; init; } = Array.Empty<string>();
+        public ResponderPriority Priority { get; init; } = ResponderPriority.Medium;
 
         public HelloWorldResponder() { }
 

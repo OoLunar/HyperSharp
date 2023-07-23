@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
 using OoLunar.HyperSharp.Errors;
-using OoLunar.HyperSharp.Responders;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Responders
 {
     public class ResponderSearcher<TInput, TOutput> where TOutput : class
     {
@@ -37,7 +36,7 @@ namespace OoLunar.HyperSharp
             }
 
             IEnumerable<Type> dependsOnAttributes = type
-                .GetCustomAttributes<DependsOnAttribute>(inherit: true)
+                .GetCustomAttributes<RequiresResponderAttribute>(inherit: true)
                 .SelectMany(attribute => attribute.Dependencies);
 
             List<Twig<TInput, TOutput>> twigDependencies = new();
@@ -45,7 +44,8 @@ namespace OoLunar.HyperSharp
             {
                 if (!_dependencies.ContainsKey(dependencyType))
                 {
-                    RegisterResponder(dependencyType); // Register dependent twigs recursively
+                    // Register dependent twigs recursively
+                    RegisterResponder(dependencyType);
                 }
 
                 twigDependencies.Add(_dependencies[dependencyType]);

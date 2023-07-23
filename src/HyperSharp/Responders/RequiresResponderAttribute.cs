@@ -4,11 +4,11 @@ using System.Linq;
 namespace OoLunar.HyperSharp.Responders
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, Inherited = true, AllowMultiple = true)]
-    public class DependsOnAttribute : Attribute
+    public class RequiresResponderAttribute : Attribute
     {
         public Type[] Dependencies { get; init; }
 
-        public DependsOnAttribute(params Type[] dependencies)
+        public RequiresResponderAttribute(params Type[] dependencies)
         {
             if (dependencies is null)
             {
@@ -28,8 +28,8 @@ namespace OoLunar.HyperSharp.Responders
     }
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, Inherited = true, AllowMultiple = true)]
-    public sealed class DependsOnAttribute<T> : DependsOnAttribute where T : IResponder
+    public sealed class RequiresResponderAttribute<T> : RequiresResponderAttribute where T : IResponder
     {
-        public DependsOnAttribute() : base(typeof(T)) { }
+        public RequiresResponderAttribute() : base(typeof(T)) { }
     }
 }
