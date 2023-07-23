@@ -27,3 +27,5 @@ jobs:
           dotnet-version: 8
       - name: Build Project
         run: dotnet build
+      - name: Test Project
+        run: dotnet run --project tests/HyperSharp.Tests.csproj

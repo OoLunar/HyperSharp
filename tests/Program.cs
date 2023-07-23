@@ -15,7 +15,7 @@ namespace OoLunar.HyperSharp.Tests
 {
     public sealed class Program
     {
-        public static async Task Main()
+        public static async Task<int> Main()
         {
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton<IConfiguration>(services => new ConfigurationBuilder()
@@ -100,8 +100,7 @@ namespace OoLunar.HyperSharp.Tests
             HttpClient httpClient = serviceProvider.GetRequiredService<HttpClient>();
             HyperConfiguration hyperConfiguration = serviceProvider.GetRequiredService<HyperConfiguration>();
             HttpResponseMessage response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
-
-            await Task.Delay(-1);
+            return response.IsSuccessStatusCode ? 0 : 1;
         }
     }
 }
