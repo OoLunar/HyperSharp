@@ -136,6 +136,7 @@ namespace OoLunar.HyperSharp
 
             _logger.LogTrace("Closing connection to {ConnectionId}", connection.Id);
             client.Dispose();
+            _openConnections.TryRemove(connection.Id, out _);
             _cancellationTokenSources.Push(cancellationTokenSource);
         }
     }

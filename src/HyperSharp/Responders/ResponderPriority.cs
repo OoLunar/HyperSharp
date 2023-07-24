@@ -11,7 +11,7 @@ namespace OoLunar.HyperSharp.Responders
         /// Medium priority responders are intended to run after low priority responders. These responders are intended for things like routing.
         /// </summary>
         /// <remarks>
-        /// This is the recommended default priority.
+        /// Medium is the recommended default responder priority.
         /// </remarks>
         Medium,
 
