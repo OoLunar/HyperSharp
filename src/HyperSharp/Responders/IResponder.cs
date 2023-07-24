@@ -4,6 +4,8 @@ using FluentResults;
 
 namespace OoLunar.HyperSharp.Responders
 {
+    public delegate Task<Result<TOutput>> ResponderDelegate<TInput, TOutput>(TInput context, CancellationToken cancellationToken) where TOutput : new();
+
     public interface IResponder
     {
         string[] Implements { get; init; }

@@ -11,8 +11,6 @@ using OoLunar.HyperSharp.Errors;
 
 namespace OoLunar.HyperSharp.Responders
 {
-    public delegate Task<Result<TOutput>> ResponderDelegate<TInput, TOutput>(TInput context, CancellationToken cancellationToken) where TOutput : new();
-
     public class ResponderSearcher<TInput, TOutput> where TOutput : new()
     {
         private readonly Dictionary<Type, Responder<TInput, TOutput>> _dependencies = new();
