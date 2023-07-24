@@ -1,4 +1,4 @@
-﻿namespace OoLunar.HyperSharp.Routing
+namespace OoLunar.HyperSharp.Routing
 {
     public interface IRoute
     {

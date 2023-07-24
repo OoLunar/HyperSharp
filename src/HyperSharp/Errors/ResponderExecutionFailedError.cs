@@ -1,16 +1,15 @@
 using System;
 using FluentResults;
-using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp.Errors
 {
     public sealed class ResponderExecutionFailedError<TInput, TOutput> : Error
         where TOutput : class
     {
-        public Twig<TInput, TOutput>? ResponderBranch => Metadata.TryGetValue(nameof(ResponderBranch), out object? branch) ? branch as Twig<TInput, TOutput> : null;
+        public Responder<TInput, TOutput>? ResponderBranch => Metadata.TryGetValue(nameof(ResponderBranch), out object? branch) ? branch as Responder<TInput, TOutput> : null;
         public Exception? Exception => Metadata.TryGetValue(nameof(Exception), out object? exception) ? exception as Exception : null;
 
-        public ResponderExecutionFailedError(Twig<TInput, TOutput>? responderBranch = null, Exception? exception = null)
+        public ResponderExecutionFailedError(Responder<TInput, TOutput>? responderBranch = null, Exception? exception = null)
         {
             // Sometimes I wish there was a cleaner way to do this.
             // A bunch of if else statements looks ugly.

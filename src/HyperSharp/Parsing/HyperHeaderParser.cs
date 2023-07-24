@@ -15,7 +15,7 @@ namespace OoLunar.HyperSharp.Parsing
     {
         // https://www.rfc-editor.org/rfc/rfc9110#section-9.1
         // All HTTP methods are case-sensitive.
-        private static readonly KeyValuePair<byte[], HttpMethod>[] HttpMethods = new KeyValuePair<byte[], HttpMethod>[]
+        private static readonly KeyValuePair<byte[], HttpMethod>[] _httpMethods = new KeyValuePair<byte[], HttpMethod>[]
         {
             new("GET"u8.ToArray(), HttpMethod.Get),
             new("HEAD"u8.ToArray(), HttpMethod.Head),
@@ -118,7 +118,7 @@ namespace OoLunar.HyperSharp.Parsing
             }
 
             HttpMethod? httpMethod = null;
-            foreach (KeyValuePair<byte[], HttpMethod> httpMethodPair in HttpMethods)
+            foreach (KeyValuePair<byte[], HttpMethod> httpMethodPair in _httpMethods)
             {
                 if (startLine[..firstSpaceIndex].SequenceEqual(httpMethodPair.Key))
                 {

@@ -8,7 +8,7 @@ namespace OoLunar.HyperSharp.Parsing
     public sealed class HyperHeaderCollection : IReadOnlyDictionary<string, IReadOnlyList<string>>
     {
         // https://developers.cloudflare.com/rules/transform/request-header-modification/reference/header-format
-        private static readonly char[] ValidHeaderNameCharacters = new char[]
+        private static readonly char[] _validHeaderNameCharacters = new char[]
         {
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -16,7 +16,7 @@ namespace OoLunar.HyperSharp.Parsing
             '-', '_'
         };
 
-        private static readonly char[] ValidHeaderValueCharacters = new char[]
+        private static readonly char[] _validHeaderValueCharacters = new char[]
         {
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -24,26 +24,26 @@ namespace OoLunar.HyperSharp.Parsing
             '-', '_', ' ', ':', ';', '.', ',', '\\', '/', '"', '\'', '!', '?', '(', ')', '{', '}', '[', ']', '@', '<', '>', '=', '+', '*', '#', '$', '&', '`', '|', '~', '^', '%'
         };
 
-        public IEnumerable<string> Keys => Headers.Keys;
-        public IEnumerable<IReadOnlyList<string>> Values => Headers.Values;
-        public int Count => Headers.Count;
+        public IEnumerable<string> Keys => _headers.Keys;
+        public IEnumerable<IReadOnlyList<string>> Values => _headers.Values;
+        public int Count => _headers.Count;
 
         // TODO: Store values as ASCII bytes instead of strings, possibly expose as IReadOnlyList<byte[]> via new methods
-        private readonly Dictionary<string, List<string>> Headers;
+        private readonly Dictionary<string, List<string>> _headers;
 
-        public HyperHeaderCollection() => Headers = new();
-        public HyperHeaderCollection(IDictionary<string, List<string>> dictionary, IEqualityComparer<string>? comparer = null) => Headers = new Dictionary<string, List<string>>(dictionary, comparer);
+        public HyperHeaderCollection() => _headers = new();
+        public HyperHeaderCollection(IDictionary<string, List<string>> dictionary, IEqualityComparer<string>? comparer = null) => _headers = new Dictionary<string, List<string>>(dictionary, comparer);
 
         public IReadOnlyList<string> this[string key]
         {
-            get => Headers[key];
+            get => _headers[key];
             set => SetHeader(key, value);
         }
 
-        public bool ContainsKey(string key) => Headers.ContainsKey(key);
+        public bool ContainsKey(string key) => _headers.ContainsKey(key);
         public bool TryGetValue(string key, [MaybeNullWhen(false)] out IReadOnlyList<string> value)
         {
-            value = Headers.TryGetValue(key, out List<string>? values)
+            value = _headers.TryGetValue(key, out List<string>? values)
                 ? values.AsReadOnly()
                 : null;
 
@@ -53,7 +53,7 @@ namespace OoLunar.HyperSharp.Parsing
         public IEnumerator<KeyValuePair<string, IReadOnlyList<string>>> GetEnumerator()
         {
             SetHeader("Date", DateTime.UtcNow.ToString("R"));
-            foreach (KeyValuePair<string, List<string>> header in Headers)
+            foreach (KeyValuePair<string, List<string>> header in _headers)
             {
                 yield return new KeyValuePair<string, IReadOnlyList<string>>(header.Key, header.Value.AsReadOnly());
             }
@@ -73,10 +73,10 @@ namespace OoLunar.HyperSharp.Parsing
             }
 
             name = NormalizeHeaderName(name);
-            if (!Headers.TryGetValue(name, out List<string>? values))
+            if (!_headers.TryGetValue(name, out List<string>? values))
             {
                 values = new();
-                Headers.Add(name, values);
+                _headers.Add(name, values);
             }
 
             values.Add(value.Trim());
@@ -101,18 +101,18 @@ namespace OoLunar.HyperSharp.Parsing
             }
 
             name = NormalizeHeaderName(name);
-            if (!Headers.TryGetValue(name, out List<string>? oldValues))
+            if (!_headers.TryGetValue(name, out List<string>? oldValues))
             {
-                Headers[name] = newValues;
+                _headers[name] = newValues;
                 return;
             }
 
             oldValues.AddRange(newValues);
         }
 
-        public void SetHeader(string name, IEnumerable<string> values) => Headers[NormalizeHeaderName(name)] = new List<string>(values);
-        public void SetHeader(string name, string value) => Headers[NormalizeHeaderName(name)] = new List<string>() { value };
-        public void RemoveHeader(string name) => Headers.Remove(NormalizeHeaderName(name));
+        public void SetHeader(string name, IEnumerable<string> values) => _headers[NormalizeHeaderName(name)] = new List<string>(values);
+        public void SetHeader(string name, string value) => _headers[NormalizeHeaderName(name)] = new List<string>() { value };
+        public void RemoveHeader(string name) => _headers.Remove(NormalizeHeaderName(name));
 
         public static bool IsValidHeaderName(string value)
         {
@@ -121,7 +121,7 @@ namespace OoLunar.HyperSharp.Parsing
                 return false;
             }
 
-            Span<char> validNameSpan = ValidHeaderNameCharacters.AsSpan();
+            Span<char> validNameSpan = _validHeaderNameCharacters.AsSpan();
             foreach (char c in value)
             {
                 if (validNameSpan.IndexOf(c) == -1)
@@ -140,7 +140,7 @@ namespace OoLunar.HyperSharp.Parsing
                 return false;
             }
 
-            Span<char> validValueSpan = ValidHeaderValueCharacters.AsSpan();
+            Span<char> validValueSpan = _validHeaderValueCharacters.AsSpan();
             foreach (char c in value)
             {
                 if (validValueSpan.IndexOf(c) == -1)
