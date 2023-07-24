@@ -95,10 +95,16 @@ namespace OoLunar.HyperSharp
             _logger.LogTrace("Received connection from {RemoteEndPoint} with Id {ConnectionId}", connection.RemoteEndPoint, connection.Id);
 
             // Try to reuse an existing cancellation token source. If none are available, create a new one.
-            if (!_cancellationTokenSources.TryPop(out CancellationTokenSource? cancellationTokenSource) || !cancellationTokenSource.TryReset())
+            CancellationTokenSource? cancellationTokenSource = null;
+            while (!_cancellationTokenSources.IsEmpty)
             {
-                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_mainCancellationTokenSource!.Token);
+                if (_cancellationTokenSources.TryPop(out cancellationTokenSource) && cancellationTokenSource.TryReset())
+                {
+                    break;
+                }
             }
+
+            cancellationTokenSource ??= CancellationTokenSource.CreateLinkedTokenSource(_mainCancellationTokenSource!.Token);
             cancellationTokenSource.CancelAfter(_configuration.Timeout);
 
             // Start parsing the HTTP Headers.
@@ -114,7 +120,7 @@ namespace OoLunar.HyperSharp
 
             // Execute any registered responders.
             _logger.LogTrace("Received request from {ConnectionId} for '{Route}'", connection.Id, context.Value.Route);
-            Result<HyperStatus> status = await _configuration.Responders(context.Value);
+            Result<HyperStatus> status = await _configuration.Responders(context.Value, cancellationTokenSource.Token);
             if (!context.Value.HasResponded)
             {
                 _logger.LogDebug("Responding to {ConnectionId} with {Status}", connection.Id, status.Value);
@@ -130,6 +136,7 @@ namespace OoLunar.HyperSharp
 
             _logger.LogTrace("Closing connection to {ConnectionId}", connection.Id);
             client.Dispose();
+            _cancellationTokenSources.Push(cancellationTokenSource);
         }
     }
 }

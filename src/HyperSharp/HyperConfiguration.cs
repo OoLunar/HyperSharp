@@ -1,8 +1,6 @@
 using System;
 using System.Net;
 using System.Text.Json;
-using System.Threading.Tasks;
-using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OoLunar.HyperSharp.Json;
@@ -12,7 +10,7 @@ namespace OoLunar.HyperSharp
 {
     public sealed record HyperConfiguration
     {
-        public Func<HyperContext, Task<Result<HyperStatus>>> Responders { get; init; }
+        public ResponderDelegate<HyperContext, HyperStatus> Responders { get; init; }
         public IPEndPoint ListeningEndpoint { get; init; }
         public JsonSerializerOptions JsonSerializerOptions { get; init; }
         public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
@@ -28,7 +26,7 @@ namespace OoLunar.HyperSharp
             MaxHeaderSize = builder.MaxHeaderSize;
             JsonSerializerOptions = serviceProvider.GetService<IOptionsSnapshot<JsonSerializerOptions>>()?.Get(builder.JsonSerializerOptionsName) ?? HyperSerializationOptions.Default;
 
-            ResponderSearcher<HyperContext, HyperStatus> responderLocator = new();
+            ResponderSearcher<HyperContext, HyperStatus> responderLocator = serviceProvider.GetRequiredService<ResponderSearcher<HyperContext, HyperStatus>>();
             responderLocator.RegisterResponders(builder.Responders);
             Responders = responderLocator.CompileTreeDelegate(serviceProvider);
         }

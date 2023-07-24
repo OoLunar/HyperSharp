@@ -2,6 +2,7 @@ using System;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using OoLunar.HyperSharp.Json;
+using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp
 {
@@ -12,6 +13,7 @@ namespace OoLunar.HyperSharp
             IServiceProvider serviceProvider = services.BuildServiceProvider();
             HyperConfigurationBuilder configurationBuilder = new();
             configurate(serviceProvider, configurationBuilder);
+            services.AddSingleton(typeof(ResponderSearcher<,>));
             services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
             services.AddSingleton<HyperServer>();
             return services;
@@ -21,6 +23,7 @@ namespace OoLunar.HyperSharp
         {
             HyperConfigurationBuilder configurationBuilder = new();
             configurate(configurationBuilder);
+            services.AddSingleton(typeof(ResponderSearcher<,>));
             services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
             services.AddSingleton<HyperServer>();
             return services;

@@ -2,17 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OoLunar.HyperSharp.Errors;
 
 namespace OoLunar.HyperSharp.Responders
 {
-    public class ResponderSearcher<TInput, TOutput> where TOutput : class
+    public delegate Task<Result<TOutput>> ResponderDelegate<TInput, TOutput>(TInput context, CancellationToken cancellationToken) where TOutput : new();
+
+    public class ResponderSearcher<TInput, TOutput> where TOutput : new()
     {
-        private readonly Dictionary<Type, Twig<TInput, TOutput>> _dependencies = new();
-        private readonly Dictionary<Twig<TInput, TOutput>, Func<TInput, Task<Result<TOutput>>>> _compiledDelegates = new();
+        private readonly Dictionary<Type, Responder<TInput, TOutput>> _dependencies = new();
+        private readonly Dictionary<Responder<TInput, TOutput>, ResponderDelegate<TInput, TOutput>> _compiledDelegates = new();
+        private readonly ILogger<ResponderSearcher<TInput, TOutput>> _logger;
+
+        public ResponderSearcher(ILogger<ResponderSearcher<TInput, TOutput>> logger) => _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         public void RegisterResponders(Assembly assembly) => RegisterResponders(assembly.GetTypes());
         public void RegisterResponders(IEnumerable<Type> types)
@@ -21,6 +28,7 @@ namespace OoLunar.HyperSharp.Responders
             {
                 if (type.IsAbstract || !type.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
                 {
+                    _logger.LogTrace("Skipping responder {ResponderType} because it's type signature is not the expected {ResponderInterface}.", type, typeof(IResponder<TInput, TOutput>));
                     continue;
                 }
 
@@ -32,14 +40,15 @@ namespace OoLunar.HyperSharp.Responders
         {
             if (_dependencies.ContainsKey(type))
             {
-                return; // Responder already registered
+                _logger.LogTrace("Skipping responder {ResponderType} because it's already registered.", type);
+                return;
             }
 
             IEnumerable<Type> dependsOnAttributes = type
                 .GetCustomAttributes<RequiresResponderAttribute>(inherit: true)
                 .SelectMany(attribute => attribute.Dependencies);
 
-            List<Twig<TInput, TOutput>> twigDependencies = new();
+            List<Responder<TInput, TOutput>> twigDependencies = new();
             foreach (Type? dependencyType in dependsOnAttributes)
             {
                 if (!_dependencies.ContainsKey(dependencyType))
@@ -51,21 +60,21 @@ namespace OoLunar.HyperSharp.Responders
                 twigDependencies.Add(_dependencies[dependencyType]);
             }
 
-            Twig<TInput, TOutput> twig = new(type, twigDependencies.ToArray());
+            Responder<TInput, TOutput> twig = new(type, twigDependencies.ToArray());
             _dependencies[type] = twig;
         }
 
         public Result ValidateResponders()
         {
             List<IError> errors = new();
-            foreach (KeyValuePair<Type, Twig<TInput, TOutput>> branch in _dependencies)
+            foreach (KeyValuePair<Type, Responder<TInput, TOutput>> branch in _dependencies)
             {
                 if (branch.Key.IsAbstract || !branch.Key.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
                 {
                     errors.Add(new ResponderInvalidTypeError(branch.Key, branch.Key));
                 }
 
-                foreach (Twig<TInput, TOutput> twig in branch.Value.Dependencies)
+                foreach (Responder<TInput, TOutput> twig in branch.Value.Dependencies)
                 {
                     if (twig.Type.IsAbstract || !twig.Type.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
                     {
@@ -85,12 +94,12 @@ namespace OoLunar.HyperSharp.Responders
             return errors.Count != 0 ? Result.Fail(errors) : Result.Ok();
         }
 
-        public Func<TInput, Task<Result<TOutput>>> CompileTreeDelegate(IServiceProvider serviceProvider)
+        public ResponderDelegate<TInput, TOutput> CompileTreeDelegate(IServiceProvider serviceProvider)
         {
             // Mark branches as dependencies if they are referenced by other branches
-            foreach (Twig<TInput, TOutput> branch in _dependencies.Values)
+            foreach (Responder<TInput, TOutput> branch in _dependencies.Values)
             {
-                foreach (Twig<TInput, TOutput> twig in branch.Dependencies)
+                foreach (Responder<TInput, TOutput> twig in branch.Dependencies)
                 {
                     twig.IsDependancy = true;
                 }
@@ -99,25 +108,25 @@ namespace OoLunar.HyperSharp.Responders
             }
 
             // Select all branches that are not dependencies
-            Dictionary<Twig<TInput, TOutput>, Func<TInput, Task<Result<TOutput>>>> branchDelegates = _dependencies
+            Dictionary<Responder<TInput, TOutput>, ResponderDelegate<TInput, TOutput>> branchDelegates = _dependencies
                 .Where(branch => !branch.Value.IsDependancy)
                 .ToDictionary(branch => branch.Value, branch => branch.Value.CompiledDelegate!);
 
-            return async context =>
+            return async (context, cancellationToken) =>
             {
-                Twig<TInput, TOutput> branch = null!;
+                Responder<TInput, TOutput> branch = null!;
                 List<IError> errors = new();
                 try
                 {
-                    foreach ((Twig<TInput, TOutput> twig, Func<TInput, Task<Result<TOutput>>> branchDelegate) in branchDelegates)
+                    foreach ((Responder<TInput, TOutput> twig, ResponderDelegate<TInput, TOutput> branchDelegate) in branchDelegates)
                     {
                         branch = twig;
-                        Result<TOutput> result = await branchDelegate(context);
+                        Result<TOutput> result = await branchDelegate(context, cancellationToken);
                         if (result.IsFailed)
                         {
                             errors.AddRange(result.Errors);
                         }
-                        else if (result.Value != default)
+                        else if (result.Value is not null && !result.Value.Equals(default))
                         {
                             return result;
                         }
@@ -132,15 +141,15 @@ namespace OoLunar.HyperSharp.Responders
             };
         }
 
-        private Func<TInput, Task<Result<TOutput>>> CompileBranchDelegate(Twig<TInput, TOutput> branch, IServiceProvider serviceProvider)
+        private ResponderDelegate<TInput, TOutput> CompileBranchDelegate(Responder<TInput, TOutput> branch, IServiceProvider serviceProvider)
         {
-            if (_compiledDelegates.TryGetValue(branch, out Func<TInput, Task<Result<TOutput>>>? compiledDelegate))
+            if (_compiledDelegates.TryGetValue(branch, out ResponderDelegate<TInput, TOutput>? compiledDelegate))
             {
                 return compiledDelegate;
             }
 
-            List<Func<TInput, Task<Result<TOutput>>>> twigDelegates = new();
-            foreach (Twig<TInput, TOutput> twig in branch.Dependencies)
+            List<ResponderDelegate<TInput, TOutput>> twigDelegates = new();
+            foreach (Responder<TInput, TOutput> twig in branch.Dependencies)
             {
                 twigDelegates.Add(CompileBranchDelegate(twig, serviceProvider));
             }
@@ -148,17 +157,17 @@ namespace OoLunar.HyperSharp.Responders
             // Add the branch delegate last so that it's only called when all other twigs succeed.
             twigDelegates.Add(((IResponder<TInput, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, branch.Type)).RespondAsync);
 
-            async Task<Result<TOutput>> branchDelegate(TInput context)
+            async Task<Result<TOutput>> branchDelegate(TInput context, CancellationToken cancellationToken = default)
             {
                 List<IError> errors = new();
-                foreach (Func<TInput, Task<Result<TOutput>>> twigDelegate in twigDelegates)
+                foreach (ResponderDelegate<TInput, TOutput> twigDelegate in twigDelegates)
                 {
-                    Result<TOutput> result = await twigDelegate(context);
+                    Result<TOutput> result = await twigDelegate(context, cancellationToken);
                     if (result.IsFailed)
                     {
                         errors.AddRange(result.Errors);
                     }
-                    else if (result.Value != default)
+                    else if (result.Value is not null && !result.Value.Equals(default))
                     {
                         return result;
                     }
@@ -178,7 +187,7 @@ namespace OoLunar.HyperSharp.Responders
                 return true;
             }
 
-            foreach (Twig<TInput, TOutput> dependency in _dependencies[twig].Dependencies)
+            foreach (Responder<TInput, TOutput> dependency in _dependencies[twig].Dependencies)
             {
                 if (CheckRecursiveDependency(branch, dependency.Type))
                 {

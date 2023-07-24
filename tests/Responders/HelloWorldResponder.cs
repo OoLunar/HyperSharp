@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentResults;
 using OoLunar.HyperSharp.Responders;
@@ -13,7 +14,7 @@ namespace OoLunar.HyperSharp.Tests.Responders
 
         public HelloWorldResponder() { }
 
-        public Task<Result<HyperStatus>> RespondAsync(HyperContext context) => Task.FromResult(Result.Ok(new HyperStatus(
+        public Task<Result<HyperStatus>> RespondAsync(HyperContext context, CancellationToken cancellationToken = default) => Task.FromResult(Result.Ok(new HyperStatus(
             HttpStatusCode.OK,
             new Error("Hello World!")
         )));
