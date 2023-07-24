@@ -1,99 +1,134 @@
 using System;
+using System.Collections.Concurrent;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentResults;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OoLunar.HyperSharp.Json;
 using OoLunar.HyperSharp.Parsing;
 
 namespace OoLunar.HyperSharp
 {
-    public delegate void HyperServerStartedEventArgs(HyperServer server);
-
     public sealed class HyperServer
     {
         private readonly HyperConfiguration Configuration;
         private readonly ILogger<HyperServer> Logger;
-        private readonly JsonSerializerOptions JsonSerializerOptions;
-        private readonly TcpListener Listener;
-        private CancellationTokenSource? CancellationTokenSource;
+        private readonly ConcurrentDictionary<Ulid, HyperConnection> OpenConnections = new();
+        private readonly ConcurrentStack<CancellationTokenSource> CancellationTokenSources = new();
+        private CancellationTokenSource? MainCancellationTokenSource;
 
-        public HyperServer(HyperConfiguration configuration, ILogger<HyperServer> logger, IOptionsSnapshot<JsonSerializerOptions>? jsonSerializerOptions = null)
+        public HyperServer(HyperConfiguration configuration, ILogger<HyperServer> logger)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            JsonSerializerOptions = jsonSerializerOptions?.Get("HyperSharp") ?? HyperSerializationOptions.Default;
-            Listener = new(Configuration.ListeningEndpoint);
         }
 
-        public void Run(CancellationToken cancellationToken = default)
+        public void Start(CancellationToken cancellationToken = default)
         {
-            if (CancellationTokenSource is not null)
+            if (MainCancellationTokenSource is not null)
             {
-                throw new InvalidOperationException("HyperServer is already running.");
+                throw new InvalidOperationException("The server is already running.");
             }
 
-            Logger.LogDebug("Starting HyperServer...");
-            CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            Listener.Start();
-            CancellationTokenSource.Token.Register(Listener.Stop);
-            _ = ReceiveLoopAsync();
-            Logger.LogInformation("HyperServer started.");
+            TcpListener listener = new(Configuration.ListeningEndpoint);
+            MainCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            MainCancellationTokenSource.Token.Register(() =>
+            {
+                Logger.LogInformation("Shutting down server...");
+                while (!OpenConnections.IsEmpty)
+                {
+                    Logger.LogInformation("Waiting for {ConnectionCount:N0} connections to close...", OpenConnections.Count);
+                    foreach (HyperConnection connection in OpenConnections.Values)
+                    {
+                        OpenConnections.TryRemove(connection.Id, out _);
+
+                        // Check if the connection has closed during iteration.
+                        if (!connection.Client.Connected)
+                        {
+                            Logger.LogDebug("Connection {ConnectionId} is already closed.", connection.Id);
+                            continue;
+                        }
+
+                        Logger.LogDebug("Waiting on connection {ConnectionId}...", connection.Id);
+                        connection.StreamReader.Complete();
+                        connection.StreamWriter.Complete();
+                        Logger.LogDebug("Connection {ConnectionId} has closed.", connection.Id);
+                    }
+                }
+
+                listener.Stop();
+                Logger.LogInformation("Server shut down.");
+            });
+
+            listener.Start();
+            _ = ListenForConnectionsAsync(listener);
+            Logger.LogInformation("Listening on {Endpoint}", Configuration.ListeningEndpoint);
         }
 
-        public async ValueTask StopAsync()
+        public async Task StopAsync()
         {
-            if (CancellationTokenSource is null)
+            if (MainCancellationTokenSource is null)
             {
-                throw new InvalidOperationException("HyperServer is not running.");
+                throw new InvalidOperationException("The server is not running.");
             }
 
-            Logger.LogDebug("Stopping HyperServer...");
-            await CancellationTokenSource!.CancelAsync();
-            Logger.LogInformation("HyperServer stopped.");
+            await MainCancellationTokenSource.CancelAsync();
+            MainCancellationTokenSource.Dispose();
+            MainCancellationTokenSource = null;
         }
 
-        private async Task ReceiveLoopAsync()
+        private async Task ListenForConnectionsAsync(TcpListener listener)
         {
-            while (!CancellationTokenSource!.Token.IsCancellationRequested)
+            while (!MainCancellationTokenSource!.IsCancellationRequested)
             {
-                _ = HandleStreamAsync(await Listener.AcceptTcpClientAsync(CancellationTokenSource.Token));
+                // Throw the connection onto the async thread pool and wait for the next connection.
+                _ = HandleConnectionAsync(await listener.AcceptTcpClientAsync());
             }
         }
 
-        private async Task HandleStreamAsync(TcpClient client)
+        private async Task HandleConnectionAsync(TcpClient client)
         {
-            Logger.LogTrace("Received connection from {IP}", client.Client.RemoteEndPoint?.ToString() ?? "<Unknown Ip Address>");
-            NetworkStream networkStream = client.GetStream();
-            Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, networkStream);
+            HyperConnection connection = new(client);
+            OpenConnections.TryAdd(connection.Id, connection);
+            Logger.LogTrace("Received connection from {RemoteEndPoint} with Id {ConnectionId}", connection.RemoteEndPoint, connection.Id);
+
+            // Try to reuse an existing cancellation token source. If none are available, create a new one.
+            if (!CancellationTokenSources.TryPop(out CancellationTokenSource? cancellationTokenSource) || !cancellationTokenSource.TryReset())
+            {
+                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(MainCancellationTokenSource!.Token);
+            }
+            cancellationTokenSource.CancelAfter(Configuration.Timeout);
+
+            // Start parsing the HTTP Headers.
+            await using NetworkStream networkStream = client.GetStream();
+            connection.StreamReader = PipeReader.Create(networkStream, new StreamPipeReaderOptions(leaveOpen: true));
+            connection.StreamWriter = PipeWriter.Create(networkStream, new StreamPipeWriterOptions(leaveOpen: true));
+            Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
             if (context.IsFailed)
             {
-                Logger.LogWarning("Failed to parse headers from {IP} on {Route}: {Error}", networkStream.Socket.RemoteEndPoint?.ToString() ?? "<Unknown Ip Address>", context.Value.Route, context.Errors);
-                await networkStream.DisposeAsync();
+                Logger.LogWarning("Failed to parse headers from {ConnectionId} on '{Route}': {Error}", connection.Id, context.Value.Route, context.Errors);
                 return;
             }
 
-            Logger.LogTrace("Received request from {IP} for {Path}", networkStream.Socket.RemoteEndPoint?.ToString() ?? "<Unknown Ip Address>", context.Value.Route);
+            // Execute any registered responders.
+            Logger.LogTrace("Received request from {ConnectionId} for '{Route}'", connection.Id, context.Value.Route);
             Result<HyperStatus> status = await Configuration.Responders(context.Value);
             if (!context.Value.HasResponded)
             {
-                Logger.LogDebug("Responding to {IP} with {Status}", networkStream.Socket.RemoteEndPoint?.ToString() ?? "<Unknown Ip Address>", status.Value);
+                Logger.LogDebug("Responding to {ConnectionId} with {Status}", connection.Id, status.Value);
                 if (status.IsFailed)
                 {
-                    await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.NotFound), JsonSerializerOptions);
+                    await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.InternalServerError), Configuration.JsonSerializerOptions);
                 }
                 else
                 {
-                    await context.Value.RespondAsync(context.Value != default ? status.Value : new HyperStatus(HttpStatusCode.NoContent), JsonSerializerOptions);
+                    await context.Value.RespondAsync(context.Value != default ? status.Value : new HyperStatus(HttpStatusCode.NoContent), Configuration.JsonSerializerOptions);
                 }
             }
 
-            Logger.LogTrace("Closing connection to {IP}", networkStream.Socket.RemoteEndPoint?.ToString() ?? "<Unknown Ip Address>");
-            await networkStream.DisposeAsync();
+            Logger.LogTrace("Closing connection to {ConnectionId}", connection.Id);
             client.Dispose();
         }
     }

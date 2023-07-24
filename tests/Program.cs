@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -95,9 +96,11 @@ namespace OoLunar.HyperSharp.Tests
             services.AddSingleton(new HttpClient() { DefaultRequestHeaders = { { "User-Agent", $"HyperSharp/{typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion} Github" } } });
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
+            ILogger<Program> logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             HyperServer server = serviceProvider.GetRequiredService<HyperServer>();
-            server.Run();
+            server.Start();
 
+            logger.LogInformation("Sending 3 requests to the server.");
             HttpClient httpClient = serviceProvider.GetRequiredService<HttpClient>();
             HyperConfiguration hyperConfiguration = serviceProvider.GetRequiredService<HyperConfiguration>();
             HttpResponseMessage response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
@@ -109,6 +112,7 @@ namespace OoLunar.HyperSharp.Tests
             response = await httpClient.GetAsync($"http://{hyperConfiguration.ListeningEndpoint}/");
             response.EnsureSuccessStatusCode();
 
+            await Task.Delay(TimeSpan.FromSeconds(15));
             await server.StopAsync();
         }
     }

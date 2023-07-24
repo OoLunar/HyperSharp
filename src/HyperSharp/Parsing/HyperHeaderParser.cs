@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentResults;
 
@@ -28,18 +28,21 @@ namespace OoLunar.HyperSharp.Parsing
             new("PATCH"u8.ToArray(), HttpMethod.Patch),
         };
 
-        public static async Task<Result<HyperContext>> TryParseHeadersAsync(int maxHeaderSize, NetworkStream networkStream)
+        public static async ValueTask<Result<HyperContext>> TryParseHeadersAsync(int maxHeaderSize, HyperConnection connection, CancellationToken cancellationToken = default)
         {
             if (maxHeaderSize < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(maxHeaderSize), "Max header size must be greater than zero.");
             }
-            ArgumentNullException.ThrowIfNull(networkStream);
+            ArgumentNullException.ThrowIfNull(connection);
 
             HyperHeaderCollection headers = new();
-            PipeReader pipeReader = PipeReader.Create(networkStream, new StreamPipeReaderOptions(leaveOpen: true));
-            ReadResult readResult = await pipeReader.ReadAsync();
-            if (readResult.Buffer.Length == 0)
+            ReadResult readResult = await connection.StreamReader.ReadAsync(cancellationToken);
+            if (readResult.IsCanceled)
+            {
+                return Result.Fail("The operation was cancelled.");
+            }
+            else if (readResult.Buffer.Length == 0)
             {
                 return Result.Fail("There was no data to be read.");
             }
@@ -50,10 +53,14 @@ namespace OoLunar.HyperSharp.Parsing
             {
                 return Result.Fail(startLineResult.Errors);
             }
+            else if (cancellationToken.IsCancellationRequested)
+            {
+                return Result.Fail("The operation was cancelled.");
+            }
 
-            pipeReader.AdvanceTo(sequencePosition);
-            readResult = await pipeReader.ReadAsync();
-            while (!readResult.IsCompleted)
+            connection.StreamReader.AdvanceTo(sequencePosition);
+            readResult = await connection.StreamReader.ReadAsync(cancellationToken);
+            while (!readResult.IsCompleted && !readResult.IsCanceled)
             {
                 if (readResult.Buffer.Length > maxHeaderSize)
                 {
@@ -65,7 +72,7 @@ namespace OoLunar.HyperSharp.Parsing
                 {
                     return Result.Fail(headerResult.Errors);
                 }
-                pipeReader.AdvanceTo(sequencePosition);
+                connection.StreamReader.AdvanceTo(sequencePosition);
 
                 // End of headers
                 if (headerResult.Value == default)
@@ -74,20 +81,18 @@ namespace OoLunar.HyperSharp.Parsing
                 }
 
                 headers.AddHeaderValue(headerResult.Value.Name, headerResult.Value.Value);
-                readResult = await pipeReader.ReadAsync();
+                readResult = await connection.StreamReader.ReadAsync(cancellationToken);
             }
 
-            // The method reads and parses headers in a loop until it encounters an error or a null header.
-            // In the case of malicious input, this could potentially lead to an infinite loop if the end of the headers is never found.
-            // TODO: Check if the last position is the end of the buffer, and if not, return an error
-            return Result.Ok(new HyperContext(
-                startLineResult.Value.Method,
-                startLineResult.Value.Route,
-                startLineResult.Value.Version,
-                headers,
-                pipeReader,
-                PipeWriter.Create(networkStream, new StreamPipeWriterOptions(leaveOpen: true))
-            ));
+            return readResult.IsCanceled || cancellationToken.IsCancellationRequested
+                ? Result.Fail("The operation was cancelled.")
+                : Result.Ok(new HyperContext(
+                    startLineResult.Value.Method,
+                    startLineResult.Value.Route,
+                    startLineResult.Value.Version,
+                    headers,
+                    connection
+                ));
         }
 
         private static Result<(HttpMethod Method, Uri Route, Version Version)> TryParseStartLine(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition)

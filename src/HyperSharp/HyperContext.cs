@@ -33,21 +33,20 @@ namespace OoLunar.HyperSharp
         public Uri Route { get; init; }
         public Version Version { get; init; }
         public HyperHeaderCollection Headers { get; init; }
-        public PipeReader BodyReader { get; init; }
-
+        public HyperConnection Connection { get; init; }
         public Dictionary<string, string> Metadata { get; init; } = new();
+
+        public PipeReader BodyReader => Connection.StreamReader;
+        private PipeWriter ResponseWriter => Connection.StreamWriter;
         public bool HasResponded { get; private set; }
 
-        private PipeWriter ResponseWriter { get; init; }
-
-        public HyperContext(HttpMethod method, Uri route, Version version, HyperHeaderCollection headers, PipeReader bodyReader, PipeWriter responseWriter)
+        public HyperContext(HttpMethod method, Uri route, Version version, HyperHeaderCollection headers, HyperConnection connection)
         {
             Version = version ?? throw new ArgumentNullException(nameof(version));
             Method = method ?? throw new ArgumentNullException(nameof(method));
             Route = route ?? throw new ArgumentNullException(nameof(route));
             Headers = headers ?? throw new ArgumentNullException(nameof(headers));
-            BodyReader = bodyReader ?? throw new ArgumentNullException(nameof(bodyReader));
-            ResponseWriter = responseWriter ?? throw new ArgumentNullException(nameof(responseWriter));
+            Connection = connection ?? throw new ArgumentNullException(nameof(connection));
         }
 
         public virtual async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null)
@@ -92,6 +91,7 @@ namespace OoLunar.HyperSharp
                 await ResponseWriter.WriteAsync(content);
             }
 
+            await BodyReader.CompleteAsync();
             await ResponseWriter.CompleteAsync();
             HasResponded = true;
         }
