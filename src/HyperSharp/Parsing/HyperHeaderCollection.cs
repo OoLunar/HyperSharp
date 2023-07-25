@@ -32,7 +32,13 @@ namespace OoLunar.HyperSharp.Parsing
         private readonly Dictionary<string, List<string>> _headers;
 
         public HyperHeaderCollection() => _headers = new();
-        public HyperHeaderCollection(IDictionary<string, List<string>> dictionary, IEqualityComparer<string>? comparer = null) => _headers = new Dictionary<string, List<string>>(dictionary, comparer);
+        public HyperHeaderCollection(int capacity) => _headers = new(capacity);
+        public HyperHeaderCollection(int capacity, IEqualityComparer<string> comparer) => _headers = new(capacity, comparer);
+        public HyperHeaderCollection(IEqualityComparer<string> comparer) => _headers = new(comparer);
+        public HyperHeaderCollection(IDictionary<string, List<string>> dictionary) => _headers = new(dictionary);
+        public HyperHeaderCollection(IDictionary<string, List<string>> dictionary, IEqualityComparer<string> comparer) => _headers = new(dictionary, comparer);
+        public HyperHeaderCollection(IEnumerable<KeyValuePair<string, List<string>>> collection) => _headers = new(collection);
+        public HyperHeaderCollection(IEnumerable<KeyValuePair<string, List<string>>> collection, IEqualityComparer<string> comparer) => _headers = new(collection, comparer);
 
         public IReadOnlyList<string> this[string key]
         {
