@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 
@@ -9,9 +10,9 @@ namespace OoLunar.HyperSharp
         public Ulid Id { get; init; }
         public TcpClient Client { get; init; }
         public string RemoteEndPoint { get; init; }
-        // Set in HyperServer, always non-null when the user receives the context.
-        public PipeReader StreamReader { get; internal set; } = null!;
-        public PipeWriter StreamWriter { get; internal set; } = null!;
+        public PipeReader StreamReader { get; private set; }
+        public PipeWriter StreamWriter { get; private set; }
+        private Stream _baseStream { get; set; }
 
         public HyperConnection(TcpClient client)
         {
@@ -20,6 +21,16 @@ namespace OoLunar.HyperSharp
             Id = Ulid.NewUlid();
             Client = client;
             RemoteEndPoint = Client.Client.RemoteEndPoint?.ToString() ?? "<Unknown Network EndPoint>";
+            _baseStream = Client.GetStream();
+            StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
+            StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
+        }
+
+        public void ApplyStreamLayer(Func<Stream, Stream> applyNewStreamLayer)
+        {
+            _baseStream = applyNewStreamLayer(_baseStream);
+            StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
+            StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
     }
 }

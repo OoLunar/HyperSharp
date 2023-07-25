@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -109,8 +108,6 @@ namespace OoLunar.HyperSharp
 
             // Start parsing the HTTP Headers.
             await using NetworkStream networkStream = client.GetStream();
-            connection.StreamReader = PipeReader.Create(networkStream, new StreamPipeReaderOptions(leaveOpen: true));
-            connection.StreamWriter = PipeWriter.Create(networkStream, new StreamPipeWriterOptions(leaveOpen: true));
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(_configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
             if (context.IsFailed)
             {
