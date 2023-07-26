@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Ensure JQ is installed
-xbps-install -Syu
-xbps-install -Sy jq
+xbps-install -Syu >/dev/null
+xbps-install -Sy jq >/dev/null
 
 # Parse JSON file and extract required information
 caption=$(jq -r '.HostEnvironmentInfo.BenchmarkDotNetCaption' $1)
