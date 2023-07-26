@@ -13,6 +13,9 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
 
+permissions:
+  discussions: write
+
 jobs:
   build_commit:
     name: Build Commit ${{ github.sha }}
