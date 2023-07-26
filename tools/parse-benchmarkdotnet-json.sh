@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Ensure JQ is installed
+sudo xbps-install -Syu
+sudo xbps-install -Sy jq
+
 # Parse JSON file and extract required information
 caption=$(jq -r '.HostEnvironmentInfo.BenchmarkDotNetCaption' $1)
 version=$(jq -r '.HostEnvironmentInfo.BenchmarkDotNetVersion' $1)

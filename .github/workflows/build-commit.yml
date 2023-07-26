@@ -13,9 +13,6 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
 
-permissions:
-  contents: write
-
 jobs:
   build_commit:
     name: Build Commit ${{ github.sha }}
@@ -32,6 +29,13 @@ jobs:
           dotnet-version: 8
       - name: Build Project
         run: dotnet build
+  test_commit:
+    name: Benchmark Commit ${{ github.sha }}
+    runs-on: self-hosted
+    needs: build_commit
+    permissions:
+      contents: write
+    steps:
       - name: Test Project
         run: dotnet run -c Release --project tests/HyperSharp.Tests.csproj >/dev/null
       - name: Output Test Results
