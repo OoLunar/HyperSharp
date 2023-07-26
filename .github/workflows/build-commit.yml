@@ -37,7 +37,7 @@ jobs:
       - name: Output Test Results
         id: test-results
         run: |
-          body="$(cat BenchmarkDotNet.Artifacts/results/OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks.ConcurrentRequests-report-github.md)"
+          body="$(bash tools/parse-benchmarkdotnet-json.sh $(realpath BenchmarkDotNet.Artifacts/results/OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks.ConcurrentRequests-report-brief.json))"
           delimiter="$(openssl rand -hex 8)"
           echo "body<<$delimiter" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
