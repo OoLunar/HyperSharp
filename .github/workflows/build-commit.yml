@@ -28,4 +28,17 @@ jobs:
       - name: Build Project
         run: dotnet build
       - name: Test Project
-        run: dotnet run --project tests/HyperSharp.Tests.csproj
+        run: dotnet run -c Release --project tests/HyperSharp.Tests.csproj >/dev/null
+      - name: Output Test Results
+        id: test-results
+        run: |
+          body="$(cat BenchmarkDotNet.Artifacts/results/OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks.ConcurrentRequests-report-github.md)"
+          delimiter="$(openssl rand -hex 8)"
+          echo "body<<$delimiter" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "$delimiter" >> $GITHUB_OUTPUT
+      - name: Comment Results
+        uses: peter-evans/commit-comment@v2
+        with:
+          body: ${{ steps.test-results.outputs.body }}
+          token: ${{ secrets.GITHUB_TOKEN }}

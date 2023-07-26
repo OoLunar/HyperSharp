@@ -1,0 +1,3 @@
+[submodule "libs/FluentResults"]
+	path = libs/FluentResults
+	url = git@github.com:altmann/FluentResults.git
