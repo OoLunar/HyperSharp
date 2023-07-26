@@ -6,6 +6,7 @@ on:
       - ".github/workflows/build-commit.yml"
       - "src/**"
       - "HyperSharp.sln"
+  workflow_dispatch:
 
 env:
   DOTNET_NOLOGO: 1
