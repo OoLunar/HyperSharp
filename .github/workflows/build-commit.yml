@@ -36,6 +36,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8
       - name: Test Project
         run: dotnet run -c Release --project tests/HyperSharp.Tests.csproj >/dev/null
       - name: Output Test Results
