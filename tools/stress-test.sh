@@ -1,57 +1,52 @@
 #!/bin/bash
 
-# Define the URL of the HTTP server you want to stress test
 SERVER_URL="http://localhost:8080"
+NUM_TOTAL_REQUESTS=1000
+WARM_UP_REQUESTS=100
 
-# Number of concurrent requests to simulate
-CONCURRENT_REQUESTS=100
-
-# Total number of requests to be made during the test
-TOTAL_REQUESTS=10000
-
-# Output directory to save individual response files
-OUTPUT_DIR="responses"
-
-# Maximum time to wait for a response (in seconds)
-TIMEOUT=5
-
-# Function to send concurrent requests and collect metrics
-send_requests() {
-  local url="$1"
-  local request_count=$2
-  local responses=()
-
-  for ((i = 1; i <= request_count; i++)); do
-    response_file="${OUTPUT_DIR}/response_$i.txt"
-    curl -s --max-time "$TIMEOUT" -o "$response_file" -w "Request #$i | Http Status: %{http_code} | Time: %{time_starttransfer} seconds | Size Download: %{size_download} bytes | Speed Download: %{speed_download} bytes\n" "$url" &
-    responses+=("$response_file")
-  done
-  wait
-
-  if [ "$1" == "-v" ]; then
-    for file in "${responses[@]}"; do
-      cat "$file"
-      printf "\n"
-    done
-  fi
-
-  rm -rf "$OUTPUT_DIR"
+# Function to make an HTTP request and record the response time
+make_request() {
+  local response_time
+  response_time=$(curl -o /dev/null -s -w "%{time_total}\n" "$SERVER_URL")
+  echo "$response_time"
 }
 
-# Function to run the stress test and measure time
-run_stress_test() {
-  echo "Running stress test with $CONCURRENT_REQUESTS concurrent requests..."
-  mkdir -p "$OUTPUT_DIR"
-  send_requests "$SERVER_URL" "$TOTAL_REQUESTS"
-  duration=$SECONDS
-  echo "Stress test completed in $duration seconds."
-}
+# Run the .NET program in the background as an independent process
+echo "Starting the .NET server..."
+dotnet run --project tests/HyperSharp.Tests.csproj >/dev/null 2>&1 &
+disown
 
-SECONDS=0
-
-# Run the .NET program in the background
-dotnet run --project tests/HyperSharp.Tests.csproj >/dev/null &
+# Wait a few seconds to ensure the .NET server is up and running
 sleep 5
 
-# Start the stress test
-run_stress_test
+# Warm up the server with 100 HTTP requests
+for ((i = 1; i <= WARM_UP_REQUESTS; i++)); do
+  make_request >/dev/null
+  printf "Warming up server: %d/%d\r" "$i" "$WARM_UP_REQUESTS"
+done
+echo
+
+# Array to store the response times
+response_times=()
+
+# Loop to make the requests
+for ((i = 1; i <= NUM_TOTAL_REQUESTS; i++)); do
+  printf "Http Requests: %d/%d\r" "$i" "$NUM_TOTAL_REQUESTS"
+  response_times+=($(make_request &))
+done
+echo
+
+# Wait for any remaining background jobs to finish
+wait
+
+# Calculate the sum of response times
+sum=0
+for time in "${response_times[@]}"; do
+  sum=$(awk "BEGIN {print $sum + $time}")
+done
+
+# Calculate the average response time in milliseconds
+average_response_time_ms=$(awk "BEGIN {printf \"%.3f\", $sum / $NUM_TOTAL_REQUESTS * 1000}")
+
+# Display the results
+echo "Average Response Time: ${average_response_time_ms} milliseconds"
