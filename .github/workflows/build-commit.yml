@@ -14,7 +14,7 @@ env:
   DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
 
 permissions:
-  actions: write
+  contents: write
 
 jobs:
   build_commit:
