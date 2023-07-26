@@ -1,14 +1,15 @@
 #!/bin/bash
 
 # Ensure JQ is installed
-sudo xbps-install -Syu
-sudo xbps-install -Sy jq
+xbps-install -Syu
+xbps-install -Sy jq
 
 # Parse JSON file and extract required information
 caption=$(jq -r '.HostEnvironmentInfo.BenchmarkDotNetCaption' $1)
 version=$(jq -r '.HostEnvironmentInfo.BenchmarkDotNetVersion' $1)
 os_version=$(jq -r '.HostEnvironmentInfo.OsVersion' $1)
 processor_name=$(jq -r '.HostEnvironmentInfo.ProcessorName' $1)
+physical_processor_count=$(jq -r '.HostEnvironmentInfo.PhysicalProcessorCount' $1)
 physical_core_count=$(jq -r '.HostEnvironmentInfo.PhysicalCoreCount' $1)
 logical_core_count=$(jq -r '.HostEnvironmentInfo.LogicalCoreCount' $1)
 runtime_version=$(jq -r '.HostEnvironmentInfo.RuntimeVersion' $1)
@@ -16,7 +17,7 @@ architecture=$(jq -r '.HostEnvironmentInfo.Architecture' $1)
 
 # Generate Markdown result for each benchmark
 echo "$caption v$version, $os_version"
-echo "- $processor_name, 1 CPU, $logical_core_count logical and $physical_core_count physical cores"
+echo "- $processor_name, $physical_processor_count CPU, $logical_core_count logical and $physical_core_count physical cores"
 echo "- $runtime_version, $architecture"
 
 # Iterate over the benchmarks
