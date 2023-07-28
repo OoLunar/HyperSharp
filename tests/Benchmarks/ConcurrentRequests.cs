@@ -27,7 +27,7 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks
             serviceProvider.GetRequiredService<HyperServer>().Start();
         }
 
-        [Benchmark, WarmupCount(1000)]
+        [WarmupCount(25), Benchmark]
         public Task<HttpResponseMessage> ConcurrentRequestsTestAsync() => _client.GetAsync("/");
 
         private static ServiceProvider CreateServiceProvider()
