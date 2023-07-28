@@ -9,25 +9,25 @@ namespace OoLunar.HyperSharp.Results
         public readonly IEnumerable<IError> Errors;
         public bool IsSuccess => !Errors.Any();
 
-        public Result(object? value)
+        private Result(object? value)
         {
             Value = value;
             Errors = Enumerable.Empty<IError>();
         }
 
-        public Result(IError error)
+        private Result(IError error)
         {
             Value = null;
             Errors = Enumerable.Repeat(error, 1);
         }
 
-        public Result(IEnumerable<IError> errors)
+        private Result(IEnumerable<IError> errors)
         {
             Value = null;
             Errors = errors;
         }
 
-        public Result(object? value, IEnumerable<IError> errors)
+        private Result(object? value, IEnumerable<IError> errors)
         {
             Value = value;
             Errors = errors;
