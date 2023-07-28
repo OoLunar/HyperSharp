@@ -1,22 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <PropertyGroup>
-    <Authors>OoLunar</Authors>
     <Description>A C# implementation of Results.</Description>
     <PackageId>OoLunar.HyperSharp.Results</PackageId>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/OoLunar/HyperSharp</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/OoLunar/HyperSharp</PackageProjectUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="../../LICENSE" Pack="true" PackagePath="" />
-    <EmbeddedResource Include="../../README.md" Pack="true" PackagePath="" />
-  </ItemGroup>
 </Project>

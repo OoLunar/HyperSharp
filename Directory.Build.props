@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Authors>OoLunar</Authors>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/OoLunar/HyperSharp</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/OoLunar/HyperSharp</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <ProjectRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), "HyperSharp.sln"))</ProjectRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectRoot)/LICENSE" Pack="true" PackagePath="" />
+    <EmbeddedResource Include="$(ProjectRoot)/README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>
