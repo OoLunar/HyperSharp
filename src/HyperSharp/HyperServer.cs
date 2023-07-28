@@ -31,14 +31,15 @@ namespace OoLunar.HyperSharp
                 throw new InvalidOperationException("The server is already running.");
             }
 
+            HyperLogging.ServerStarting(_logger, _configuration.ListeningEndpoint, null);
             TcpListener listener = new(_configuration.ListeningEndpoint);
             _mainCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _mainCancellationTokenSource.Token.Register(() =>
             {
-                _logger.LogInformation("Shutting down server...");
+                HyperLogging.ServerStopping(_logger, _configuration.ListeningEndpoint, null);
                 while (!_openConnections.IsEmpty)
                 {
-                    _logger.LogInformation("Waiting for {ConnectionCount:N0} connections to close...", _openConnections.Count);
+                    HyperLogging.ConnectionsPending(_logger, _openConnections.Count, null);
                     foreach (HyperConnection connection in _openConnections.Values)
                     {
                         _openConnections.TryRemove(connection.Id, out _);
@@ -46,24 +47,25 @@ namespace OoLunar.HyperSharp
                         // Check if the connection has closed during iteration.
                         if (!connection.Client.Connected)
                         {
-                            _logger.LogDebug("Connection {ConnectionId} is already closed.", connection.Id);
+                            HyperLogging.ConnectionAlreadyClosed(_logger, connection.Id, null);
                             continue;
                         }
 
-                        _logger.LogDebug("Waiting on connection {ConnectionId}...", connection.Id);
+                        HyperLogging.ConnectionClosing(_logger, connection.Id, null);
                         connection.StreamReader.Complete();
                         connection.StreamWriter.Complete();
-                        _logger.LogDebug("Connection {ConnectionId} has closed.", connection.Id);
+                        connection.Client.Dispose();
+                        HyperLogging.ConnectionClosed(_logger, connection.Id, null);
                     }
                 }
 
                 listener.Stop();
-                _logger.LogInformation("Server shut down.");
+                HyperLogging.ServerStopped(_logger, _configuration.ListeningEndpoint, null);
             });
 
             listener.Start();
             _ = ListenForConnectionsAsync(listener);
-            _logger.LogInformation("Listening on {Endpoint}", _configuration.ListeningEndpoint);
+            HyperLogging.ServerStarted(_logger, _configuration.ListeningEndpoint, null);
         }
 
         public async Task StopAsync()
@@ -91,7 +93,7 @@ namespace OoLunar.HyperSharp
         {
             HyperConnection connection = new(client);
             _openConnections.TryAdd(connection.Id, connection);
-            _logger.LogTrace("Received connection from {RemoteEndPoint} with Id {ConnectionId}", connection.RemoteEndPoint, connection.Id);
+            HyperLogging.ConnectionOpened(_logger, connection.RemoteEndPoint, connection.Id, null);
 
             // Try to reuse an existing cancellation token source. If none are available, create a new one.
             CancellationTokenSource? cancellationTokenSource = null;
@@ -111,16 +113,16 @@ namespace OoLunar.HyperSharp
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(_configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
             if (context.IsFailed)
             {
-                _logger.LogWarning("Failed to parse headers from {ConnectionId} on '{Route}': {Error}", connection.Id, context.Value.Route, context.Errors);
+                HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Value.Route, context.Errors, null);
                 return;
             }
 
             // Execute any registered responders.
-            _logger.LogTrace("Received request from {ConnectionId} for '{Route}'", connection.Id, context.Value.Route);
+            HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value.Route, null);
             Result<HyperStatus> status = await _configuration.Responders(context.Value, cancellationTokenSource.Token);
             if (!context.Value.HasResponded)
             {
-                _logger.LogDebug("Responding to {ConnectionId} with {Status}", connection.Id, status.Value);
+                HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
                 if (status.IsFailed)
                 {
                     await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.InternalServerError), _configuration.JsonSerializerOptions);
@@ -131,10 +133,12 @@ namespace OoLunar.HyperSharp
                 }
             }
 
-            _logger.LogTrace("Closing connection to {ConnectionId}", connection.Id);
+            HyperLogging.HttpResponded(_logger, connection.Id, status.Value, null);
+            HyperLogging.ConnectionClosing(_logger, connection.Id, null);
             client.Dispose();
             _openConnections.TryRemove(connection.Id, out _);
             _cancellationTokenSources.Push(cancellationTokenSource);
+            HyperLogging.ConnectionClosed(_logger, connection.Id, null);
         }
     }
 }

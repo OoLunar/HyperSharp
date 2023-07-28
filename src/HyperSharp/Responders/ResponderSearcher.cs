@@ -26,7 +26,7 @@ namespace OoLunar.HyperSharp.Responders
             {
                 if (type.IsAbstract || !type.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
                 {
-                    _logger.LogTrace("Skipping responder {ResponderType} because it's type signature is not the expected {ResponderInterface}.", type, typeof(IResponder<TInput, TOutput>));
+                    HyperLogging.ResponderTypeMismatch(_logger, type, typeof(IResponder<TInput, TOutput>), null);
                     continue;
                 }
 
@@ -38,7 +38,7 @@ namespace OoLunar.HyperSharp.Responders
         {
             if (_dependencies.ContainsKey(type))
             {
-                _logger.LogTrace("Skipping responder {ResponderType} because it's already registered.", type);
+                HyperLogging.ResponderSkippedRegistration(_logger, type, null);
                 return;
             }
 
