@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using FluentResults;
 using Microsoft.Extensions.Logging;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp
 {

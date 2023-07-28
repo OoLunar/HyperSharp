@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using FluentResults;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Responders
 {
@@ -16,6 +16,6 @@ namespace OoLunar.HyperSharp.Responders
     public interface IResponder<TInput, TOutput> : IResponder
     {
         Task<Result<TOutput>> RespondAsync(TInput context, CancellationToken cancellationToken = default);
-        async Task<Result> IResponder.RespondAsync(object context, CancellationToken cancellationToken) => (Result)(ResultBase)await RespondAsync((TInput)context, cancellationToken);
+        async Task<Result> IResponder.RespondAsync(object context, CancellationToken cancellationToken) => await RespondAsync((TInput)context, cancellationToken);
     }
 }

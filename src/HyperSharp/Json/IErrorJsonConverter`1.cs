@@ -1,7 +1,8 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FluentResults;
+using System.Linq;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Json
 {
@@ -12,10 +13,10 @@ namespace OoLunar.HyperSharp.Json
         {
             writer.WriteStartObject();
             writer.WriteString("message", value.Message);
-            if (value.Reasons.Count > 0)
+            if (value.Errors.Any())
             {
                 writer.WriteStartArray("reasons");
-                foreach (IError error in value.Reasons)
+                foreach (IError error in value.Errors)
                 {
                     Write(writer, (T)error, options);
                 }

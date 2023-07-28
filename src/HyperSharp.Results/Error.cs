@@ -3,10 +3,16 @@ using System.Linq;
 
 namespace OoLunar.HyperSharp.Results
 {
-    public class Error : IError
+    public record Error : IError
     {
         public string Message { get; init; }
         public IEnumerable<IError> Errors { get; init; }
+
+        public Error()
+        {
+            Message = "<No error message provided>";
+            Errors = Enumerable.Empty<IError>();
+        }
 
         public Error(string message)
         {

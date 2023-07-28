@@ -1,14 +1,16 @@
 using System;
-using FluentResults;
+using System.Collections.Generic;
 using OoLunar.HyperSharp.Responders;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Errors
 {
-    public sealed class ResponderExecutionFailedError<TInput, TOutput> : Error where TOutput : new()
+    public sealed record ResponderExecutionFailedError<TInput, TOutput> : Error where TOutput : new()
     {
-        public Responder<TInput, TOutput>? ResponderBranch => Metadata.TryGetValue(nameof(ResponderBranch), out object? branch) ? branch as Responder<TInput, TOutput> : null;
-        public Exception? Exception => Metadata.TryGetValue(nameof(Exception), out object? exception) ? exception as Exception : null;
+        public Responder<TInput, TOutput>? ResponderBranch { get; init; }
+        public Exception? Exception { get; init; }
 
+        public ResponderExecutionFailedError(IEnumerable<IError> errors) : base() => Errors = errors;
         public ResponderExecutionFailedError(Responder<TInput, TOutput>? responderBranch = null, Exception? exception = null)
         {
             // Sometimes I wish there was a cleaner way to do this.
@@ -25,11 +27,8 @@ namespace OoLunar.HyperSharp.Errors
                 _ => $"Responder {responderBranch.Type} failed to execute: {exception.Message}"
             };
 
-            WithMetadata(new()
-            {
-                [nameof(ResponderBranch)] = responderBranch,
-                [nameof(Exception)] = exception
-            });
+            ResponderBranch = responderBranch;
+            Exception = exception;
         }
     }
 }

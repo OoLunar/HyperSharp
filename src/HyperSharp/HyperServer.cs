@@ -4,9 +4,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentResults;
 using Microsoft.Extensions.Logging;
 using OoLunar.HyperSharp.Parsing;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp
 {
@@ -111,25 +111,25 @@ namespace OoLunar.HyperSharp
             // Start parsing the HTTP Headers.
             await using NetworkStream networkStream = client.GetStream();
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(_configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
-            if (context.IsFailed)
+            if (!context.IsSuccess)
             {
-                HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Value.Route, context.Errors, null);
+                HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Value!.Route, context.Errors, null);
                 return;
             }
 
             // Execute any registered responders.
-            HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value.Route, null);
+            HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
             Result<HyperStatus> status = await _configuration.Responders(context.Value, cancellationTokenSource.Token);
             if (!context.Value.HasResponded)
             {
                 HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
-                if (status.IsFailed)
+                if (status.IsSuccess)
                 {
-                    await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.InternalServerError), _configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(status.Value == default ? new HyperStatus(HttpStatusCode.NoContent) : status.Value, _configuration.JsonSerializerOptions);
                 }
                 else
                 {
-                    await context.Value.RespondAsync(context.Value != default ? status.Value : new HyperStatus(HttpStatusCode.NoContent), _configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.InternalServerError), _configuration.JsonSerializerOptions);
                 }
             }
 

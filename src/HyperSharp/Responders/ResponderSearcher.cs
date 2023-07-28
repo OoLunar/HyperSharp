@@ -4,10 +4,10 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OoLunar.HyperSharp.Errors;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Responders
 {
@@ -89,7 +89,7 @@ namespace OoLunar.HyperSharp.Responders
                 }
             }
 
-            return errors.Count != 0 ? Result.Fail(errors) : Result.Ok();
+            return errors.Count != 0 ? Result.Failure(errors) : Result.Success();
         }
 
         public ResponderDelegate<TInput, TOutput> CompileTreeDelegate(IServiceProvider serviceProvider)
@@ -120,7 +120,7 @@ namespace OoLunar.HyperSharp.Responders
                     {
                         branch = twig;
                         Result<TOutput> result = await branchDelegate(context, cancellationToken);
-                        if (result.IsFailed)
+                        if (!result.IsSuccess)
                         {
                             errors.AddRange(result.Errors);
                         }
@@ -132,10 +132,10 @@ namespace OoLunar.HyperSharp.Responders
                 }
                 catch (Exception error)
                 {
-                    return Result.Fail(new ResponderExecutionFailedError<TInput, TOutput>(branch, error));
+                    return Result.Failure<TOutput>(new ResponderExecutionFailedError<TInput, TOutput>(branch, error));
                 }
 
-                return Result.Fail(new ResponderExecutionFailedError<TInput, TOutput>().CausedBy(errors));
+                return Result.Failure<TOutput>(new ResponderExecutionFailedError<TInput, TOutput>(errors));
             };
         }
 
@@ -161,7 +161,7 @@ namespace OoLunar.HyperSharp.Responders
                 foreach (ResponderDelegate<TInput, TOutput> twigDelegate in twigDelegates)
                 {
                     Result<TOutput> result = await twigDelegate(context, cancellationToken);
-                    if (result.IsFailed)
+                    if (!result.IsSuccess)
                     {
                         errors.AddRange(result.Errors);
                     }
@@ -171,7 +171,7 @@ namespace OoLunar.HyperSharp.Responders
                     }
                 }
 
-                return Result.Fail(errors);
+                return Result.Failure<TOutput>(errors);
             }
 
             _compiledDelegates[branch] = branch.CompiledDelegate = branchDelegate;

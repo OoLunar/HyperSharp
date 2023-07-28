@@ -1,21 +1,21 @@
 using System;
-using FluentResults;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Errors
 {
-    public sealed class ResponderRecursiveDependencyError : Error
+    public sealed record ResponderRecursiveDependencyError : Error
     {
-        public Type ResponderType => (Type)Metadata[nameof(ResponderType)];
-        public Type RecursiveDependencyType => (Type)Metadata[nameof(RecursiveDependencyType)];
+        public Type ResponderType { get; init; }
+        public Type RecursiveDependencyType { get; init; }
 
         public ResponderRecursiveDependencyError(Type responderType, Type recursiveDependencyType)
         {
+            ArgumentNullException.ThrowIfNull(responderType, nameof(responderType));
+            ArgumentNullException.ThrowIfNull(recursiveDependencyType, nameof(recursiveDependencyType));
+
             Message = $"Recursive dependency: Responder {responderType} depends on {recursiveDependencyType}, which depends on {responderType}.";
-            WithMetadata(new()
-            {
-                [nameof(ResponderType)] = responderType,
-                [nameof(RecursiveDependencyType)] = recursiveDependencyType
-            });
+            ResponderType = responderType;
+            RecursiveDependencyType = recursiveDependencyType;
         }
     }
 }

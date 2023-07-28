@@ -1,6 +1,6 @@
 using System;
-using FluentResults;
 using OoLunar.HyperSharp.Responders;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Routing
 {
