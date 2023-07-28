@@ -10,7 +10,7 @@ namespace OoLunar.HyperSharp.Errors
         public Responder<TInput, TOutput>? ResponderBranch { get; init; }
         public Exception? Exception { get; init; }
 
-        public ResponderExecutionFailedError(IEnumerable<IError> errors) : base() => Errors = errors;
+        public ResponderExecutionFailedError(IEnumerable<Error> errors) : base() => Errors = errors;
         public ResponderExecutionFailedError(Responder<TInput, TOutput>? responderBranch = null, Exception? exception = null)
         {
             // Sometimes I wish there was a cleaner way to do this.

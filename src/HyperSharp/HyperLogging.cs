@@ -22,7 +22,7 @@ namespace OoLunar.HyperSharp
         public static readonly Action<ILogger, string, Ulid, Exception?> ConnectionOpened = LoggerMessage.Define<string, Ulid>(LogLevel.Trace, new EventId(2, nameof(ConnectionOpened)), "Received connection from {RemoteEndPoint} with Id {ConnectionId}.");
 
         // HTTP related logs
-        public static readonly Action<ILogger, Ulid, Uri, IEnumerable<IError>, Exception?> HttpInvalidHeaders = LoggerMessage.Define<Ulid, Uri, IEnumerable<IError>>(LogLevel.Warning, new EventId(3, nameof(HttpInvalidHeaders)), "Failed to parse headers from {ConnectionId} on '{Route}': {Error}");
+        public static readonly Action<ILogger, Ulid, Uri, IEnumerable<Error>, Exception?> HttpInvalidHeaders = LoggerMessage.Define<Ulid, Uri, IEnumerable<Error>>(LogLevel.Warning, new EventId(3, nameof(HttpInvalidHeaders)), "Failed to parse headers from {ConnectionId} on '{Route}': {Error}");
         public static readonly Action<ILogger, Ulid, Uri, Exception?> HttpReceivedRequest = LoggerMessage.Define<Ulid, Uri>(LogLevel.Trace, new EventId(3, nameof(HttpReceivedRequest)), "Received request from {ConnectionId} for '{Route}'");
         public static readonly Action<ILogger, Ulid, HyperStatus, Exception?> HttpResponding = LoggerMessage.Define<Ulid, HyperStatus>(LogLevel.Trace, new EventId(3, nameof(HttpResponding)), "Responding to {ConnectionId} with {Status}");
         public static readonly Action<ILogger, Ulid, HyperStatus, Exception?> HttpResponded = LoggerMessage.Define<Ulid, HyperStatus>(LogLevel.Debug, new EventId(3, nameof(HttpResponded)), "Responded to {ConnectionId} with {Status}");

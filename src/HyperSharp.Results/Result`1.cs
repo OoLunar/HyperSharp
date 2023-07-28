@@ -6,28 +6,28 @@ namespace OoLunar.HyperSharp.Results
     public readonly record struct Result<T>
     {
         public readonly T? Value;
-        public readonly IEnumerable<IError> Errors;
+        public readonly IEnumerable<Error> Errors;
         public bool IsSuccess => !Errors.Any();
 
         internal Result(T? value)
         {
             Value = value;
-            Errors = Enumerable.Empty<IError>();
+            Errors = Enumerable.Empty<Error>();
         }
 
-        internal Result(IError error)
+        internal Result(Error error)
         {
             Value = default;
             Errors = Enumerable.Repeat(error, 1);
         }
 
-        internal Result(IEnumerable<IError> errors)
+        internal Result(IEnumerable<Error> errors)
         {
             Value = default;
             Errors = errors;
         }
 
-        internal Result(T? value, IEnumerable<IError> errors)
+        internal Result(T? value, IEnumerable<Error> errors)
         {
             Value = value;
             Errors = errors;

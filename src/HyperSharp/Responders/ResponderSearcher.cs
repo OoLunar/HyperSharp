@@ -64,7 +64,7 @@ namespace OoLunar.HyperSharp.Responders
 
         public Result ValidateResponders()
         {
-            List<IError> errors = new();
+            List<Error> errors = new();
             foreach (KeyValuePair<Type, Responder<TInput, TOutput>> branch in _dependencies)
             {
                 if (branch.Key.IsAbstract || !branch.Key.GetInterfaces().Contains(typeof(IResponder<TInput, TOutput>)))
@@ -113,7 +113,7 @@ namespace OoLunar.HyperSharp.Responders
             return async (context, cancellationToken) =>
             {
                 Responder<TInput, TOutput> branch = null!;
-                List<IError> errors = new();
+                List<Error> errors = new();
                 try
                 {
                     foreach ((Responder<TInput, TOutput> twig, ResponderDelegate<TInput, TOutput> branchDelegate) in branchDelegates)
@@ -157,7 +157,7 @@ namespace OoLunar.HyperSharp.Responders
 
             async Task<Result<TOutput>> branchDelegate(TInput context, CancellationToken cancellationToken = default)
             {
-                List<IError> errors = new();
+                List<Error> errors = new();
                 foreach (ResponderDelegate<TInput, TOutput> twigDelegate in twigDelegates)
                 {
                     Result<TOutput> result = await twigDelegate(context, cancellationToken);
