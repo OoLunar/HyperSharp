@@ -7,6 +7,8 @@ on:
   push:
     paths:
       - ".github/workflows/release.yml"
+      - "*.sln"
+      - "*.csproj"
 
 env:
   DOTNET_NOLOGO: 1
