@@ -16,6 +16,7 @@ runtime_version=$(jq -r '.HostEnvironmentInfo.RuntimeVersion' $1)
 architecture=$(jq -r '.HostEnvironmentInfo.Architecture' $1)
 
 # Generate Markdown result for each benchmark
+echo "### Machine Information:"
 echo "$caption v$version, $os_version"
 echo "- $processor_name, $physical_processor_count CPU, $logical_core_count logical and $physical_core_count physical cores"
 echo "- $runtime_version, $architecture"
