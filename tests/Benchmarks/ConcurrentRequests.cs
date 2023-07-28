@@ -18,14 +18,21 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks
     public class ConcurrentRequests
     {
         private readonly HttpClient _client;
+        private readonly HyperServer _hyperServer;
 
         public ConcurrentRequests()
         {
             ServiceProvider serviceProvider = CreateServiceProvider();
 
             _client = serviceProvider.GetRequiredService<HttpClient>();
-            serviceProvider.GetRequiredService<HyperServer>().Start();
+            _hyperServer = serviceProvider.GetRequiredService<HyperServer>();
         }
+
+        [GlobalSetup]
+        public void SetupAsync() => _hyperServer.Start();
+
+        [GlobalCleanup]
+        public Task CleanupAsync() => _hyperServer.StopAsync();
 
         [WarmupCount(25), Benchmark]
         public Task<HttpResponseMessage> ConcurrentRequestsTestAsync() => _client.GetAsync("/");
