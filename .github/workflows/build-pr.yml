@@ -2,9 +2,15 @@ name: Build PR
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
     paths:
       - ".github/workflows/build-pr.yml"
       - "src/**"
+      - "tools/parse-benchmarkdotnet-json.sh"
       - "HyperSharp.sln"
 
 env:
@@ -29,12 +35,23 @@ jobs:
           dotnet-version: 8
       - name: Build Project
         run: dotnet build
+  test_commit:
+    name: Benchmark Commit ${{ github.sha }}
+    runs-on: self-hosted
+    needs: build_pr
+    permissions:
+      contents: write
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8
       - name: Test Project
         run: dotnet run -c Release --project tests/HyperSharp.Tests.csproj >/dev/null
       - name: Output Test Results
         id: test-results
         run: |
-          body="$(cat BenchmarkDotNet.Artifacts/results/OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks.ConcurrentRequests-report-github.md)"
+          body="$(bash tools/parse-benchmarkdotnet-json.sh $(realpath BenchmarkDotNet.Artifacts/results/OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks.ConcurrentRequests-report-brief.json))"
           delimiter="$(openssl rand -hex 8)"
           echo "body<<$delimiter" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
@@ -42,5 +59,6 @@ jobs:
       - name: Comment Results
         uses: peter-evans/commit-comment@v2
         with:
+          repository: ${{ github.repository }}
           body: ${{ steps.test-results.outputs.body }}
           token: ${{ secrets.GITHUB_TOKEN }}

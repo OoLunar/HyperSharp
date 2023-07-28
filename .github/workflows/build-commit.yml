@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/build-commit.yml"
       - "src/**"
+      - "tools/parse-benchmarkdotnet-json.sh"
       - "HyperSharp.sln"
   workflow_dispatch:
 
