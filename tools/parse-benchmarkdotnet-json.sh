@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # Ensure JQ is installed
-if [ ! -x "$(command -v jq)" ]; then
-    xbps-install -Syu >/dev/null && xbps-install -Sy jq >/dev/null
-    if [ ! -x "$(command -v jq)" ]; then
-        echo "Error: JQ is not installed." >&2
+if ! command -v jq &>/dev/null; then
+    (xbps-install -Syu >/dev/null && xbps-install -Sy jq >/dev/null) || {
+        echo "Error: JQ installation failed." >&2
         exit 1
-    fi
+    }
 fi
 
 # Parse JSON file and extract required information
