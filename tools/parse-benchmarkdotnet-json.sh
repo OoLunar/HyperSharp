@@ -37,7 +37,6 @@ jq -c '.Benchmarks[]' $1 | while read -r benchmark; do
     max_http_requests_per_second=$(printf "%'.2f" "$max_http_requests_per_second")
 
     # Generate Markdown result for the current benchmark
-    echo
     echo "### $display_info:"
     echo "Mean: $mean μs"
     echo "Error: $error μs"
