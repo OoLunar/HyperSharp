@@ -9,7 +9,6 @@ namespace OoLunar.HyperSharp.Responders
     public interface IResponder
     {
         string[] Implements { get; init; }
-        ResponderPriority Priority { get; init; }
 
         Task<Result> RespondAsync(object context, CancellationToken cancellationToken = default);
     }
