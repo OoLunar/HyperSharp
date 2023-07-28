@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperSharp", "src\HyperShar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperSharp.Routing", "src\HyperSharp.Routing\HyperSharp.Routing.csproj", "{DA403C6B-A58C-456C-AC9D-58D94DD9A2B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperSharp.Results", "src\HyperSharp.Results\HyperSharp.Results.csproj", "{743EE7BD-EF97-488F-BD1E-04D20DDED391}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,9 +34,14 @@ Global
 		{DA403C6B-A58C-456C-AC9D-58D94DD9A2B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA403C6B-A58C-456C-AC9D-58D94DD9A2B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA403C6B-A58C-456C-AC9D-58D94DD9A2B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{743EE7BD-EF97-488F-BD1E-04D20DDED391}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{743EE7BD-EF97-488F-BD1E-04D20DDED391}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{743EE7BD-EF97-488F-BD1E-04D20DDED391}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{743EE7BD-EF97-488F-BD1E-04D20DDED391}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9039F73D-A796-4B4D-A950-FB8C3007A09E} = {FFCC127A-1254-4758-BA26-AEBD1C3A6DF1}
 		{DA403C6B-A58C-456C-AC9D-58D94DD9A2B7} = {FFCC127A-1254-4758-BA26-AEBD1C3A6DF1}
+		{743EE7BD-EF97-488F-BD1E-04D20DDED391} = {FFCC127A-1254-4758-BA26-AEBD1C3A6DF1}
 	EndGlobalSection
 EndGlobal
