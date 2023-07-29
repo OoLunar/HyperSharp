@@ -1,19 +1,19 @@
-using System.Threading.Tasks;
-using OoLunar.HyperSharp.Tests.Benchmarks;
-#if !DEBUG
-using BenchmarkDotNet.Running;
-#endif
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OoLunar.HyperSharp.Tests.Benchmarks;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+#if !DEBUG
+using BenchmarkDotNet.Running;
+#endif
 
 namespace OoLunar.HyperSharp.Tests
 {

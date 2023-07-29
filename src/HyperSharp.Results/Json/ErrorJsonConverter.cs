@@ -1,7 +1,7 @@
 using System;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Linq;
 
 namespace OoLunar.HyperSharp.Results.Json
 {
