@@ -11,7 +11,7 @@ using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Parsing
 {
-    public sealed class HyperHeaderParser
+    public static class HyperHeaderParser
     {
         // https://www.rfc-editor.org/rfc/rfc9110#section-9.1
         // All HTTP methods are case-sensitive.
