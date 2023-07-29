@@ -1,0 +1,46 @@
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
+using BenchmarkDotNet.Attributes;
+using Microsoft.Extensions.DependencyInjection;
+using OoLunar.HyperSharp.Parsing;
+
+namespace OoLunar.HyperSharp.Tests.Benchmarks
+{
+    [JsonExporterAttribute.Brief]
+    public class ParseRequests
+    {
+        public static readonly byte[] HttpRequestBytes = @"""
+GET / HTTP/1.1\r
+Host: localhost:5000\r
+User-Agent: curl/7.64.1\r
+Accept: */*\r
+\r\n"""u8.ToArray();
+
+        private readonly HyperServer _hyperServer;
+        private readonly HyperConnection _hyperConnection;
+        private readonly HyperContext _hyperContext;
+
+        public ParseRequests()
+        {
+            ServiceProvider serviceProvider = Program.CreateServiceProvider();
+            _hyperServer = serviceProvider.GetRequiredService<HyperServer>();
+            _hyperConnection = new HyperConnection(new MemoryStream(HttpRequestBytes));
+            _hyperContext = new HyperContext(HttpMethod.Get, new Uri("/"), HttpVersion.Version11, new(), new HyperConnection(new MemoryStream(HttpRequestBytes)));
+        }
+
+        [GlobalSetup]
+        public void Setup() => _hyperServer.Start();
+
+        [GlobalCleanup]
+        public Task CleanupAsync() => _hyperServer.StopAsync();
+
+        [Benchmark]
+        public async ValueTask ParseHeadersTestAsync() => await HyperHeaderParser.TryParseHeadersAsync(_hyperServer.Configuration.MaxHeaderSize, _hyperConnection);
+
+        [Benchmark]
+        public async Task RespondAsync() => await _hyperContext.RespondAsync(new());
+    }
+}
