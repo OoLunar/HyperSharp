@@ -12,7 +12,7 @@ namespace OoLunar.HyperSharp
 {
     public sealed class HyperServer
     {
-        private readonly HyperConfiguration _configuration;
+        public HyperConfiguration Configuration { get; init; }
         private readonly ILogger<HyperServer> _logger;
         private readonly ConcurrentDictionary<Ulid, HyperConnection> _openConnections = new();
         private readonly ConcurrentStack<CancellationTokenSource> _cancellationTokenSources = new();
@@ -20,7 +20,7 @@ namespace OoLunar.HyperSharp
 
         public HyperServer(HyperConfiguration configuration, ILogger<HyperServer> logger)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -31,12 +31,12 @@ namespace OoLunar.HyperSharp
                 throw new InvalidOperationException("The server is already running.");
             }
 
-            HyperLogging.ServerStarting(_logger, _configuration.ListeningEndpoint, null);
-            TcpListener listener = new(_configuration.ListeningEndpoint);
+            HyperLogging.ServerStarting(_logger, Configuration.ListeningEndpoint, null);
+            TcpListener listener = new(Configuration.ListeningEndpoint);
             _mainCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _mainCancellationTokenSource.Token.Register(() =>
             {
-                HyperLogging.ServerStopping(_logger, _configuration.ListeningEndpoint, null);
+                HyperLogging.ServerStopping(_logger, Configuration.ListeningEndpoint, null);
                 while (!_openConnections.IsEmpty)
                 {
                     HyperLogging.ConnectionsPending(_logger, _openConnections.Count, null);
@@ -60,12 +60,12 @@ namespace OoLunar.HyperSharp
                 }
 
                 listener.Stop();
-                HyperLogging.ServerStopped(_logger, _configuration.ListeningEndpoint, null);
+                HyperLogging.ServerStopped(_logger, Configuration.ListeningEndpoint, null);
             });
 
             listener.Start();
             _ = ListenForConnectionsAsync(listener);
-            HyperLogging.ServerStarted(_logger, _configuration.ListeningEndpoint, null);
+            HyperLogging.ServerStarted(_logger, Configuration.ListeningEndpoint, null);
         }
 
         public async Task StopAsync()
@@ -106,11 +106,11 @@ namespace OoLunar.HyperSharp
             }
 
             cancellationTokenSource ??= CancellationTokenSource.CreateLinkedTokenSource(_mainCancellationTokenSource!.Token);
-            cancellationTokenSource.CancelAfter(_configuration.Timeout);
+            cancellationTokenSource.CancelAfter(Configuration.Timeout);
 
             // Start parsing the HTTP Headers.
             await using NetworkStream networkStream = client.GetStream();
-            Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(_configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
+            Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
             if (!context.IsSuccess)
             {
                 HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Value!.Route, context.Errors, null);
@@ -119,17 +119,17 @@ namespace OoLunar.HyperSharp
 
             // Execute any registered responders.
             HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
-            Result<HyperStatus> status = await _configuration.Responders(context.Value, cancellationTokenSource.Token);
+            Result<HyperStatus> status = await Configuration.Responders(context.Value, cancellationTokenSource.Token);
             if (!context.Value.HasResponded)
             {
                 HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
                 if (status.IsSuccess)
                 {
-                    await context.Value.RespondAsync(status.Value == default ? new HyperStatus(HttpStatusCode.NoContent) : status.Value, _configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(status.Value == default ? new HyperStatus(HttpStatusCode.NoContent) : status.Value, Configuration.JsonSerializerOptions);
                 }
                 else
                 {
-                    await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.InternalServerError), _configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.InternalServerError), Configuration.JsonSerializerOptions);
                 }
             }
 
