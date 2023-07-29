@@ -52,12 +52,11 @@ namespace OoLunar.HyperSharp
         {
             // Grab the base network stream to write our ASCII headers to.
             // TODO: Find a solution which allows modification of the body (Gzip) and the base stream (SSL).
-            PipeWriter baseStreamWriter = PipeWriter.Create(Connection.Client.GetStream(), new StreamPipeWriterOptions(leaveOpen: true));
 
             // Write request line
-            await baseStreamWriter.WriteAsync(_httpVersions[Version], cancellationToken);
-            await baseStreamWriter.WriteAsync(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"), cancellationToken);
-            await baseStreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+            await Connection.StreamWriter.WriteAsync(_httpVersions[Version], cancellationToken);
+            await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"), cancellationToken);
+            await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
 
             // Serialize body ahead of time due to headers
             byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? HyperJsonSerializationOptions.Default);
@@ -69,25 +68,25 @@ namespace OoLunar.HyperSharp
 
             foreach (KeyValuePair<string, IReadOnlyList<string>> header in status.Headers)
             {
-                await baseStreamWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Key), cancellationToken);
-                await baseStreamWriter.WriteAsync(": "u8.ToArray(), cancellationToken);
+                await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Key), cancellationToken);
+                await Connection.StreamWriter.WriteAsync(": "u8.ToArray(), cancellationToken);
                 if (header.Value.Count == 1)
                 {
-                    await baseStreamWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Value[0]), cancellationToken);
+                    await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Value[0]), cancellationToken);
                 }
                 else
                 {
                     foreach (string value in header.Value)
                     {
-                        await baseStreamWriter.WriteAsync(Encoding.ASCII.GetBytes(value), cancellationToken);
-                        await baseStreamWriter.WriteAsync(", "u8.ToArray(), cancellationToken);
+                        await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(value), cancellationToken);
+                        await Connection.StreamWriter.WriteAsync(", "u8.ToArray(), cancellationToken);
                     }
                 }
 
-                await baseStreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+                await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
             }
-            await baseStreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
-            await baseStreamWriter.CompleteAsync();
+            await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+            await Connection.StreamWriter.CompleteAsync();
 
             // Write body
             if (content.Length != 0)
