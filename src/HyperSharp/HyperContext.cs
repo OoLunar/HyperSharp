@@ -9,7 +9,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using OoLunar.HyperSharp.Json;
 using OoLunar.HyperSharp.Parsing;
 
 namespace OoLunar.HyperSharp
@@ -61,7 +60,7 @@ namespace OoLunar.HyperSharp
             await baseStreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
 
             // Serialize body ahead of time due to headers
-            byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? HyperSerializationOptions.Default);
+            byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? HyperJsonSerializationOptions.Default);
 
             // Write headers
             status.Headers.SetHeader("Server", _serverName);

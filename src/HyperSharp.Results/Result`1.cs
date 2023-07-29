@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
+using OoLunar.HyperSharp.Results.Json;
 
 namespace OoLunar.HyperSharp.Results
 {
+    [JsonConverter(typeof(ResultJsonConverterFactory))]
     public readonly record struct Result<T>
     {
         public readonly T? Value;

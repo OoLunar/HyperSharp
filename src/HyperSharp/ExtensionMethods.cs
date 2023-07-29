@@ -1,7 +1,5 @@
 using System;
-using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
-using OoLunar.HyperSharp.Json;
 using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp
@@ -28,7 +26,5 @@ namespace OoLunar.HyperSharp
             services.AddSingleton<HyperServer>();
             return services;
         }
-
-        public static IServiceCollection ConfigureHyperJsonConverters(this IServiceCollection serviceCollection, string? optionsName = "HyperSharp") => serviceCollection.Configure<JsonSerializerOptions>(optionsName, options => options.Converters.Add(new IErrorJsonConverterFactory()));
     }
 }

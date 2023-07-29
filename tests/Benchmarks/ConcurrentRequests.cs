@@ -94,7 +94,6 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks
                 logger.AddSerilog(loggerConfiguration.CreateLogger());
             });
 
-            services.ConfigureHyperJsonConverters();
             services.AddHyperSharp((services, hyperConfiguration) =>
             {
                 IConfiguration configuration = services.GetRequiredService<IConfiguration>();

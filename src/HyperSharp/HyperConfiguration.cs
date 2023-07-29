@@ -3,7 +3,6 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OoLunar.HyperSharp.Json;
 using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp
@@ -24,7 +23,7 @@ namespace OoLunar.HyperSharp
 
             ListeningEndpoint = builder.ListeningEndpoint;
             MaxHeaderSize = builder.MaxHeaderSize;
-            JsonSerializerOptions = serviceProvider.GetService<IOptionsSnapshot<JsonSerializerOptions>>()?.Get(builder.JsonSerializerOptionsName) ?? HyperSerializationOptions.Default;
+            JsonSerializerOptions = serviceProvider.GetService<IOptionsSnapshot<JsonSerializerOptions>>()?.Get(builder.JsonSerializerOptionsName) ?? HyperJsonSerializationOptions.Default;
 
             ResponderSearcher<HyperContext, HyperStatus> responderLocator = serviceProvider.GetRequiredService<ResponderSearcher<HyperContext, HyperStatus>>();
             responderLocator.RegisterResponders(builder.Responders);
