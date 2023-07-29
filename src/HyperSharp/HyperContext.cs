@@ -86,7 +86,6 @@ namespace OoLunar.HyperSharp
                 await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
             }
             await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
-            await Connection.StreamWriter.CompleteAsync();
 
             // Write body
             if (content.Length != 0)

@@ -12,6 +12,10 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 #if !DEBUG
+using System.IO;
+using System.Text;
+using BenchmarkDotNet.Portability.Cpu;
+using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 #endif
 
@@ -30,7 +34,59 @@ namespace OoLunar.HyperSharp.Tests
             await concurrentRequestsTest.CleanupAsync();
         }
 #else
-        public static void Main() => BenchmarkRunner.Run<ConcurrentRequests>();
+        public static void Main()
+        {
+            Summary summary = BenchmarkRunner.Run<ConcurrentRequests>();
+            using FileStream fileStream = File.OpenWrite("benchmark-results.md");
+            fileStream.Write("### Machine Information:\nBenchmarkDotNet v"u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.BenchmarkDotNetVersion));
+            fileStream.Write(", "u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.OsVersion.Value));
+            fileStream.Write("\n- "u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(CpuInfoFormatter.Format(summary.HostEnvironmentInfo.CpuInfo.Value)));
+            fileStream.Write("\n- "u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.RuntimeVersion));
+            fileStream.Write(", "u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.Architecture.ToLowerInvariant()));
+            fileStream.Write(", "u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.JitInfo));
+            fileStream.Write("\n- Hardware Intrinsics: "u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(summary.Reports[0].GetHardwareIntrinsicsInfo()?.Replace(",", ", ") ?? "Not supported."));
+            fileStream.Write("\n- Is running in Docker: "u8);
+            fileStream.Write(summary.HostEnvironmentInfo.InDocker ? "Yes"u8 : "No"u8);
+
+            foreach (BenchmarkCase benchmarkCase in summary.BenchmarksCases)
+            {
+                foreach (BenchmarkReport report in summary.Reports)
+                {
+                    /*
+### ConcurrentRequestsTestAsync:
+                    Mean: 447.49 μs
+                    Error: 12.69 μs
+                    StdDev: 36.60 μs
+                    Max HTTP Requests per second: 2234.71 (1,000,000 / 447.49)
+                    */
+                    fileStream.Write("\n\n### "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes(benchmarkCase.Descriptor.WorkloadMethodDisplayInfo));
+                    if (!report.Success)
+                    {
+                        fileStream.Write(" (FAILED)"u8);
+                    }
+
+                    fileStream.Write(":\nMean: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes((report.ResultStatistics!.Mean / 1000).ToString("N2", CultureInfo.InvariantCulture)));
+                    fileStream.Write(" μs\nError: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes((report.ResultStatistics.StandardError / 1000).ToString("N2", CultureInfo.InvariantCulture)));
+                    fileStream.Write(" μs\nStdDev: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes((report.ResultStatistics.StandardDeviation / 1000).ToString("N2", CultureInfo.InvariantCulture)));
+                    fileStream.Write(" μs\nAverage HTTP Requests per second: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes((1_000_000 / (report.ResultStatistics.Mean / 1000)).ToString("N0", CultureInfo.InvariantCulture)));
+                    fileStream.Write(" (1,000,000 / "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes((report.ResultStatistics.Mean / 1000).ToString("N2", CultureInfo.InvariantCulture)));
+                    fileStream.Write(")"u8);
+                }
+            }
+        }
 #endif
 
         public static ServiceProvider CreateServiceProvider()

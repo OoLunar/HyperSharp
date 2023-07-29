@@ -5,7 +5,6 @@ on:
     paths:
       - ".github/workflows/build-commit.yml"
       - "src/**"
-      - "tools/parse-benchmarkdotnet-json.sh"
       - "HyperSharp.sln"
   workflow_dispatch:
 
@@ -47,7 +46,7 @@ jobs:
       - name: Output Test Results
         id: test-results
         run: |
-          body="$(bash tools/parse-benchmarkdotnet-json.sh $(realpath BenchmarkDotNet.Artifacts/results/OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks.ConcurrentRequests-report-brief.json))"
+          body="$(cat benchmark-results.md)"
           delimiter="$(openssl rand -hex 8)"
           echo "body<<$delimiter" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
