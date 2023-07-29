@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using OoLunar.HyperSharp.Responders;
 using OoLunar.HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Tests.Benchmarks.Responders
+namespace OoLunar.HyperSharp.Tests.Responders
 {
     public sealed class HelloWorldResponder : IResponder<HyperContext, HyperStatus>
     {

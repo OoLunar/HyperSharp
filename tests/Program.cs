@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
-using OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks;
+using OoLunar.HyperSharp.Tests.Benchmarks;
 #if !DEBUG
 using BenchmarkDotNet.Running;
 #endif
 
-namespace OoLunar.HyperSharp.Tests.Benchmarks
+namespace OoLunar.HyperSharp.Tests
 {
     public sealed class Program
     {

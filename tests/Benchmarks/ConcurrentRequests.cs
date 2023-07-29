@@ -12,7 +12,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 
-namespace OoLunar.HyperSharp.Tests.Benchmarks.Benchmarks
+namespace OoLunar.HyperSharp.Tests.Benchmarks
 {
     [JsonExporterAttribute.Brief]
     public class ConcurrentRequests
