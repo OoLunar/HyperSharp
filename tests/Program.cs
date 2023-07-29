@@ -59,13 +59,6 @@ namespace OoLunar.HyperSharp.Tests
             {
                 foreach (BenchmarkReport report in summary.Reports)
                 {
-                    /*
-### ConcurrentRequestsTestAsync:
-                    Mean: 447.49 μs
-                    Error: 12.69 μs
-                    StdDev: 36.60 μs
-                    Max HTTP Requests per second: 2234.71 (1,000,000 / 447.49)
-                    */
                     fileStream.Write("\n\n### "u8);
                     fileStream.Write(Encoding.UTF8.GetBytes(benchmarkCase.Descriptor.WorkloadMethodDisplayInfo));
                     if (!report.Success)
