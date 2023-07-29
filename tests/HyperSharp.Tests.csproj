@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../res/config.json" CopyToOutputDirectory="Always" />
+    <PackageReference Include="Humanizer" Version="2.14.1" />
     <ProjectReference Include="../src/HyperSharp/HyperSharp.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.13.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />

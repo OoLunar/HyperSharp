@@ -482,3 +482,4 @@ $RECYCLE.BIN/
 # content below from: OoLunar
 logs/
 res/config.debug.json
+benchmark-results.md
