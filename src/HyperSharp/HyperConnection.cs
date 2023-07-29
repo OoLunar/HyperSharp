@@ -26,6 +26,18 @@ namespace OoLunar.HyperSharp
             StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
+        public HyperConnection(Stream baseStream)
+        {
+            ArgumentNullException.ThrowIfNull(baseStream);
+
+            Id = Ulid.NewUlid();
+            Client = new TcpClient();
+            RemoteEndPoint = "<Unknown Network EndPoint>";
+            _baseStream = baseStream;
+            StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
+            StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
+        }
+
         public void ApplyStreamLayer(Func<Stream, Stream> applyNewStreamLayer)
         {
             _baseStream = applyNewStreamLayer(_baseStream);
