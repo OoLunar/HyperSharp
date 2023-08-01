@@ -1,7 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Linq;
+using System.Collections;
 
 namespace OoLunar.HyperSharp.Parsing
 {
@@ -24,113 +26,223 @@ namespace OoLunar.HyperSharp.Parsing
             '-', '_', ' ', ':', ';', '.', ',', '\\', '/', '"', '\'', '!', '?', '(', ')', '{', '}', '[', ']', '@', '<', '>', '=', '+', '*', '#', '$', '&', '`', '|', '~', '^', '%'
         };
 
-        public IEnumerable<string> Keys => _headers.Keys;
-        public IEnumerable<IReadOnlyList<string>> Values => _headers.Values;
+        private readonly Dictionary<string, List<byte[]>> _headers = new();
+
         public int Count => _headers.Count;
-
-        // TODO: Store values as ASCII bytes instead of strings, possibly expose as IReadOnlyList<byte[]> via new methods
-        private readonly Dictionary<string, List<string>> _headers;
-
-        public HyperHeaderCollection() => _headers = new();
-        public HyperHeaderCollection(int capacity) => _headers = new(capacity);
-        public HyperHeaderCollection(int capacity, IEqualityComparer<string> comparer) => _headers = new(capacity, comparer);
-        public HyperHeaderCollection(IEqualityComparer<string> comparer) => _headers = new(comparer);
-        public HyperHeaderCollection(IDictionary<string, List<string>> dictionary) => _headers = new(dictionary);
-        public HyperHeaderCollection(IDictionary<string, List<string>> dictionary, IEqualityComparer<string> comparer) => _headers = new(dictionary, comparer);
-        public HyperHeaderCollection(IEnumerable<KeyValuePair<string, List<string>>> collection) => _headers = new(collection);
-        public HyperHeaderCollection(IEnumerable<KeyValuePair<string, List<string>>> collection, IEqualityComparer<string> comparer) => _headers = new(collection, comparer);
-
-        public IReadOnlyList<string> this[string key]
+        public IEnumerable<string> Keys => _headers.Keys;
+        public IEnumerable<IReadOnlyList<string>> Values
         {
-            get => _headers[key];
-            set => SetHeader(key, value);
+            get
+            {
+                foreach (List<byte[]> values in _headers.Values)
+                {
+                    yield return values.Select(Encoding.ASCII.GetString).ToList();
+                }
+            }
         }
 
         public bool ContainsKey(string key) => _headers.ContainsKey(key);
-        public bool TryGetValue(string key, [MaybeNullWhen(false)] out IReadOnlyList<string> value)
-        {
-            value = _headers.TryGetValue(key, out List<string>? values)
-                ? values.AsReadOnly()
-                : null;
-
-            return value is not null;
-        }
-
+        public IReadOnlyList<string> this[string key] => _headers[key].Select(Encoding.ASCII.GetString).ToList();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         public IEnumerator<KeyValuePair<string, IReadOnlyList<string>>> GetEnumerator()
         {
-            SetHeader("Date", DateTime.UtcNow.ToString("R"));
-            foreach (KeyValuePair<string, List<string>> header in _headers)
+            foreach (KeyValuePair<string, List<byte[]>> header in _headers)
             {
-                yield return new KeyValuePair<string, IReadOnlyList<string>>(header.Key, header.Value.AsReadOnly());
+                yield return new KeyValuePair<string, IReadOnlyList<string>>(header.Key, header.Value.Select(Encoding.ASCII.GetString).ToList());
             }
         }
-        IEnumerator<KeyValuePair<string, IReadOnlyList<string>>> IEnumerable<KeyValuePair<string, IReadOnlyList<string>>>.GetEnumerator() => GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public void AddHeaderValue(string name, string value)
+        public void Add(string name, string value)
         {
-            if (!IsValidHeaderName(name))
+            ValidateArgumentParameters(ref name, value);
+            if (_headers.TryGetValue(name, out List<byte[]>? values))
             {
-                throw new ArgumentException("Header name is invalid.", nameof(name));
+                values.Add(Encoding.ASCII.GetBytes(value));
             }
-            else if (!IsValidHeaderValue(value))
+            else
             {
-                throw new ArgumentException("Header value is invalid.", nameof(value));
+                _headers.Add(name, new List<byte[]> { Encoding.ASCII.GetBytes(value) });
             }
-
-            name = NormalizeHeaderName(name);
-            if (!_headers.TryGetValue(name, out List<string>? values))
-            {
-                values = new();
-                _headers.Add(name, values);
-            }
-
-            values.Add(value.Trim());
         }
 
-        public void AddHeaderValues(string name, IEnumerable<string> values)
+        public void Add(string name, IEnumerable<string> values)
         {
-            if (!IsValidHeaderName(name))
+            ValidateArgumentParameters(ref name, values);
+            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
-                throw new ArgumentException("Header name is invalid.", nameof(name));
+                existingValues = new List<byte[]>();
+                _headers.Add(name, existingValues);
             }
 
-            List<string> newValues = new();
             foreach (string value in values)
             {
-                if (!IsValidHeaderValue(value))
-                {
-                    throw new ArgumentException("Header value is invalid.", nameof(values));
-                }
+                existingValues.Add(Encoding.ASCII.GetBytes(value));
+            }
+        }
 
-                newValues.Add(value.Trim());
+        public bool TryAdd(string name, string value)
+        {
+            ValidateArgumentParameters(ref name, value);
+            if (_headers.ContainsKey(name))
+            {
+                return false;
             }
 
-            name = NormalizeHeaderName(name);
-            if (!_headers.TryGetValue(name, out List<string>? oldValues))
+            _headers.Add(name, new List<byte[]> { Encoding.ASCII.GetBytes(value) });
+            return true;
+        }
+
+        public bool TryAdd(string name, IEnumerable<string> values)
+        {
+            ValidateArgumentParameters(ref name, values);
+            if (_headers.ContainsKey(name))
             {
-                _headers[name] = newValues;
+                return false;
+            }
+
+            List<byte[]> existingValues = new();
+            foreach (string value in values)
+            {
+                existingValues.Add(Encoding.ASCII.GetBytes(value));
+            }
+
+            _headers.Add(name, existingValues);
+            return true;
+        }
+
+        public void Set(string name, string value)
+        {
+            ValidateArgumentParameters(ref name, value);
+            if (!_headers.TryGetValue(name, out List<byte[]>? values))
+            {
+                _headers.Add(name, new List<byte[]> { Encoding.ASCII.GetBytes(value) });
                 return;
             }
 
-            oldValues.AddRange(newValues);
+            values.Clear();
+            values.Add(Encoding.ASCII.GetBytes(value));
         }
 
-        public void SetHeader(string name, IEnumerable<string> values) => _headers[NormalizeHeaderName(name)] = new List<string>(values);
-        public void SetHeader(string name, string value) => _headers[NormalizeHeaderName(name)] = new List<string>() { value };
-        public void RemoveHeader(string name) => _headers.Remove(NormalizeHeaderName(name));
-
-        public static bool IsValidHeaderName(string value)
+        public void Set(string name, IEnumerable<string> values)
         {
-            if (value is null)
+            ValidateArgumentParameters(ref name, values);
+            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
+                existingValues = new List<byte[]>();
+                _headers.Add(name, existingValues);
+                return;
+            }
+
+            existingValues.Clear();
+            foreach (string value in values)
+            {
+                existingValues.Add(Encoding.ASCII.GetBytes(value));
+            }
+        }
+
+        public bool Remove(string name)
+        {
+            ValidateArgumentParameters(ref name, string.Empty);
+            return _headers.Remove(name);
+        }
+
+        public bool TryGetValue(string name, [MaybeNullWhen(false)] out string value)
+        {
+            ValidateArgumentParameters(ref name, string.Empty);
+            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            {
+                value = null;
                 return false;
             }
 
+            value = Encoding.ASCII.GetString(existingValues[0]);
+            return true;
+        }
+
+        public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<string> values)
+        {
+            ValidateArgumentParameters(ref name, string.Empty);
+            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            {
+                values = null;
+                return false;
+            }
+
+            values = existingValues.Select(Encoding.ASCII.GetString).ToList();
+            return true;
+        }
+
+        public bool TryGetValue(string name, [MaybeNullWhen(false)] out byte[] value)
+        {
+            ValidateArgumentParameters(ref name, string.Empty);
+            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            {
+                value = null;
+                return false;
+            }
+
+            value = existingValues[0];
+            return true;
+        }
+
+        public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<byte[]> values)
+        {
+            ValidateArgumentParameters(ref name, string.Empty);
+            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            {
+                values = null;
+                return false;
+            }
+
+            values = existingValues;
+            return true;
+        }
+
+        private static void ValidateArgumentParameters(ref string name, string value)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+            if (!IsValidName(name))
+            {
+                throw new ArgumentException($"Invalid header name: {name}", nameof(name));
+            }
+
+            if (!IsValidValue(value))
+            {
+                throw new ArgumentException($"Invalid header value: {value}", nameof(value));
+            }
+
+            name = NormalizeHeaderName(name);
+        }
+
+        private static void ValidateArgumentParameters(ref string name, IEnumerable<string> value)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+            if (!IsValidName(name))
+            {
+                throw new ArgumentException($"Invalid header name: {name}", nameof(name));
+            }
+
+            foreach (string item in value)
+            {
+                if (!IsValidValue(item))
+                {
+                    throw new ArgumentException($"Invalid header value: {item}", nameof(value));
+                }
+            }
+
+            name = NormalizeHeaderName(name);
+        }
+
+        public static bool IsValidName(string value)
+        {
             Span<char> validNameSpan = _validHeaderNameCharacters.AsSpan();
-            foreach (char c in value)
+            foreach (char character in value)
             {
-                if (validNameSpan.IndexOf(c) == -1)
+                if (validNameSpan.IndexOf(character) == -1)
                 {
                     return false;
                 }
@@ -139,17 +251,12 @@ namespace OoLunar.HyperSharp.Parsing
             return true;
         }
 
-        public static bool IsValidHeaderValue(string value)
+        public static bool IsValidValue(ReadOnlySpan<char> value)
         {
-            if (value is null)
-            {
-                return false;
-            }
-
             Span<char> validValueSpan = _validHeaderValueCharacters.AsSpan();
-            foreach (char c in value)
+            foreach (char character in value)
             {
-                if (validValueSpan.IndexOf(c) == -1)
+                if (validValueSpan.IndexOf(character) == -1)
                 {
                     return false;
                 }
@@ -158,7 +265,6 @@ namespace OoLunar.HyperSharp.Parsing
             return true;
         }
 
-        public static string NormalizeHeaderName(string value) => NormalizeHeaderName(value.AsSpan());
         public static string NormalizeHeaderName(ReadOnlySpan<char> value)
         {
             if (value.IsEmpty)
@@ -166,20 +272,17 @@ namespace OoLunar.HyperSharp.Parsing
                 return string.Empty;
             }
 
-            Span<char> chars = value.ToArray();
-            for (int i = 0; i < value.Length; i++)
+            Span<char> characters = value.ToArray();
+            characters[0] = char.ToUpperInvariant(value[0]);
+            for (int i = 1; i < value.Length; i++)
             {
                 if (value[i] == '-' || value[i] == '_')
                 {
-                    chars[i + 1] = char.ToUpperInvariant(value[i + 1]);
-                }
-                else if (i == 0)
-                {
-                    chars[0] = char.ToUpperInvariant(value[0]);
+                    characters[i + 1] = char.ToUpperInvariant(value[i + 1]);
                 }
             }
 
-            return chars.ToString();
+            return characters.ToString();
         }
     }
 }

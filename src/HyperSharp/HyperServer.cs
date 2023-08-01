@@ -91,7 +91,7 @@ namespace OoLunar.HyperSharp
 
         private async Task HandleConnectionAsync(TcpClient client)
         {
-            HyperConnection connection = new(client);
+            HyperConnection connection = new(client, this);
             _openConnections.TryAdd(connection.Id, connection);
             HyperLogging.ConnectionOpened(_logger, connection.RemoteEndPoint, connection.Id, null);
 
@@ -113,7 +113,7 @@ namespace OoLunar.HyperSharp
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
             if (!context.IsSuccess)
             {
-                HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Value!.Route, context.Errors, null);
+                HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Errors, null);
                 return;
             }
 
@@ -125,7 +125,7 @@ namespace OoLunar.HyperSharp
                 HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
                 if (status.IsSuccess)
                 {
-                    await context.Value.RespondAsync(status.Value == default ? new HyperStatus(HttpStatusCode.NoContent) : status.Value, Configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(status.HasValue ? status.Value : new HyperStatus(HttpStatusCode.NoContent), Configuration.JsonSerializerOptions);
                 }
                 else
                 {

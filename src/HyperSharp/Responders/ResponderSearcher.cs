@@ -124,7 +124,7 @@ namespace OoLunar.HyperSharp.Responders
                         {
                             errors.AddRange(result.Errors);
                         }
-                        else if (result.Value is not null && !result.Value.Equals(default))
+                        else if (result.HasValue)
                         {
                             return result;
                         }
@@ -165,7 +165,7 @@ namespace OoLunar.HyperSharp.Responders
                     {
                         errors.AddRange(result.Errors);
                     }
-                    else if (result.Value is not null && !result.Value.Equals(default))
+                    else if (result.HasValue)
                     {
                         return result;
                     }

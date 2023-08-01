@@ -11,6 +11,7 @@ namespace OoLunar.HyperSharp
         public int MaxHeaderSize { get; set; } = 8192;
         public List<Type> Responders { get; set; } = new();
         public string JsonSerializerOptionsName { get; set; } = "HyperSharp";
+        public string ServerName { get; set; } = "HyperSharp";
 
         public void AddResponders(Assembly assembly) => Responders.AddRange(assembly.GetTypes());
     }

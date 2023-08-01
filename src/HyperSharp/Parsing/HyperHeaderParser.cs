@@ -80,7 +80,7 @@ namespace OoLunar.HyperSharp.Parsing
                     break;
                 }
 
-                headers.AddHeaderValue(headerResult.Value.Name, headerResult.Value.Value);
+                headers.Add(headerResult.Value.Name, headerResult.Value.Value);
                 readResult = await connection.StreamReader.ReadAsync(cancellationToken);
             }
 

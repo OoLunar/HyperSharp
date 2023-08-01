@@ -16,18 +16,11 @@ namespace OoLunar.HyperSharp
     [DebuggerDisplay("{ToString(),nq}")]
     public class HyperContext
     {
-        private static readonly string _serverName;
-        private static readonly FrozenDictionary<Version, byte[]> _httpVersions;
-
-        static HyperContext()
+        private static readonly FrozenDictionary<Version, byte[]> _httpVersions = new Dictionary<Version, byte[]>()
         {
-            _serverName = "HyperSharp";
-            _httpVersions = new Dictionary<Version, byte[]>()
-            {
-                [HttpVersion.Version10] = "HTTP/1.0 "u8.ToArray(),
-                [HttpVersion.Version11] = "HTTP/1.1 "u8.ToArray(),
-            }.ToFrozenDictionary();
-        }
+            [HttpVersion.Version10] = "HTTP/1.0 "u8.ToArray(),
+            [HttpVersion.Version11] = "HTTP/1.1 "u8.ToArray(),
+        }.ToFrozenDictionary();
 
         public HttpMethod Method { get; init; }
         public Uri Route { get; init; }
@@ -41,11 +34,19 @@ namespace OoLunar.HyperSharp
 
         public HyperContext(HttpMethod method, Uri route, Version version, HyperHeaderCollection headers, HyperConnection connection)
         {
-            Version = version ?? throw new ArgumentNullException(nameof(version));
-            Method = method ?? throw new ArgumentNullException(nameof(method));
-            Route = route ?? throw new ArgumentNullException(nameof(route));
-            Headers = headers ?? throw new ArgumentNullException(nameof(headers));
-            Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            ArgumentNullException.ThrowIfNull(method);
+            ArgumentNullException.ThrowIfNull(route);
+            ArgumentNullException.ThrowIfNull(version);
+            ArgumentNullException.ThrowIfNull(headers);
+            ArgumentNullException.ThrowIfNull(connection);
+
+            Version = version;
+            Method = method;
+            Headers = headers;
+            Connection = connection;
+            Route = headers.TryGetValue("Host", out IReadOnlyList<string>? host)
+                ? new Uri($"http://{host[0]}/{route.OriginalString}")
+                : new Uri(connection.Server.Configuration.Host, route);
         }
 
         public virtual async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null, CancellationToken cancellationToken = default)
@@ -62,23 +63,32 @@ namespace OoLunar.HyperSharp
             byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? HyperJsonSerializationOptions.Default);
 
             // Write headers
-            status.Headers.SetHeader("Server", _serverName);
-            status.Headers.SetHeader("Content-Length", content.Length.ToString());
-            status.Headers.SetHeader("Content-Type", "application/json; charset=utf-8");
+            status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
+            status.Headers.TryAdd("Content-Length", content.Length.ToString());
+            status.Headers.TryAdd("Content-Type", "application/json; charset=utf-8");
+            status.Headers.TryAdd("Server", Connection.Server.Configuration.ServerName);
 
-            foreach (KeyValuePair<string, IReadOnlyList<string>> header in status.Headers)
+            foreach (string headerName in status.Headers.Keys)
             {
-                await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Key), cancellationToken);
+                await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(headerName), cancellationToken);
                 await Connection.StreamWriter.WriteAsync(": "u8.ToArray(), cancellationToken);
-                if (header.Value.Count == 1)
+
+                if (!status.Headers.TryGetValue(headerName, out IReadOnlyList<byte[]>? headerValues))
                 {
-                    await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(header.Value[0]), cancellationToken);
+                    // This shouldn't be able to happen, but just in case.
+                    await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+                    continue;
+                }
+
+                if (headerValues.Count == 1)
+                {
+                    await Connection.StreamWriter.WriteAsync(headerValues[0], cancellationToken);
                 }
                 else
                 {
-                    foreach (string value in header.Value)
+                    foreach (byte[] value in headerValues)
                     {
-                        await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(value), cancellationToken);
+                        await Connection.StreamWriter.WriteAsync(value, cancellationToken);
                         await Connection.StreamWriter.WriteAsync(", "u8.ToArray(), cancellationToken);
                     }
                 }

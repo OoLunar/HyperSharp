@@ -12,6 +12,8 @@ namespace OoLunar.HyperSharp.Results.Json
             writer.WriteStartObject();
             writer.WritePropertyName("value");
             JsonSerializer.Serialize(writer, value.Value, options);
+            writer.WritePropertyName("status");
+            JsonSerializer.Serialize(writer, value.Status, options);
             writer.WritePropertyName("errors");
             JsonSerializer.Serialize(writer, value.Errors, options);
             writer.WriteEndObject();
