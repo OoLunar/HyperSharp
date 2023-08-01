@@ -9,9 +9,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using OoLunar.HyperSharp.Parsing;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Protocol
 {
     [DebuggerDisplay("{ToString(),nq}")]
     public class HyperContext
@@ -60,7 +59,7 @@ namespace OoLunar.HyperSharp
             await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
 
             // Serialize body ahead of time due to headers
-            byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? HyperJsonSerializationOptions.Default);
+            byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? Connection.Server.Configuration.JsonSerializerOptions);
 
             // Write headers
             status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));

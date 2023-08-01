@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Protocol
 {
     public sealed record HyperConnection
     {

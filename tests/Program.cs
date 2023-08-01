@@ -10,6 +10,7 @@ using OoLunar.HyperSharp.Tests.Benchmarks;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+using OoLunar.HyperSharp.Setup;
 #if DEBUG
 using System.Threading.Tasks;
 #else

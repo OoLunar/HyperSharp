@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Setup
 {
     public sealed class HyperConfigurationBuilder
     {

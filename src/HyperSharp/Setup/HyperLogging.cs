@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Results;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Setup
 {
     internal static class HyperLogging
     {

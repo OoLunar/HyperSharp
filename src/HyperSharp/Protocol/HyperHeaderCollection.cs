@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
-namespace OoLunar.HyperSharp.Parsing
+namespace OoLunar.HyperSharp.Protocol
 {
     public sealed class HyperHeaderCollection : IReadOnlyDictionary<string, IReadOnlyList<string>>
     {

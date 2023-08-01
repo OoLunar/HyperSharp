@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using OoLunar.HyperSharp.Protocol;
 
 namespace OoLunar.HyperSharp.Routing
 {

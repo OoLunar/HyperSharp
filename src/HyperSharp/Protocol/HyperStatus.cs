@@ -1,9 +1,8 @@
 using System;
 using System.Diagnostics;
 using System.Net;
-using OoLunar.HyperSharp.Parsing;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Protocol
 {
     [DebuggerDisplay("{ToString(),nq}")]
     public readonly record struct HyperStatus

@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Responders;
 using OoLunar.HyperSharp.Results;
 

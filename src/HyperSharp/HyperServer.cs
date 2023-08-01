@@ -5,8 +5,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using OoLunar.HyperSharp.Parsing;
+using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Results;
+using OoLunar.HyperSharp.Setup;
 
 namespace OoLunar.HyperSharp
 {

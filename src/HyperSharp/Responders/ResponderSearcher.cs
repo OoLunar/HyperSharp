@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OoLunar.HyperSharp.Errors;
 using OoLunar.HyperSharp.Results;
+using OoLunar.HyperSharp.Setup;
 
 namespace OoLunar.HyperSharp.Responders
 {

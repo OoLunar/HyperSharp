@@ -2,7 +2,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using OoLunar.HyperSharp.Responders;
 
-namespace OoLunar.HyperSharp
+namespace OoLunar.HyperSharp.Setup
 {
     public static class ExtensionMethods
     {
