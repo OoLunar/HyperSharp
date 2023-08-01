@@ -38,6 +38,8 @@ namespace OoLunar.HyperSharp.Tests
         public static void Main()
         {
             Summary summary = BenchmarkRunner.Run<ConcurrentRequests>();
+            File.WriteAllText("benchmark-results.md", string.Empty);
+
             using FileStream fileStream = File.OpenWrite("benchmark-results.md");
             fileStream.Write("### Machine Information:\nBenchmarkDotNet v"u8);
             fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.BenchmarkDotNetVersion));
