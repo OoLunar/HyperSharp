@@ -83,7 +83,7 @@ namespace OoLunar.HyperSharp.Tests
                 fileStream.Write(Encoding.UTF8.GetBytes(standardDeviation));
                 fileStream.Write("\nAverage HTTP Requests per second: "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes((1_000_000_000 / report.ResultStatistics.Mean).ToString("N2", CultureInfo.InvariantCulture)));
-                fileStream.Write(" (1,000,000,000 / "u8);
+                fileStream.Write(" (1,000,000,000ns / "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes(report.ResultStatistics.Mean.ToString("N2", CultureInfo.InvariantCulture)));
                 fileStream.Write("ns)"u8);
             }
