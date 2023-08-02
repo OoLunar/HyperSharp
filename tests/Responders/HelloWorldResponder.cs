@@ -8,7 +8,7 @@ using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Tests.Responders
 {
-    public sealed class HelloWorldResponder : IResponder<HyperContext, HyperStatus>
+    public readonly struct HelloWorldResponder : IResponder<HyperContext, HyperStatus>
     {
         public string[] Implements { get; init; } = Array.Empty<string>();
         public HelloWorldResponder() { }
