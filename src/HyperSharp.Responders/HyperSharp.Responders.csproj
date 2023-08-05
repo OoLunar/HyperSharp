@@ -1,16 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Description>A C# implementation of the HTTP 1.1 protocol.</Description>
-    <PackageId>OoLunar.HyperSharp</PackageId>
+    <Description>A C# reinvention of events through compiled expressions.</Description>
+    <PackageId>OoLunar.HyperSharp.Responders</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../HyperSharp.Results/HyperSharp.Results.csproj" />
-    <ProjectReference Include="../HyperSharp.Responders/HyperSharp.Responders.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
-    <PackageReference Include="System.IO.Pipelines" Version="7.0.0" />
-    <PackageReference Include="Ulid" Version="1.2.6" />
   </ItemGroup>
 </Project>

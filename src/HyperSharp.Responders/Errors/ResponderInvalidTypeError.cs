@@ -1,7 +1,7 @@
 using System;
 using OoLunar.HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Errors
+namespace OoLunar.HyperSharp.Responders.Errors
 {
     public sealed record ResponderInvalidTypeError : Error
     {

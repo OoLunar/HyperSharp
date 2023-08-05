@@ -11,7 +11,7 @@ namespace OoLunar.HyperSharp.Setup
             IServiceProvider serviceProvider = services.BuildServiceProvider();
             HyperConfigurationBuilder configurationBuilder = new();
             configurate(serviceProvider, configurationBuilder);
-            services.AddSingleton(typeof(ResponderSearcher<,>));
+            services.AddSingleton<ResponderCompiler>();
             services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
             services.AddSingleton<HyperServer>();
             return services;
@@ -21,7 +21,7 @@ namespace OoLunar.HyperSharp.Setup
         {
             HyperConfigurationBuilder configurationBuilder = new();
             configurate(configurationBuilder);
-            services.AddSingleton(typeof(ResponderSearcher<,>));
+            services.AddSingleton<ResponderCompiler>();
             services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
             services.AddSingleton<HyperServer>();
             return services;
