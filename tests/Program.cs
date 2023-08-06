@@ -14,12 +14,13 @@ using OoLunar.HyperSharp.Setup;
 using OoLunar.HyperSharp.Tests.Benchmarks;
 using System.Threading.Tasks;
 #else
-using System.Linq;
 using System.IO;
 using System.Text;
+using System.Linq;
 using BenchmarkDotNet.Portability.Cpu;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
+using Humanizer;
 #endif
 
 namespace OoLunar.HyperSharp.Tests
@@ -29,7 +30,7 @@ namespace OoLunar.HyperSharp.Tests
 #if DEBUG
         public static async Task Main()
         {
-            ConcurrentRequests concurrentRequestsTest = new();
+            HttpBenchmarks concurrentRequestsTest = new();
             concurrentRequestsTest.Setup();
             (await concurrentRequestsTest.ConcurrentRequestsTestAsync()).EnsureSuccessStatusCode();
             (await concurrentRequestsTest.ConcurrentRequestsTestAsync()).EnsureSuccessStatusCode();
@@ -40,57 +41,71 @@ namespace OoLunar.HyperSharp.Tests
         public static void Main()
         {
             Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly);
-            Summary summary = summaries[0];
+            Summary firstSummary = summaries[0];
             File.WriteAllText("benchmark-results.md", string.Empty);
 
             using FileStream fileStream = File.OpenWrite("benchmark-results.md");
             fileStream.Write("### Machine Information:\nBenchmarkDotNet v"u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.BenchmarkDotNetVersion));
+            fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.HostEnvironmentInfo.BenchmarkDotNetVersion));
             fileStream.Write(", "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.OsVersion.Value));
+            fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.HostEnvironmentInfo.OsVersion.Value));
             fileStream.Write("\n- "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(CpuInfoFormatter.Format(summary.HostEnvironmentInfo.CpuInfo.Value)));
+            fileStream.Write(Encoding.UTF8.GetBytes(CpuInfoFormatter.Format(firstSummary.HostEnvironmentInfo.CpuInfo.Value)));
             fileStream.Write("\n- Hardware Intrinsics: "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(summary.Reports[0].GetHardwareIntrinsicsInfo()?.Replace(",", ", ") ?? "Not supported."));
+            fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.Reports[0].GetHardwareIntrinsicsInfo()?.Replace(",", ", ") ?? "Not supported."));
             fileStream.Write("\n- "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.RuntimeVersion));
+            fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.HostEnvironmentInfo.RuntimeVersion));
             fileStream.Write(", "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.Architecture.ToLowerInvariant()));
+            fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.HostEnvironmentInfo.Architecture.ToLowerInvariant()));
             fileStream.Write(", "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(summary.HostEnvironmentInfo.JitInfo));
-            fileStream.Write("\n- Is running in Docker: "u8);
-            fileStream.Write(summary.HostEnvironmentInfo.InDocker ? "Yes"u8 : "No"u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.HostEnvironmentInfo.JitInfo));
+            fileStream.Write("\n- Total Execution Time: "u8);
+            fileStream.Write(Encoding.UTF8.GetBytes(TimeSpan.FromTicks(summaries.Sum(summary => summary.TotalTime.Ticks)).Humanize(3)));
 
-            foreach (BenchmarkReport report in summaries.SelectMany(summary => summary.Reports))
+            foreach (Summary summary in summaries.OrderBy(summary => summary.BenchmarksCases.Length))
             {
-                fileStream.Write("\n### "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes(report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo));
-                if (!report.Success)
+                fileStream.Write("\n\n## "u8);
+                fileStream.Write(Encoding.UTF8.GetBytes(summary.BenchmarksCases[0].Descriptor.Type.Name));
+                fileStream.Write("\nExecution Time: "u8);
+                fileStream.Write(Encoding.UTF8.GetBytes(summary.TotalTime.Humanize(3)));
+
+                // baseline first
+                foreach (BenchmarkReport report in summary.Reports.OrderBy(report => !summary.IsBaseline(report.BenchmarkCase)))
                 {
-                    fileStream.Write(" (FAILED)"u8);
+                    fileStream.Write("\n### "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes(report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo));
+                    if (summary.IsBaseline(report.BenchmarkCase))
+                    {
+                        fileStream.Write(", Baseline"u8);
+                    }
+
+                    if (!report.Success)
+                    {
+                        fileStream.Write(", Failed"u8);
+                    }
+
+                    if (report.ResultStatistics is null)
+                    {
+                        fileStream.Write(":\nNo results."u8);
+                        continue;
+                    }
+
+                    string mean = GetHumanizedNanoSeconds(report.ResultStatistics.Mean);
+                    string standardError = GetHumanizedNanoSeconds(report.ResultStatistics.StandardError);
+                    string standardDeviation = GetHumanizedNanoSeconds(report.ResultStatistics.StandardDeviation);
+
+                    fileStream.Write(":\nMean: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes(mean));
+                    fileStream.Write("\nError: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes(standardError));
+                    fileStream.Write("\nStdDev: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes(standardDeviation));
+                    fileStream.Write("\nMax per second: "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes((1_000_000_000 / report.ResultStatistics.Mean).ToString("N2", CultureInfo.InvariantCulture)));
+                    fileStream.Write(" (1,000,000,000ns / "u8);
+                    fileStream.Write(Encoding.UTF8.GetBytes(report.ResultStatistics.Mean.ToString("N2", CultureInfo.InvariantCulture)));
+                    fileStream.Write("ns)"u8);
                 }
-
-                if (report.ResultStatistics is null)
-                {
-                    fileStream.Write(":\nNo results."u8);
-                    continue;
-                }
-
-                string mean = GetHumanizedNanoSeconds(report.ResultStatistics.Mean);
-                string standardError = GetHumanizedNanoSeconds(report.ResultStatistics.StandardError);
-                string standardDeviation = GetHumanizedNanoSeconds(report.ResultStatistics.StandardDeviation);
-
-                fileStream.Write(":\nMean: "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes(mean));
-                fileStream.Write("\nError: "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes(standardError));
-                fileStream.Write("\nStdDev: "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes(standardDeviation));
-                fileStream.Write("\nMax per second: "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes((1_000_000_000 / report.ResultStatistics.Mean).ToString("N2", CultureInfo.InvariantCulture)));
-                fileStream.Write(" (1,000,000,000ns / "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes(report.ResultStatistics.Mean.ToString("N2", CultureInfo.InvariantCulture)));
-                fileStream.Write("ns)"u8);
             }
         }
 

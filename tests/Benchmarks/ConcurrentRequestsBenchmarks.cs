@@ -6,12 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace OoLunar.HyperSharp.Tests.Benchmarks
 {
     [JsonExporterAttribute.Brief]
-    public class ConcurrentRequests
+    public class HttpBenchmarks
     {
         private readonly HttpClient _client;
         private readonly HyperServer _hyperServer;
 
-        public ConcurrentRequests()
+        public HttpBenchmarks()
         {
             ServiceProvider serviceProvider = Program.CreateServiceProvider();
 
@@ -25,7 +25,9 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks
         [GlobalCleanup]
         public Task CleanupAsync() => _hyperServer.StopAsync();
 
-        [WarmupCount(25), Benchmark]
+        [WarmupCount(5), Benchmark]
         public Task<HttpResponseMessage> ConcurrentRequestsTestAsync() => _client.GetAsync("/");
+
+
     }
 }
