@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/build-commit.yml"
       - "src/**"
+      - "tests/**"
       - "HyperSharp.sln"
   workflow_dispatch:
 
