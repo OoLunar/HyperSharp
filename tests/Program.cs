@@ -6,14 +6,15 @@ using System.Net.Http;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OoLunar.HyperSharp.Tests.Benchmarks;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using OoLunar.HyperSharp.Setup;
 #if DEBUG
+using OoLunar.HyperSharp.Tests.Benchmarks;
 using System.Threading.Tasks;
 #else
+using System.Linq;
 using System.IO;
 using System.Text;
 using BenchmarkDotNet.Portability.Cpu;
@@ -38,7 +39,8 @@ namespace OoLunar.HyperSharp.Tests
 #else
         public static void Main()
         {
-            Summary summary = BenchmarkRunner.Run<ConcurrentRequests>();
+            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly);
+            Summary summary = summaries[0];
             File.WriteAllText("benchmark-results.md", string.Empty);
 
             using FileStream fileStream = File.OpenWrite("benchmark-results.md");
@@ -59,7 +61,7 @@ namespace OoLunar.HyperSharp.Tests
             fileStream.Write("\n- Is running in Docker: "u8);
             fileStream.Write(summary.HostEnvironmentInfo.InDocker ? "Yes"u8 : "No"u8);
 
-            foreach (BenchmarkReport report in summary.Reports)
+            foreach (BenchmarkReport report in summaries.SelectMany(summary => summary.Reports))
             {
                 fileStream.Write("\n### "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes(report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo));
@@ -84,7 +86,7 @@ namespace OoLunar.HyperSharp.Tests
                 fileStream.Write(Encoding.UTF8.GetBytes(standardError));
                 fileStream.Write("\nStdDev: "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes(standardDeviation));
-                fileStream.Write("\nAverage HTTP Requests per second: "u8);
+                fileStream.Write("\nMax per second: "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes((1_000_000_000 / report.ResultStatistics.Mean).ToString("N2", CultureInfo.InvariantCulture)));
                 fileStream.Write(" (1,000,000,000ns / "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes(report.ResultStatistics.Mean.ToString("N2", CultureInfo.InvariantCulture)));

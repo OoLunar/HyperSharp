@@ -7,7 +7,7 @@ using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Tests.Responders
 {
-    public readonly struct HelloWorldResponder : IResponder<HyperContext, HyperStatus>
+    public readonly record struct HelloWorldResponder : IResponder<HyperContext, HyperStatus>
     {
         public static Type[] Needs => Type.EmptyTypes;
 
