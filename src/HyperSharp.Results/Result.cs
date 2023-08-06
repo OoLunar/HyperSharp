@@ -8,6 +8,8 @@ namespace OoLunar.HyperSharp.Results
     [JsonConverter(typeof(ResultJsonConverter))]
     public readonly record struct Result
     {
+        internal static readonly IEnumerable<Error> _emptyErrors = Enumerable.Empty<Error>();
+
         public readonly object? Value;
         public readonly IEnumerable<Error> Errors;
         public readonly ResultStatus Status;
@@ -17,21 +19,21 @@ namespace OoLunar.HyperSharp.Results
         public Result()
         {
             Value = null;
-            Errors = Enumerable.Empty<Error>();
+            Errors = _emptyErrors;
             Status = ResultStatus.IsSuccess;
         }
 
         internal Result(object? value)
         {
             Value = value;
-            Errors = Enumerable.Empty<Error>();
+            Errors = _emptyErrors;
             Status = ResultStatus.IsSuccess | ResultStatus.HasValue;
         }
 
         internal Result(Error error)
         {
             Value = null;
-            Errors = Enumerable.Repeat(error, 1);
+            Errors = new[] { error };
             Status = ResultStatus.None;
         }
 
@@ -40,6 +42,13 @@ namespace OoLunar.HyperSharp.Results
             Value = null;
             Errors = errors;
             Status = ResultStatus.None;
+        }
+
+        internal Result(object? value, Error error)
+        {
+            Value = value;
+            Errors = new[] { error };
+            Status = ResultStatus.HasValue;
         }
 
         internal Result(object? value, IEnumerable<Error> errors)
@@ -54,6 +63,7 @@ namespace OoLunar.HyperSharp.Results
         public static Result Failure(string error) => new(new Error(error));
         public static Result Failure(Error error) => new(error);
         public static Result Failure(IEnumerable<Error> errors) => new(errors);
+        public static Result Failure(object? value, Error error) => new(value, error);
         public static Result Failure(object? value, IEnumerable<Error> errors) => new(value, errors);
 
         public static Result<T> Success<T>() => new();
@@ -61,6 +71,7 @@ namespace OoLunar.HyperSharp.Results
         public static Result<T> Failure<T>(string error) => new(new Error(error));
         public static Result<T> Failure<T>(Error error) => new(error);
         public static Result<T> Failure<T>(IEnumerable<Error> errors) => new(errors);
+        public static Result<T> Failure<T>(T value, Error error) => new(value, error);
         public static Result<T> Failure<T>(T value, IEnumerable<Error> errors) => new(value, errors);
     }
 }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Serialization;
 using OoLunar.HyperSharp.Results.Json;
 
@@ -17,21 +16,21 @@ namespace OoLunar.HyperSharp.Results
         public Result()
         {
             Value = default;
-            Errors = Enumerable.Empty<Error>();
+            Errors = Result._emptyErrors;
             Status = ResultStatus.IsSuccess;
         }
 
         internal Result(T? value)
         {
             Value = value;
-            Errors = Enumerable.Empty<Error>();
+            Errors = Result._emptyErrors;
             Status = ResultStatus.IsSuccess | ResultStatus.HasValue;
         }
 
         internal Result(Error error)
         {
             Value = default;
-            Errors = Enumerable.Repeat(error, 1);
+            Errors = new[] { error };
             Status = ResultStatus.None;
         }
 
@@ -40,6 +39,13 @@ namespace OoLunar.HyperSharp.Results
             Value = default;
             Errors = errors;
             Status = ResultStatus.None;
+        }
+
+        internal Result(T? value, Error error)
+        {
+            Value = value;
+            Errors = new[] { error };
+            Status = ResultStatus.HasValue;
         }
 
         internal Result(T? value, IEnumerable<Error> errors)
