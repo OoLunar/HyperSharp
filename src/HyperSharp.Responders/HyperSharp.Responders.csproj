@@ -3,6 +3,7 @@
     <OutputType>Library</OutputType>
     <Description>A C# reinvention of events through compiled expressions.</Description>
     <PackageId>OoLunar.HyperSharp.Responders</PackageId>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../HyperSharp.Results/HyperSharp.Results.csproj" />

@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OoLunar.HyperSharp.Protocol;
@@ -37,17 +36,8 @@ namespace OoLunar.HyperSharp
             JsonSerializerOptions = serviceProvider.GetService<IOptionsSnapshot<JsonSerializerOptions>>()?.Get(builder.JsonSerializerOptionsName) ?? HyperJsonSerializationOptions.Default;
             ServerName = builder.ServerName;
 
-            ILogger<HyperServer> logger = serviceProvider.GetRequiredService<ILogger<HyperServer>>();
             ResponderCompiler responderCompiler = serviceProvider.GetRequiredService<ResponderCompiler>();
             responderCompiler.Search(builder.Responders);
-            if (!responderCompiler.Validate())
-            {
-                logger.LogCritical("The responder tree is invalid, the server will not start.");
-                Responders = (context, status) => new HyperStatus(HttpStatusCode.InternalServerError, new HyperError("The responder tree is invalid, the server will not start."));
-                return;
-            }
-
-            responderCompiler.Validate();
             Responders = responderCompiler.Compile<HyperContext, HyperStatus>(serviceProvider);
         }
     }

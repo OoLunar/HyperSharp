@@ -5,7 +5,6 @@ using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using OoLunar.HyperSharp.Responders.Errors;
 using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Responders
@@ -94,11 +93,12 @@ namespace OoLunar.HyperSharp.Responders
 
         public bool IsSyncronous() => _builders.TrueForAll(builder => builder.IsSyncronous);
 
-        public ResponderDelegate<TContext, TOutput> Compile<TContext, TOutput>(IServiceProvider serviceProvider)
+        public unsafe ResponderDelegate<TContext, TOutput> Compile<TContext, TOutput>(IServiceProvider serviceProvider)
         {
             if (!Validate())
             {
-                throw new InvalidOperationException("Cannot compile responders because there are errors.");
+                _logger.LogError("Cannot compile responders because there are errors. Returning an empty responder.");
+                return (context, cancellationToken) => Result.Failure<TOutput>("Cannot compile responders because there are errors.");
             }
             else if (!IsSyncronous())
             {
@@ -119,23 +119,42 @@ namespace OoLunar.HyperSharp.Responders
                 rootRespondersDelegates.Add(CompileDependency<TContext, TOutput>(serviceProvider, builder));
             }
 
+            if (rootRespondersDelegates.Count == 1)
+            {
+                return rootRespondersDelegates[0];
+            }
+            else if (rootRespondersDelegates.Count == 2)
+            {
+                return (context, cancellationToken) =>
+                {
+                    Result<TOutput> result = rootRespondersDelegates[0](context, cancellationToken);
+                    return !result.IsSuccess || result.HasValue ? result : rootRespondersDelegates[1](context, cancellationToken);
+                };
+            }
+            else if (rootRespondersDelegates.Count == 3)
+            {
+                return (context, cancellationToken) =>
+                {
+                    Result<TOutput> result = rootRespondersDelegates[0](context, cancellationToken);
+                    if (!result.IsSuccess || result.HasValue)
+                    {
+                        return result;
+                    }
+
+                    result = rootRespondersDelegates[1](context, cancellationToken);
+                    return !result.IsSuccess || result.HasValue ? result : rootRespondersDelegates[2](context, cancellationToken);
+                };
+            }
+
             return (context, cancellationToken) =>
             {
-                // If any of the responders throw, treat it as undefined behavior and return an error
-                try
+                foreach (ResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
                 {
-                    foreach (ResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
+                    Result<TOutput> result = responder(context, cancellationToken);
+                    if (!result.IsSuccess || result.HasValue)
                     {
-                        Result<TOutput> result = responder(context, cancellationToken);
-                        if (!result.IsSuccess || result.HasValue)
-                        {
-                            return result;
-                        }
+                        return result;
                     }
-                }
-                catch (Exception error)
-                {
-                    return Result.Failure<TOutput>(new ResponderExecutionFailedError(error));
                 }
 
                 return Result.Success<TOutput>();
@@ -144,8 +163,11 @@ namespace OoLunar.HyperSharp.Responders
 
         private ResponderDelegate<TContext, TOutput> CompileDependency<TContext, TOutput>(IServiceProvider serviceProvider, ResponderBuilder builder)
         {
-            IResponder<TContext, TOutput> responder = (IResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
-            ResponderDelegate<TContext, TOutput> responderDelegate = IResponder.GetResponderDelegate(responder);
+            // ActivatorUtilities throws an exception if the type has no constructors (structs)
+            ResponderDelegate<TContext, TOutput> responderDelegate = IResponder.GetResponderDelegate(builder.Type.GetConstructors().Length == 0
+                ? (IResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
+                : (IResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type));
+
             if (builder.Dependencies.Count == 0)
             {
                 return responderDelegate;
@@ -159,11 +181,38 @@ namespace OoLunar.HyperSharp.Responders
             }
             dependencies.Add(responderDelegate);
 
+            if (dependencies.Count == 1)
+            {
+                return dependencies[0];
+            }
+            else if (dependencies.Count == 2)
+            {
+                return (context, cancellationToken) =>
+                {
+                    Result<TOutput> result = dependencies[0](context, cancellationToken);
+                    return !result.IsSuccess || result.HasValue ? result : dependencies[1](context, cancellationToken);
+                };
+            }
+            else if (dependencies.Count == 3)
+            {
+                return (context, cancellationToken) =>
+                {
+                    Result<TOutput> result = dependencies[0](context, cancellationToken);
+                    if (!result.IsSuccess || result.HasValue)
+                    {
+                        return result;
+                    }
+
+                    result = dependencies[1](context, cancellationToken);
+                    return !result.IsSuccess || result.HasValue ? result : dependencies[2](context, cancellationToken);
+                };
+            }
+
             return (context, cancellationToken) =>
             {
-                foreach (ResponderDelegate<TContext, TOutput> dependency in dependencies)
+                foreach (ResponderDelegate<TContext, TOutput> responder in dependencies)
                 {
-                    Result<TOutput> result = dependency(context, cancellationToken);
+                    Result<TOutput> result = responder(context, cancellationToken);
                     if (!result.IsSuccess || result.HasValue)
                     {
                         return result;
