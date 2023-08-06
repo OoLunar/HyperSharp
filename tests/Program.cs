@@ -60,14 +60,14 @@ namespace OoLunar.HyperSharp.Tests
             fileStream.Write(", "u8);
             fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.HostEnvironmentInfo.JitInfo));
             fileStream.Write("\n- Total Execution Time: "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(TimeSpan.FromTicks(summaries.Sum(summary => summary.TotalTime.Ticks)).Humanize(3)));
+            fileStream.Write(Encoding.UTF8.GetBytes(TimeSpan.FromTicks(summaries.Sum(summary => summary.TotalTime.Ticks)).Humanize(3, CultureInfo.InvariantCulture)));
 
             foreach (Summary summary in summaries.OrderBy(summary => summary.BenchmarksCases.Length))
             {
                 fileStream.Write("\n\n## "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes(summary.BenchmarksCases[0].Descriptor.Type.Name));
                 fileStream.Write("\nExecution Time: "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes(summary.TotalTime.Humanize(3)));
+                fileStream.Write(Encoding.UTF8.GetBytes(summary.TotalTime.Humanize(3, CultureInfo.InvariantCulture)));
 
                 // baseline first
                 foreach (BenchmarkReport report in summary.Reports.OrderBy(report => !summary.IsBaseline(report.BenchmarkCase)))
