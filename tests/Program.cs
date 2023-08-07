@@ -20,7 +20,6 @@ using System.Linq;
 using BenchmarkDotNet.Portability.Cpu;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
-using Humanizer;
 #endif
 
 namespace OoLunar.HyperSharp.Tests
@@ -60,14 +59,14 @@ namespace OoLunar.HyperSharp.Tests
             fileStream.Write(", "u8);
             fileStream.Write(Encoding.UTF8.GetBytes(firstSummary.HostEnvironmentInfo.JitInfo));
             fileStream.Write("\n- Total Execution Time: "u8);
-            fileStream.Write(Encoding.UTF8.GetBytes(TimeSpan.FromTicks(summaries.Sum(summary => summary.TotalTime.Ticks)).Humanize(3, CultureInfo.InvariantCulture)));
+            fileStream.Write(Encoding.UTF8.GetBytes(GetHumanizedNanoSeconds(summaries.Sum(summary => summary.TotalTime.TotalNanoseconds))));
 
             foreach (Summary summary in summaries.OrderBy(summary => summary.BenchmarksCases.Length))
             {
                 fileStream.Write("\n\n## "u8);
                 fileStream.Write(Encoding.UTF8.GetBytes(summary.BenchmarksCases[0].Descriptor.Type.Name));
                 fileStream.Write("\nExecution Time: "u8);
-                fileStream.Write(Encoding.UTF8.GetBytes(summary.TotalTime.Humanize(3, CultureInfo.InvariantCulture)));
+                fileStream.Write(Encoding.UTF8.GetBytes(GetHumanizedNanoSeconds(summary.TotalTime.TotalNanoseconds)));
 
                 // baseline first
                 foreach (BenchmarkReport report in summary.Reports.OrderBy(report => !summary.IsBaseline(report.BenchmarkCase)))
@@ -114,8 +113,23 @@ namespace OoLunar.HyperSharp.Tests
             < 1_000 => nanoSeconds.ToString("N0", CultureInfo.InvariantCulture) + "ns",
             < 1_000_000 => (nanoSeconds / 1_000).ToString("N2", CultureInfo.InvariantCulture) + "μs",
             < 1_000_000_000 => (nanoSeconds / 1_000_000).ToString("N2", CultureInfo.InvariantCulture) + "ms",
-            _ => (nanoSeconds / 1_000_000_000).ToString("N2", CultureInfo.InvariantCulture) + "s"
+            _ => GetHumanizedExecutionTime(nanoSeconds / 1_000_000_000)
         };
+
+        private static string GetHumanizedExecutionTime(double seconds)
+        {
+            StringBuilder stringBuilder = new();
+            if (seconds >= 60)
+            {
+                stringBuilder.Append((seconds / 60).ToString("N0", CultureInfo.InvariantCulture));
+                stringBuilder.Append("m and ");
+                seconds %= 60;
+            }
+
+            stringBuilder.Append(seconds.ToString("N3", CultureInfo.InvariantCulture));
+            stringBuilder.Append('s');
+            return stringBuilder.ToString();
+        }
 #endif
 
         public static ServiceProvider CreateServiceProvider()
