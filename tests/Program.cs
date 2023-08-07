@@ -10,6 +10,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using OoLunar.HyperSharp.Setup;
+using OoLunar.HyperSharp.Tests.Responders;
 #if DEBUG
 using OoLunar.HyperSharp.Tests.Benchmarks;
 using System.Threading.Tasks;
@@ -205,7 +206,7 @@ namespace OoLunar.HyperSharp.Tests
                 }
 
                 hyperConfiguration.ListeningEndpoint = new IPEndPoint(address, configuration.GetValue("server:port", 8080));
-                hyperConfiguration.AddResponders(typeof(Program).Assembly);
+                hyperConfiguration.AddResponders(new[] { typeof(HelloWorldResponder) });
             });
 
             services.AddSingleton(services =>
