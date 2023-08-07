@@ -14,5 +14,6 @@ namespace OoLunar.HyperSharp.Setup
         public string ServerName { get; set; } = "HyperSharp";
 
         public void AddResponders(Assembly assembly) => Responders.AddRange(assembly.GetTypes());
+        public void AddResponders(IEnumerable<Type> responders) => Responders.AddRange(responders);
     }
 }
