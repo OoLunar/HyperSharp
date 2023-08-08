@@ -11,36 +11,28 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using OoLunar.HyperSharp.Setup;
 using OoLunar.HyperSharp.Tests.Responders;
-#if DEBUG
-using OoLunar.HyperSharp.Tests.Benchmarks;
-using System.Threading.Tasks;
-#else
 using System.IO;
 using System.Text;
 using System.Linq;
 using BenchmarkDotNet.Portability.Cpu;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
+#if DEBUG
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
 #endif
 
 namespace OoLunar.HyperSharp.Tests
 {
     public sealed class Program
     {
-#if DEBUG
-        public static async Task Main()
-        {
-            HttpBenchmarks concurrentRequestsTest = new();
-            concurrentRequestsTest.Setup();
-            (await concurrentRequestsTest.ConcurrentRequestsTestAsync()).EnsureSuccessStatusCode();
-            (await concurrentRequestsTest.ConcurrentRequestsTestAsync()).EnsureSuccessStatusCode();
-            (await concurrentRequestsTest.ConcurrentRequestsTestAsync()).EnsureSuccessStatusCode();
-            await concurrentRequestsTest.CleanupAsync();
-        }
-#else
         public static void Main()
         {
+#if DEBUG
+            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly, ManualConfig.CreateMinimumViable().WithOptions(ConfigOptions.DisableOptimizationsValidator).AddJob(Job.Dry));
+#else
             Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly);
+#endif
             Summary firstSummary = summaries[0];
             File.WriteAllText("benchmark-results.md", string.Empty);
 
@@ -131,7 +123,6 @@ namespace OoLunar.HyperSharp.Tests
             stringBuilder.Append('s');
             return stringBuilder.ToString();
         }
-#endif
 
         public static ServiceProvider CreateServiceProvider()
         {
