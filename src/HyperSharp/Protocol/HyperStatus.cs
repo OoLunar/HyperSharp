@@ -13,8 +13,8 @@ namespace OoLunar.HyperSharp.Protocol
 
         public HyperStatus() : this(HttpStatusCode.InternalServerError, new HyperHeaderCollection(), null) { }
         public HyperStatus(HttpStatusCode code) : this(code, new HyperHeaderCollection(), null) { }
-        public HyperStatus(HttpStatusCode code, HyperHeaderCollection headers) : this(code, headers, null) { }
         public HyperStatus(HttpStatusCode code, object? body) : this(code, new HyperHeaderCollection(), body) { }
+        public HyperStatus(HttpStatusCode code, HyperHeaderCollection headers) : this(code, headers, null) { }
         public HyperStatus(HttpStatusCode code, HyperHeaderCollection headers, object? body)
         {
             ArgumentNullException.ThrowIfNull(headers, nameof(headers));
