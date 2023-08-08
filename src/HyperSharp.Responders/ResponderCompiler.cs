@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -93,7 +94,7 @@ namespace OoLunar.HyperSharp.Responders
 
         public bool IsSynchronous() => _builders.TrueForAll(builder => builder.IsSyncronous);
 
-        public ResponderDelegate<TContext, TOutput> Compile<TContext, TOutput>(IServiceProvider serviceProvider)
+        public ResponderDelegate<TContext, TOutput> CompileResponders<TContext, TOutput>(IServiceProvider serviceProvider)
         {
             if (!Validate())
             {
@@ -153,10 +154,10 @@ namespace OoLunar.HyperSharp.Responders
         private ResponderDelegate<TContext, TOutput> CompileDependency<TContext, TOutput>(IServiceProvider serviceProvider, ResponderBuilder builder)
         {
             // ActivatorUtilities throws an exception if the type has no constructors (structs)
-            ResponderDelegate<TContext, TOutput> responderDelegate = IResponder.GetResponderDelegate(builder.Type.GetConstructors().Length == 0
+            IResponder<TContext, TOutput> responder = builder.Type.GetConstructors().Length == 0
                 ? (IResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
-                : (IResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type));
-
+                : (IResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
+            ResponderDelegate<TContext, TOutput> responderDelegate = responder.Respond;
             if (builder.Dependencies.Count == 0)
             {
                 return responderDelegate;
@@ -190,6 +191,128 @@ namespace OoLunar.HyperSharp.Responders
                     foreach (ResponderDelegate<TContext, TOutput> responder in dependencies)
                     {
                         Result<TOutput> result = responder(context, cancellationToken);
+                        if (!result.IsSuccess || result.HasValue)
+                        {
+                            return result;
+                        }
+                    }
+
+                    return Result.Success<TOutput>();
+                }
+            };
+        }
+
+        public ValueResponderDelegate<TContext, TOutput> CompileAsyncResponders<TContext, TOutput>(IServiceProvider serviceProvider)
+        {
+            if (!Validate())
+            {
+                _logger.LogError("Cannot compile responders because there are errors. Returning an empty responder.");
+                return (context, cancellationToken) => ValueTask.FromResult(Result.Failure<TOutput>("Cannot compile responders because there are errors."));
+            }
+            else if (!IsSynchronous())
+            {
+                _logger.LogWarning("Compiling syncronous responders when there are asyncronous responders.");
+            }
+
+            // Grab the responders which aren't dependencies of any other responders
+            IEnumerable<ResponderBuilder> rootResponders = _builders.Where(builder => builder.RequiredBy.Count == 0);
+            if (!rootResponders.Any())
+            {
+                return (context, cancellationToken) => ValueTask.FromResult(Result.Success<TOutput>());
+            }
+
+            // Compile the root responders
+            List<ValueResponderDelegate<TContext, TOutput>> rootRespondersDelegates = new();
+            foreach (ResponderBuilder builder in rootResponders)
+            {
+                rootRespondersDelegates.Add(CompileAsyncDependency<TContext, TOutput>(serviceProvider, builder));
+            }
+
+            return rootRespondersDelegates.Count switch
+            {
+                1 => rootRespondersDelegates[0],
+                2 => async (context, cancellationToken) =>
+                {
+                    Result<TOutput> result = await rootRespondersDelegates[0](context, cancellationToken);
+                    if (!result.IsSuccess || result.HasValue)
+                    {
+                        return result;
+                    }
+
+                    result = await rootRespondersDelegates[1](context, cancellationToken);
+                    return !result.IsSuccess || result.HasValue ? result : Result.Success<TOutput>();
+                }
+                ,
+                _ => async (context, cancellationToken) =>
+                {
+                    foreach (ValueResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
+                    {
+                        Result<TOutput> result = await responder(context, cancellationToken);
+                        if (!result.IsSuccess || result.HasValue)
+                        {
+                            return result;
+                        }
+                    }
+
+                    return Result.Success<TOutput>();
+                }
+            };
+        }
+
+        private ValueResponderDelegate<TContext, TOutput> CompileAsyncDependency<TContext, TOutput>(IServiceProvider serviceProvider, ResponderBuilder builder)
+        {
+            // ActivatorUtilities throws an exception if the type has no constructors (structs)
+            ValueResponderDelegate<TContext, TOutput> responderDelegate;
+            if (builder.Type.IsAssignableFrom(typeof(ITaskResponder)))
+            {
+                ITaskResponder<TContext, TOutput> taskResponder = builder.Type.GetConstructors().Length == 0
+                    ? (ITaskResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
+                    : (ITaskResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
+
+                responderDelegate = async (context, cancellationToken) => await taskResponder.RespondAsync(context, cancellationToken);
+            }
+            else
+            {
+                IValueResponder<TContext, TOutput> responder = builder.Type.GetConstructors().Length == 0
+                    ? (IValueResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
+                    : (IValueResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
+
+                responderDelegate = responder.RespondAsync;
+            }
+
+            if (builder.Dependencies.Count == 0)
+            {
+                return responderDelegate;
+            }
+
+            List<ValueResponderDelegate<TContext, TOutput>> dependencies = new();
+            foreach (Type dependency in builder.Dependencies)
+            {
+                ResponderBuilder dependencyBuilder = _resolvedResponders[dependency];
+                dependencies.Add(CompileAsyncDependency<TContext, TOutput>(serviceProvider, dependencyBuilder));
+            }
+            dependencies.Add(responderDelegate);
+
+            return dependencies.Count switch
+            {
+                1 => dependencies[0],
+                2 => async (context, cancellationToken) =>
+                {
+                    Result<TOutput> result = await dependencies[0](context, cancellationToken);
+                    if (!result.IsSuccess || result.HasValue)
+                    {
+                        return result;
+                    }
+
+                    result = await dependencies[1](context, cancellationToken);
+                    return !result.IsSuccess || result.HasValue ? result : Result.Success<TOutput>();
+                }
+                ,
+                _ => async (context, cancellationToken) =>
+                {
+                    foreach (ValueResponderDelegate<TContext, TOutput> responder in dependencies)
+                    {
+                        Result<TOutput> result = await responder(context, cancellationToken);
                         if (!result.IsSuccess || result.HasValue)
                         {
                             return result;

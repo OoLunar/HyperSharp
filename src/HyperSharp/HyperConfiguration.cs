@@ -38,7 +38,7 @@ namespace OoLunar.HyperSharp
 
             ResponderCompiler responderCompiler = serviceProvider.GetRequiredService<ResponderCompiler>();
             responderCompiler.Search(builder.Responders);
-            Responders = responderCompiler.Compile<HyperContext, HyperStatus>(serviceProvider);
+            Responders = responderCompiler.CompileResponders<HyperContext, HyperStatus>(serviceProvider);
         }
     }
 }

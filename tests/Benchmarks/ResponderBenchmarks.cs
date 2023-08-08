@@ -34,15 +34,15 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks
 
             ResponderCompiler compiler = new();
             compiler.Search(new[] { typeof(OkResponder) });
-            yield return compiler.Compile<HyperContext, HyperStatus>(Program.CreateServiceProvider());
+            yield return compiler.CompileResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
 
             compiler = new();
             compiler.Search(new[] { typeof(HelloWorldResponder) });
-            yield return compiler.Compile<HyperContext, HyperStatus>(Program.CreateServiceProvider());
+            yield return compiler.CompileResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
 
             compiler = new();
             compiler.Search(new[] { typeof(OkResponder), typeof(HelloWorldResponder) });
-            yield return compiler.Compile<HyperContext, HyperStatus>(Program.CreateServiceProvider());
+            yield return compiler.CompileResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
         }
     }
 }
