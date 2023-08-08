@@ -1,6 +1,5 @@
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Http;
@@ -13,21 +12,6 @@ namespace OoLunar.HyperSharp.Protocol
 {
     public static class HyperHeaderParser
     {
-        // https://www.rfc-editor.org/rfc/rfc9110#section-9.1
-        // All HTTP methods are case-sensitive.
-        private static readonly KeyValuePair<byte[], HttpMethod>[] _httpMethods = new KeyValuePair<byte[], HttpMethod>[]
-        {
-            new("GET"u8.ToArray(), HttpMethod.Get),
-            new("HEAD"u8.ToArray(), HttpMethod.Head),
-            new("POST"u8.ToArray(), HttpMethod.Post),
-            new("PUT"u8.ToArray(), HttpMethod.Put),
-            new("DELETE"u8.ToArray(), HttpMethod.Delete),
-            new("CONNECT"u8.ToArray(), HttpMethod.Connect),
-            new("OPTIONS"u8.ToArray(), HttpMethod.Options),
-            new("TRACE"u8.ToArray(), HttpMethod.Trace),
-            new("PATCH"u8.ToArray(), HttpMethod.Patch),
-        };
-
         public static async ValueTask<Result<HyperContext>> TryParseHeadersAsync(int maxHeaderSize, HyperConnection connection, CancellationToken cancellationToken = default)
         {
             if (maxHeaderSize < 1)
@@ -48,7 +32,7 @@ namespace OoLunar.HyperSharp.Protocol
             }
 
             SequencePosition sequencePosition = default;
-            Result<(HttpMethod Method, Uri Route, Version Version)> startLineResult = TryParseStartLine(readResult, maxHeaderSize, ref sequencePosition);
+            Result startLineResult = TryParseStartLine(readResult, maxHeaderSize, ref sequencePosition, out HttpMethod? method, out Uri? route, out Version? version);
             if (!startLineResult.IsSuccess)
             {
                 return Result.Failure<HyperContext>(startLineResult.Errors);
@@ -67,7 +51,7 @@ namespace OoLunar.HyperSharp.Protocol
                     return Result.Failure<HyperContext>("Data exceeds the max header size.");
                 }
 
-                Result<(string Name, string Value)> headerResult = TryParseHeader(readResult, maxHeaderSize, ref sequencePosition);
+                Result headerResult = TryParseHeader(readResult, maxHeaderSize, ref sequencePosition, out string? name, out string? value);
                 if (!headerResult.IsSuccess)
                 {
                     return Result.Failure<HyperContext>(headerResult.Errors);
@@ -80,31 +64,35 @@ namespace OoLunar.HyperSharp.Protocol
                     break;
                 }
 
-                headers.Add(headerResult.Value.Name, headerResult.Value.Value);
+                headers.Add(name!, value!);
                 readResult = await connection.StreamReader.ReadAsync(cancellationToken);
             }
 
             return readResult.IsCanceled || cancellationToken.IsCancellationRequested
                 ? Result.Failure<HyperContext>("The operation was cancelled.")
                 : Result.Success<HyperContext>(new(
-                    startLineResult.Value.Method,
-                    startLineResult.Value.Route,
-                    startLineResult.Value.Version,
+                    method!,
+                    route!,
+                    version!,
                     headers,
                     connection
                 ));
         }
 
-        private static Result<(HttpMethod Method, Uri Route, Version Version)> TryParseStartLine(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition)
+        private static Result TryParseStartLine(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition, out HttpMethod? method, out Uri? route, out Version? version)
         {
+            method = default;
+            route = default;
+            version = default;
+
             SequenceReader<byte> sequenceReader = new(result.Buffer);
             if (!sequenceReader.TryReadTo(out ReadOnlySpan<byte> startLine, "\r\n"u8, advancePastDelimiter: true))
             {
-                return Result.Failure<(HttpMethod, Uri, Version)>("Invalid data in the start line.");
+                return Result.Failure("Invalid data in the start line.");
             }
             else if (startLine.Length > maxHeaderSize)
             {
-                return Result.Failure<(HttpMethod, Uri, Version)>("Start line length exceeds max header size.");
+                return Result.Failure("Start line length exceeds max header size.");
             }
 
             // Split the start line into method, path, and version
@@ -114,76 +102,118 @@ namespace OoLunar.HyperSharp.Protocol
                 || lastSpaceIndex == -1
                 || firstSpaceIndex == lastSpaceIndex)
             {
-                return Result.Failure<(HttpMethod, Uri, Version)>("Invalid start line data.");
+                return Result.Failure("Invalid start line data.");
             }
 
-            HttpMethod? httpMethod = null;
-            foreach (KeyValuePair<byte[], HttpMethod> httpMethodPair in _httpMethods)
+            // https://www.rfc-editor.org/rfc/rfc9110#section-9.1
+            // All HTTP methods are case-sensitive.
+            // TODO: Source gen
+            ReadOnlySpan<byte> methodSpan = startLine[..firstSpaceIndex];
+            if (methodSpan.SequenceEqual("GET"u8))
             {
-                if (startLine[..firstSpaceIndex].SequenceEqual(httpMethodPair.Key))
-                {
-                    httpMethod = httpMethodPair.Value;
-                    break;
-                }
+                method = HttpMethod.Get;
+            }
+            else if (methodSpan.SequenceEqual("HEAD"u8))
+            {
+                method = HttpMethod.Head;
+            }
+            else if (methodSpan.SequenceEqual("POST"u8))
+            {
+                method = HttpMethod.Post;
+            }
+            else if (methodSpan.SequenceEqual("PUT"u8))
+            {
+                method = HttpMethod.Put;
+            }
+            else if (methodSpan.SequenceEqual("DELETE"u8))
+            {
+                method = HttpMethod.Delete;
+            }
+            else if (methodSpan.SequenceEqual("CONNECT"u8))
+            {
+                method = HttpMethod.Connect;
+            }
+            else if (methodSpan.SequenceEqual("OPTIONS"u8))
+            {
+                method = HttpMethod.Options;
+            }
+            else if (methodSpan.SequenceEqual("TRACE"u8))
+            {
+                method = HttpMethod.Trace;
+            }
+            else if (methodSpan.SequenceEqual("PATCH"u8))
+            {
+                method = HttpMethod.Patch;
+            }
+            else
+            {
+                return Result.Failure("Invalid HTTP method specified.");
             }
 
-            if (httpMethod is null)
+            if (!Uri.TryCreate(Encoding.ASCII.GetString(startLine[(firstSpaceIndex + 1)..lastSpaceIndex]), UriKind.RelativeOrAbsolute, out route))
             {
-                return Result.Failure<(HttpMethod, Uri, Version)>("Invalid HTTP method specified.");
+                return Result.Failure("Invalid route specified.");
             }
 
-            if (!Uri.TryCreate(Encoding.ASCII.GetString(startLine[(firstSpaceIndex + 1)..lastSpaceIndex]), UriKind.Absolute, out Uri? httpRoute))
+            ReadOnlySpan<byte> versionSpan = startLine[(lastSpaceIndex + 1)..];
+            Span<byte> loweredVersionSpan = stackalloc byte[versionSpan.Length];
+            for (int i = 0; i < versionSpan.Length; i++)
             {
-                return Result.Failure<(HttpMethod, Uri, Version)>("Invalid route specified.");
+                // Lowercase h, t or p
+                loweredVersionSpan[i] = versionSpan[i] is >= 65 and <= 90 ? (byte)(versionSpan[i] + 32) : versionSpan[i];
             }
 
-            Version httpVersion = Encoding.ASCII.GetString(startLine[(lastSpaceIndex + 1)..]).ToLowerInvariant() switch
+            if (loweredVersionSpan.SequenceEqual("http/1.0"u8))
             {
-                "http/1.0" => HttpVersion.Version10,
-                "http/1.1" => HttpVersion.Version11,
-                _ => HttpVersion.Unknown
-            };
-
-            if (httpVersion == HttpVersion.Unknown)
+                version = HttpVersion.Version10;
+            }
+            else if (loweredVersionSpan.SequenceEqual("http/1.1"u8))
             {
-                return Result.Failure<(HttpMethod, Uri, Version)>("Invalid HTTP version specified.");
+                version = HttpVersion.Version11;
+            }
+            else
+            {
+                return Result.Failure("Invalid HTTP version specified.");
             }
 
             sequencePosition = sequenceReader.Position;
-            return Result.Success((httpMethod, httpRoute, httpVersion));
+            return Result.Success();
         }
 
-        private static Result<(string Name, string Value)> TryParseHeader(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition)
+        private static Result TryParseHeader(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition, out string? name, out string? value)
         {
+            name = default;
+            value = default;
+
             SequenceReader<byte> sequenceReader = new(result.Buffer);
             if (!sequenceReader.TryReadTo(out ReadOnlySpan<byte> header, "\r\n"u8, advancePastDelimiter: true))
             {
-                return Result.Failure<(string, string)>("Invalid header data.");
+                return Result.Failure("Invalid header data.");
             }
             else if (header.Length > maxHeaderSize)
             {
-                return Result.Failure<(string, string)>("Header line length exceeds max header size.");
+                return Result.Failure("Header line length exceeds max header size.");
             }
             else if (header.Length == 0)
             {
                 // We've reached the end of the headers
                 // Skip the next two bytes (\r\n)
                 sequencePosition = sequenceReader.Position;
-                return Result.Success<(string, string)>();
+                return Result.Success();
             }
 
             // Find the index of the separator (':') in the header line
             int separatorIndex = header.IndexOf((byte)':');
             if (separatorIndex == -1)
             {
-                return Result.Failure<(string, string)>("Invalid header data.");
+                return Result.Failure("Invalid header data.");
             }
 
+            // TODO: Pass the header name and value as ReadOnlySpan<byte> to avoid allocations
+            name = Encoding.ASCII.GetString(header[..separatorIndex]).Trim();
+            value = Encoding.ASCII.GetString(header[(separatorIndex + 1)..]).Trim();
             sequencePosition = sequenceReader.Position;
-            return Result.Success((
-                name: Encoding.ASCII.GetString(header[..separatorIndex]).Trim(),
-                value: Encoding.ASCII.GetString(header[(separatorIndex + 1)..]).Trim()
-            ));
+            return Result.Success();
         }
     }
 }
