@@ -1,6 +1,8 @@
 using System;
 using System.Net;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OoLunar.HyperSharp.Protocol;
@@ -11,7 +13,7 @@ namespace OoLunar.HyperSharp
 {
     public sealed record HyperConfiguration
     {
-        public ResponderDelegate<HyperContext, HyperStatus> Responders { get; init; }
+        public ValueTaskResponderDelegate<HyperContext, HyperStatus> Responders { get; init; }
         public IPEndPoint ListeningEndpoint { get; init; }
         public JsonSerializerOptions JsonSerializerOptions { get; init; }
         public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
@@ -38,7 +40,15 @@ namespace OoLunar.HyperSharp
 
             ResponderCompiler responderCompiler = serviceProvider.GetRequiredService<ResponderCompiler>();
             responderCompiler.Search(builder.Responders);
-            Responders = responderCompiler.CompileResponders<HyperContext, HyperStatus>(serviceProvider);
+
+            if (!responderCompiler.IsSynchronous())
+            {
+                Responders = responderCompiler.CompileAsyncResponders<HyperContext, HyperStatus>(serviceProvider);
+                return;
+            }
+
+            ResponderDelegate<HyperContext, HyperStatus> synchronousResponders = responderCompiler.CompileResponders<HyperContext, HyperStatus>(serviceProvider);
+            Responders = (HyperContext context, CancellationToken cancellationToken) => ValueTask.FromResult(synchronousResponders(context, cancellationToken));
         }
     }
 }

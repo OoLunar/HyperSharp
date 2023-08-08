@@ -120,7 +120,7 @@ namespace OoLunar.HyperSharp
 
             // Execute any registered responders.
             HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
-            Result<HyperStatus> status = Configuration.Responders(context.Value, cancellationTokenSource.Token);
+            Result<HyperStatus> status = await Configuration.Responders(context.Value, cancellationTokenSource.Token);
             if (!context.Value.HasResponded)
             {
                 HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
