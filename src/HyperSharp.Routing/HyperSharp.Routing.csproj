@@ -3,6 +3,7 @@
     <OutputType>Library</OutputType>
     <Description>A C# implementation of the HTTP 1.1 protocol.</Description>
     <PackageId>OoLunar.HyperSharp.Routing</PackageId>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../HyperSharp/HyperSharp.csproj" />

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Description>A C# reinvention of events through compiled expressions.</Description>
+    <Description>A C# reinvention of events through delegates.</Description>
     <PackageId>OoLunar.HyperSharp.Responders</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
