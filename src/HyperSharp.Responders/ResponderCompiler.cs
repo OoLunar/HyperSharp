@@ -263,13 +263,13 @@ namespace OoLunar.HyperSharp.Responders
         {
             // ActivatorUtilities throws an exception if the type has no constructors (structs)
             ValueResponderDelegate<TContext, TOutput> responderDelegate;
-            if (builder.Type.IsAssignableFrom(typeof(ITaskResponder)))
+            if (typeof(ITaskResponder).IsAssignableFrom(builder.Type))
             {
                 ITaskResponder<TContext, TOutput> taskResponder = builder.Type.GetConstructors().Length == 0
                     ? (ITaskResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
                     : (ITaskResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
 
-                responderDelegate = async (context, cancellationToken) => await taskResponder.RespondAsync(context, cancellationToken);
+                responderDelegate = async ValueTask<Result<TOutput>> (context, cancellationToken) => await taskResponder.RespondAsync(context, cancellationToken);
             }
             else
             {

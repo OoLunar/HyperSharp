@@ -33,7 +33,7 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks
             yield return new HelloWorldValueResponder().RespondAsync;
 
             ResponderCompiler compiler = new();
-            compiler.Search(new[] { typeof(OkValueResponder) });
+            compiler.Search(new[] { typeof(OkTaskResponder) });
             yield return compiler.CompileAsyncResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
 
             compiler = new();
@@ -41,7 +41,7 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks
             yield return compiler.CompileAsyncResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
 
             compiler = new();
-            compiler.Search(new[] { typeof(OkValueResponder), typeof(HelloWorldValueResponder) });
+            compiler.Search(new[] { typeof(OkTaskResponder), typeof(HelloWorldValueResponder) });
             yield return compiler.CompileAsyncResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
         }
     }

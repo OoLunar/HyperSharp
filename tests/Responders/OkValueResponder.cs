@@ -8,10 +8,10 @@ using OoLunar.HyperSharp.Responders;
 
 namespace OoLunar.HyperSharp.Tests.Responders
 {
-    public readonly record struct OkValueResponder : IValueResponder<HyperContext, HyperStatus>
+    public readonly record struct OkTaskResponder : ITaskResponder<HyperContext, HyperStatus>
     {
         public static Type[] Needs => Type.EmptyTypes;
 
-        public ValueTask<Result<HyperStatus>> RespondAsync(HyperContext context, CancellationToken cancellationToken = default) => ValueTask.FromResult(Result.Success(new HyperStatus(HttpStatusCode.OK)));
+        public Task<Result<HyperStatus>> RespondAsync(HyperContext context, CancellationToken cancellationToken = default) => Task.FromResult(Result.Success(new HyperStatus(HttpStatusCode.OK)));
     }
 }
