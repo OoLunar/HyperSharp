@@ -91,16 +91,16 @@ namespace OoLunar.HyperSharp.Responders
             return false;
         }
 
-        public bool IsSyncronous() => _builders.TrueForAll(builder => builder.IsSyncronous);
+        public bool IsSynchronous() => _builders.TrueForAll(builder => builder.IsSyncronous);
 
-        public unsafe ResponderDelegate<TContext, TOutput> Compile<TContext, TOutput>(IServiceProvider serviceProvider)
+        public ResponderDelegate<TContext, TOutput> Compile<TContext, TOutput>(IServiceProvider serviceProvider)
         {
             if (!Validate())
             {
                 _logger.LogError("Cannot compile responders because there are errors. Returning an empty responder.");
                 return (context, cancellationToken) => Result.Failure<TOutput>("Cannot compile responders because there are errors.");
             }
-            else if (!IsSyncronous())
+            else if (!IsSynchronous())
             {
                 _logger.LogWarning("Compiling syncronous responders when there are asyncronous responders.");
             }
@@ -119,21 +119,10 @@ namespace OoLunar.HyperSharp.Responders
                 rootRespondersDelegates.Add(CompileDependency<TContext, TOutput>(serviceProvider, builder));
             }
 
-            if (rootRespondersDelegates.Count == 1)
+            return rootRespondersDelegates.Count switch
             {
-                return rootRespondersDelegates[0];
-            }
-            else if (rootRespondersDelegates.Count == 2)
-            {
-                return (context, cancellationToken) =>
-                {
-                    Result<TOutput> result = rootRespondersDelegates[0](context, cancellationToken);
-                    return !result.IsSuccess || result.HasValue ? result : rootRespondersDelegates[1](context, cancellationToken);
-                };
-            }
-            else if (rootRespondersDelegates.Count == 3)
-            {
-                return (context, cancellationToken) =>
+                1 => rootRespondersDelegates[0],
+                2 => (context, cancellationToken) =>
                 {
                     Result<TOutput> result = rootRespondersDelegates[0](context, cancellationToken);
                     if (!result.IsSuccess || result.HasValue)
@@ -142,22 +131,22 @@ namespace OoLunar.HyperSharp.Responders
                     }
 
                     result = rootRespondersDelegates[1](context, cancellationToken);
-                    return !result.IsSuccess || result.HasValue ? result : rootRespondersDelegates[2](context, cancellationToken);
-                };
-            }
-
-            return (context, cancellationToken) =>
-            {
-                foreach (ResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
-                {
-                    Result<TOutput> result = responder(context, cancellationToken);
-                    if (!result.IsSuccess || result.HasValue)
-                    {
-                        return result;
-                    }
+                    return !result.IsSuccess || result.HasValue ? result : Result.Success<TOutput>();
                 }
+                ,
+                _ => (context, cancellationToken) =>
+                {
+                    foreach (ResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
+                    {
+                        Result<TOutput> result = responder(context, cancellationToken);
+                        if (!result.IsSuccess || result.HasValue)
+                        {
+                            return result;
+                        }
+                    }
 
-                return Result.Success<TOutput>();
+                    return Result.Success<TOutput>();
+                }
             };
         }
 
@@ -181,21 +170,10 @@ namespace OoLunar.HyperSharp.Responders
             }
             dependencies.Add(responderDelegate);
 
-            if (dependencies.Count == 1)
+            return dependencies.Count switch
             {
-                return dependencies[0];
-            }
-            else if (dependencies.Count == 2)
-            {
-                return (context, cancellationToken) =>
-                {
-                    Result<TOutput> result = dependencies[0](context, cancellationToken);
-                    return !result.IsSuccess || result.HasValue ? result : dependencies[1](context, cancellationToken);
-                };
-            }
-            else if (dependencies.Count == 3)
-            {
-                return (context, cancellationToken) =>
+                1 => dependencies[0],
+                2 => (context, cancellationToken) =>
                 {
                     Result<TOutput> result = dependencies[0](context, cancellationToken);
                     if (!result.IsSuccess || result.HasValue)
@@ -204,22 +182,22 @@ namespace OoLunar.HyperSharp.Responders
                     }
 
                     result = dependencies[1](context, cancellationToken);
-                    return !result.IsSuccess || result.HasValue ? result : dependencies[2](context, cancellationToken);
-                };
-            }
-
-            return (context, cancellationToken) =>
-            {
-                foreach (ResponderDelegate<TContext, TOutput> responder in dependencies)
-                {
-                    Result<TOutput> result = responder(context, cancellationToken);
-                    if (!result.IsSuccess || result.HasValue)
-                    {
-                        return result;
-                    }
+                    return !result.IsSuccess || result.HasValue ? result : Result.Success<TOutput>();
                 }
+                ,
+                _ => (context, cancellationToken) =>
+                {
+                    foreach (ResponderDelegate<TContext, TOutput> responder in dependencies)
+                    {
+                        Result<TOutput> result = responder(context, cancellationToken);
+                        if (!result.IsSuccess || result.HasValue)
+                        {
+                            return result;
+                        }
+                    }
 
-                return Result.Success<TOutput>();
+                    return Result.Success<TOutput>();
+                }
             };
         }
     }
