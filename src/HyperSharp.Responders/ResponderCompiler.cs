@@ -1,11 +1,11 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
 using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Responders

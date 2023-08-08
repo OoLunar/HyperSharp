@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.IO;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Net;
 using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Responders;
 using OoLunar.HyperSharp.Tests.Responders;

@@ -1,8 +1,8 @@
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
-using System.IO;
 using OoLunar.HyperSharp.Protocol;
 
 namespace OoLunar.HyperSharp.Tests.Benchmarks

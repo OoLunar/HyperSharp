@@ -1,9 +1,9 @@
 using System;
 using System.Net;
 using System.Threading;
-using OoLunar.HyperSharp.Results;
 using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Responders;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Tests.Responders
 {
