@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Serialization;
 using OoLunar.HyperSharp.Results.Json;
 
@@ -8,7 +8,7 @@ namespace OoLunar.HyperSharp.Results
     [JsonConverter(typeof(ResultJsonConverter))]
     public readonly record struct Result
     {
-        internal static readonly IEnumerable<Error> _emptyErrors = Enumerable.Empty<Error>();
+        internal static readonly Error[] _emptyErrors = Array.Empty<Error>();
 
         public readonly object? Value;
         public readonly IEnumerable<Error> Errors;
