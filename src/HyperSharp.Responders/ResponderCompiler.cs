@@ -202,7 +202,7 @@ namespace OoLunar.HyperSharp.Responders
             };
         }
 
-        public ValueResponderDelegate<TContext, TOutput> CompileAsyncResponders<TContext, TOutput>(IServiceProvider serviceProvider)
+        public ValueTaskResponderDelegate<TContext, TOutput> CompileAsyncResponders<TContext, TOutput>(IServiceProvider serviceProvider)
         {
             if (!Validate())
             {
@@ -222,7 +222,7 @@ namespace OoLunar.HyperSharp.Responders
             }
 
             // Compile the root responders
-            List<ValueResponderDelegate<TContext, TOutput>> rootRespondersDelegates = new();
+            List<ValueTaskResponderDelegate<TContext, TOutput>> rootRespondersDelegates = new();
             foreach (ResponderBuilder builder in rootResponders)
             {
                 rootRespondersDelegates.Add(CompileAsyncDependency<TContext, TOutput>(serviceProvider, builder));
@@ -245,7 +245,7 @@ namespace OoLunar.HyperSharp.Responders
                 ,
                 _ => async (context, cancellationToken) =>
                 {
-                    foreach (ValueResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
+                    foreach (ValueTaskResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
                     {
                         Result<TOutput> result = await responder(context, cancellationToken);
                         if (!result.IsSuccess || result.HasValue)
@@ -259,10 +259,10 @@ namespace OoLunar.HyperSharp.Responders
             };
         }
 
-        private ValueResponderDelegate<TContext, TOutput> CompileAsyncDependency<TContext, TOutput>(IServiceProvider serviceProvider, ResponderBuilder builder)
+        private ValueTaskResponderDelegate<TContext, TOutput> CompileAsyncDependency<TContext, TOutput>(IServiceProvider serviceProvider, ResponderBuilder builder)
         {
             // ActivatorUtilities throws an exception if the type has no constructors (structs)
-            ValueResponderDelegate<TContext, TOutput> responderDelegate;
+            ValueTaskResponderDelegate<TContext, TOutput> responderDelegate;
             if (typeof(ITaskResponder).IsAssignableFrom(builder.Type))
             {
                 ITaskResponder<TContext, TOutput> taskResponder = builder.Type.GetConstructors().Length == 0
@@ -273,9 +273,9 @@ namespace OoLunar.HyperSharp.Responders
             }
             else
             {
-                IValueResponder<TContext, TOutput> responder = builder.Type.GetConstructors().Length == 0
-                    ? (IValueResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
-                    : (IValueResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
+                IValueTaskResponder<TContext, TOutput> responder = builder.Type.GetConstructors().Length == 0
+                    ? (IValueTaskResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
+                    : (IValueTaskResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
 
                 responderDelegate = responder.RespondAsync;
             }
@@ -285,7 +285,7 @@ namespace OoLunar.HyperSharp.Responders
                 return responderDelegate;
             }
 
-            List<ValueResponderDelegate<TContext, TOutput>> dependencies = new();
+            List<ValueTaskResponderDelegate<TContext, TOutput>> dependencies = new();
             foreach (Type dependency in builder.Dependencies)
             {
                 ResponderBuilder dependencyBuilder = _resolvedResponders[dependency];
@@ -310,7 +310,7 @@ namespace OoLunar.HyperSharp.Responders
                 ,
                 _ => async (context, cancellationToken) =>
                 {
-                    foreach (ValueResponderDelegate<TContext, TOutput> responder in dependencies)
+                    foreach (ValueTaskResponderDelegate<TContext, TOutput> responder in dependencies)
                     {
                         Result<TOutput> result = await responder(context, cancellationToken);
                         if (!result.IsSuccess || result.HasValue)

@@ -26,22 +26,22 @@ namespace OoLunar.HyperSharp.Tests.Benchmarks
 
         [Benchmark]
         [ArgumentsSource(nameof(Data))]
-        public async ValueTask DelegateExecutionTimeAsync(ValueResponderDelegate<HyperContext, HyperStatus> responder) => await responder(_context, default);
+        public async ValueTask DelegateExecutionTimeAsync(ValueTaskResponderDelegate<HyperContext, HyperStatus> responder) => await responder(_context, default);
 
-        public static IEnumerable<ValueResponderDelegate<HyperContext, HyperStatus>> Data()
+        public static IEnumerable<ValueTaskResponderDelegate<HyperContext, HyperStatus>> Data()
         {
-            yield return new HelloWorldValueResponder().RespondAsync;
+            yield return new HelloWorldValueTaskResponder().RespondAsync;
 
             ResponderCompiler compiler = new();
             compiler.Search(new[] { typeof(OkTaskResponder) });
             yield return compiler.CompileAsyncResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
 
             compiler = new();
-            compiler.Search(new[] { typeof(HelloWorldValueResponder) });
+            compiler.Search(new[] { typeof(HelloWorldValueTaskResponder) });
             yield return compiler.CompileAsyncResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
 
             compiler = new();
-            compiler.Search(new[] { typeof(OkTaskResponder), typeof(HelloWorldValueResponder) });
+            compiler.Search(new[] { typeof(OkTaskResponder), typeof(HelloWorldValueTaskResponder) });
             yield return compiler.CompileAsyncResponders<HyperContext, HyperStatus>(Program.CreateServiceProvider());
         }
     }
