@@ -36,10 +36,21 @@ jobs:
           dotnet-version: 8
       - name: Build Project
         run: dotnet build
-  test_commit:
-    name: Benchmark Commit ${{ github.sha }}
+  test_pr:
+    name: Test PR \#${{ github.event.pull_request.number }}
     runs-on: self-hosted
     needs: build_pr
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8
+      - name: Test Project
+        run: dotnet test
+  benchmark_pr:
+    name: Benchmark PR \#${{ github.event.pull_request.number }}
+    runs-on: self-hosted
+    needs: test_pr
     permissions:
       contents: write
     steps:
@@ -47,8 +58,8 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8
-      - name: Test Project
-        run: dotnet run -c Release --project benchmarks/HyperSharp.Tests.csproj >/dev/null
+      - name: Benchmark Project
+        run: dotnet run -c Release --project benchmarks/HyperSharp.Benchmarks.csproj
       - name: Output Test Results
         id: test-results
         run: |
@@ -60,6 +71,5 @@ jobs:
       - name: Comment Results
         uses: peter-evans/commit-comment@v2
         with:
-          repository: ${{ github.repository }}
           body: ${{ steps.test-results.outputs.body }}
           token: ${{ secrets.GITHUB_TOKEN }}
