@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/build-commit.yml"
+      - "benchmarks/**"
       - "src/**"
       - "tests/**"
       - "HyperSharp.sln"

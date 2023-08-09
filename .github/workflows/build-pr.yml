@@ -9,7 +9,9 @@ on:
       - ready_for_review
     paths:
       - ".github/workflows/build-pr.yml"
+      - "benchmarks/**"
       - "src/**"
+      - "tests/**"
       - "HyperSharp.sln"
 
 env:
