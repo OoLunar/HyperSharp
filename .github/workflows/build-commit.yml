@@ -43,7 +43,7 @@ jobs:
         with:
           dotnet-version: 8
       - name: Test Project
-        run: dotnet run -c Release --project tests/HyperSharp.Tests.csproj >/dev/null
+        run: dotnet run -c Release --project benchmarks/HyperSharp.Tests.csproj >/dev/null
       - name: Output Test Results
         id: test-results
         run: |
