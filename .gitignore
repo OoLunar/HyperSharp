@@ -479,7 +479,8 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# content below from: OoLunar
+# Content below from: OoLunar
+build/
 logs/
 res/config.debug.json
 benchmark-results.md

@@ -1,9 +1,15 @@
 {
     "server": {
         "address": "127.0.0.1",
-        "port": 8080
+        "port": 8080,
+        "max_header_size": 8192,
+        "name": "HyperSharp",
+        "connection_timeout": 30
     },
     "logging": {
-        "level": "Information"
+        "level": "Debug",
+        "overrides": {
+            "OoLunar.HyperSharp.Responders": "Information"
+        }
     }
 }
