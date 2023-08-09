@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperSharp.Results", "src\H
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperSharp.Responders", "src\HyperSharp.Responders\HyperSharp.Responders.csproj", "{AFD72127-9929-42BA-9DA5-979FA68D40BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperSharp.Tests", "benchmarks\HyperSharp.Tests.csproj", "{90B23269-FA7B-4F30-8269-671E5C567354}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperSharp.Benchmarks", "benchmarks\HyperSharp.Benchmarks.csproj", "{799A0958-B9AF-41EC-88B9-F50363D58A04}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,10 +40,10 @@ Global
 		{AFD72127-9929-42BA-9DA5-979FA68D40BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFD72127-9929-42BA-9DA5-979FA68D40BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFD72127-9929-42BA-9DA5-979FA68D40BC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{90B23269-FA7B-4F30-8269-671E5C567354}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{90B23269-FA7B-4F30-8269-671E5C567354}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{90B23269-FA7B-4F30-8269-671E5C567354}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{90B23269-FA7B-4F30-8269-671E5C567354}.Release|Any CPU.Build.0 = Release|Any CPU
+		{799A0958-B9AF-41EC-88B9-F50363D58A04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{799A0958-B9AF-41EC-88B9-F50363D58A04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{799A0958-B9AF-41EC-88B9-F50363D58A04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{799A0958-B9AF-41EC-88B9-F50363D58A04}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9039F73D-A796-4B4D-A950-FB8C3007A09E} = {FFCC127A-1254-4758-BA26-AEBD1C3A6DF1}

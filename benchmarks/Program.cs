@@ -10,7 +10,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using OoLunar.HyperSharp.Setup;
-using OoLunar.HyperSharp.Tests.Responders;
+using OoLunar.HyperSharp.Benchmarks.Responders;
 using System.IO;
 using System.Text;
 using System.Linq;
@@ -22,7 +22,7 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 #endif
 
-namespace OoLunar.HyperSharp.Tests
+namespace OoLunar.HyperSharp.Benchmarks
 {
     public sealed class Program
     {

@@ -6,7 +6,7 @@ using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Responders;
 using OoLunar.HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Tests.Responders
+namespace OoLunar.HyperSharp.Benchmarks.Responders
 {
     public readonly record struct HelloWorldValueTaskResponder : IValueTaskResponder<HyperContext, HyperStatus>
     {

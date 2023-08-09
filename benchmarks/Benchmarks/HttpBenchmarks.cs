@@ -5,7 +5,7 @@ using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using OoLunar.HyperSharp.Protocol;
 
-namespace OoLunar.HyperSharp.Tests.Benchmarks
+namespace OoLunar.HyperSharp.Benchmarks.Cases
 {
     [JsonExporterAttribute.Brief]
     public class HttpBenchmarks
