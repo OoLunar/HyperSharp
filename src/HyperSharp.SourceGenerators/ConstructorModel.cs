@@ -2,16 +2,25 @@ namespace HyperSharp.SourceGenerators;
 
 using System.Collections.Generic;
 
-// we'd love to make this a record struct, or at least a readonly struct with init accessors, but... netstandard.
-internal struct ConstructorModel
+internal readonly record struct ConstructorModel
 {
-    public bool SkipGeneration { get; set; }
+    public bool SkipGeneration { get; }
+    public string EnclosingType { get; }
+    public string EnclosingTypeKeyword { get; }
+    public string EnclosingNamespace { get; }
+    public IDictionary<string, string>? Parameters { get; }
 
-    public string EnclosingType { get; set; }
-
-    public string EnclosingTypeKeyword { get; set; }
-
-    public string EnclosingNamespace { get; set; }
-
-    public IDictionary<string, string>? Parameters { get; set; }
+    public ConstructorModel(
+        bool skipGeneration,
+        string enclosingType,
+        string enclosingTypeKeyword,
+        string enclosingNamespace,
+        IDictionary<string, string>? parameters = null)
+    {
+        SkipGeneration = skipGeneration;
+        EnclosingType = enclosingType;
+        EnclosingTypeKeyword = enclosingTypeKeyword;
+        EnclosingNamespace = enclosingNamespace;
+        Parameters = parameters;
+    }
 }
