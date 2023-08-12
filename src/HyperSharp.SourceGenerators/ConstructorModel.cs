@@ -1,4 +1,4 @@
-namespace HyperSharp.Generators;
+namespace HyperSharp.SourceGenerators;
 
 using System.Collections.Generic;
 

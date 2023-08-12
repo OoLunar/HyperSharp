@@ -5,7 +5,7 @@
     <PackageId>OoLunar.HyperSharp</PackageId>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../HyperSharp.Generators/HyperSharp.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../HyperSharp.SourceGenerators/HyperSharp.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../HyperSharp.Results/HyperSharp.Results.csproj" />
     <ProjectReference Include="../HyperSharp.Responders/HyperSharp.Responders.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />

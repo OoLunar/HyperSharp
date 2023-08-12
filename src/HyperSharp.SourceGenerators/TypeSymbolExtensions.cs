@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace HyperSharp.Generators;
+namespace HyperSharp.SourceGenerators;
 
 internal static class TypeSymbolExtensions
 {

@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Net;
 
-using HyperSharp.Generators;
+using HyperSharp.SourceGenerators;
 
 namespace OoLunar.HyperSharp.Protocol
 {

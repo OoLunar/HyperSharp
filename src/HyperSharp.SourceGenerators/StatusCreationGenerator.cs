@@ -5,7 +5,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace HyperSharp.Generators;
+namespace HyperSharp.SourceGenerators;
 
 /// <summary>
 /// Generates static creation methods for statuses
@@ -29,7 +29,7 @@ public class StatusCreationGenerator : IIncrementalGenerator
 
         IncrementalValuesProvider<ConstructorModel> constructors = context.SyntaxProvider.ForAttributeWithMetadataName<ConstructorModel>
         (
-            fullyQualifiedMetadataName: "HyperSharp.Generators.GenerateStatusCreationAttribute",
+            fullyQualifiedMetadataName: "HyperSharp.SourceGenerators.GenerateStatusCreationAttribute",
             predicate: (node, _) =>
             {
                 if (node is not ConstructorDeclarationSyntax ctor)
