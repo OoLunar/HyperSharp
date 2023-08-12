@@ -6,23 +6,26 @@ namespace OoLunar.HyperSharp.Setup
 {
     public static class ExtensionMethods
     {
+        public static IServiceCollection AddHyperSharp(this IServiceCollection services) => AddHyperSharp(services, new HyperConfigurationBuilder());
+        public static IServiceCollection AddHyperSharp(this IServiceCollection services, Action<HyperConfigurationBuilder> configurate)
+        {
+            HyperConfigurationBuilder configurationBuilder = new();
+            configurate(configurationBuilder);
+            return AddHyperSharp(services, configurationBuilder);
+        }
+
         public static IServiceCollection AddHyperSharp(this IServiceCollection services, Action<IServiceProvider, HyperConfigurationBuilder> configurate)
         {
             IServiceProvider serviceProvider = services.BuildServiceProvider();
             HyperConfigurationBuilder configurationBuilder = new();
             configurate(serviceProvider, configurationBuilder);
-            services.AddSingleton<ResponderCompiler>();
-            services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
-            services.AddSingleton<HyperServer>();
-            return services;
+            return AddHyperSharp(services, configurationBuilder);
         }
 
-        public static IServiceCollection AddHyperSharp(this IServiceCollection services, Action<HyperConfigurationBuilder> configurate)
+        public static IServiceCollection AddHyperSharp(this IServiceCollection services, HyperConfigurationBuilder builder)
         {
-            HyperConfigurationBuilder configurationBuilder = new();
-            configurate(configurationBuilder);
             services.AddSingleton<ResponderCompiler>();
-            services.AddSingleton(new HyperConfiguration(services, configurationBuilder));
+            services.AddSingleton(new HyperConfiguration(services, builder));
             services.AddSingleton<HyperServer>();
             return services;
         }

@@ -16,12 +16,15 @@ namespace OoLunar.HyperSharp
         public string ServerName { get; init; }
         public int MaxHeaderSize { get; init; }
         public Uri Host { get; init; }
-        public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
+        public TimeSpan Timeout { get; init; }
         public IPEndPoint ListeningEndpoint { get; init; }
         public JsonSerializerOptions JsonSerializerOptions { get; init; }
         public ValueTaskResponderDelegate<HyperContext, HyperStatus> RespondersDelegate { get; init; }
 
-        internal HyperConfiguration(IServiceCollection serviceDescriptors, HyperConfigurationBuilder builder)
+        public HyperConfiguration() : this(new ServiceCollection().AddHyperSharp(), new HyperConfigurationBuilder()) { }
+        public HyperConfiguration(HyperConfigurationBuilder builder) : this(new ServiceCollection().AddHyperSharp(), builder) { }
+        public HyperConfiguration(IServiceCollection serviceDescriptors) : this(serviceDescriptors, new HyperConfigurationBuilder()) { }
+        public HyperConfiguration(IServiceCollection serviceDescriptors, HyperConfigurationBuilder builder)
         {
             ArgumentNullException.ThrowIfNull(serviceDescriptors, nameof(serviceDescriptors));
             ArgumentNullException.ThrowIfNull(builder, nameof(builder));

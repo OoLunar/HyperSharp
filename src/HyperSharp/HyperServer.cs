@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Results;
 using OoLunar.HyperSharp.Setup;
@@ -19,10 +20,10 @@ namespace OoLunar.HyperSharp
         private readonly ConcurrentStack<CancellationTokenSource> _cancellationTokenSources = new();
         private CancellationTokenSource? _mainCancellationTokenSource;
 
-        public HyperServer(HyperConfiguration configuration, ILogger<HyperServer> logger)
+        public HyperServer(HyperConfiguration configuration, ILogger<HyperServer>? logger = null)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = logger ?? NullLogger<HyperServer>.Instance;
         }
 
         public void Start(CancellationToken cancellationToken = default)
