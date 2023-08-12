@@ -120,22 +120,9 @@ namespace OoLunar.HyperSharp.Responders
                 rootRespondersDelegates.Add(CompileDependency<TContext, TOutput>(serviceProvider, builder));
             }
 
-            return rootRespondersDelegates.Count switch
+            return (context, cancellationToken) =>
             {
-                1 => rootRespondersDelegates[0],
-                2 => (context, cancellationToken) =>
-                {
-                    Result<TOutput> result = rootRespondersDelegates[0](context, cancellationToken);
-                    if (!result.IsSuccess || result.HasValue)
-                    {
-                        return result;
-                    }
-
-                    result = rootRespondersDelegates[1](context, cancellationToken);
-                    return !result.IsSuccess || result.HasValue ? result : Result.Success<TOutput>();
-                }
-                ,
-                _ => (context, cancellationToken) =>
+                try
                 {
                     foreach (ResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
                     {
@@ -147,6 +134,11 @@ namespace OoLunar.HyperSharp.Responders
                     }
 
                     return Result.Success<TOutput>();
+                }
+                catch (Exception error)
+                {
+                    _logger.LogError(error, "An exception was thrown while executing a responder.");
+                    return Result.Failure<TOutput>(new Error("An exception was thrown while executing the responder.", error));
                 }
             };
         }
@@ -228,22 +220,9 @@ namespace OoLunar.HyperSharp.Responders
                 rootRespondersDelegates.Add(CompileAsyncDependency<TContext, TOutput>(serviceProvider, builder));
             }
 
-            return rootRespondersDelegates.Count switch
+            return async (context, cancellationToken) =>
             {
-                1 => rootRespondersDelegates[0],
-                2 => async (context, cancellationToken) =>
-                {
-                    Result<TOutput> result = await rootRespondersDelegates[0](context, cancellationToken);
-                    if (!result.IsSuccess || result.HasValue)
-                    {
-                        return result;
-                    }
-
-                    result = await rootRespondersDelegates[1](context, cancellationToken);
-                    return !result.IsSuccess || result.HasValue ? result : Result.Success<TOutput>();
-                }
-                ,
-                _ => async (context, cancellationToken) =>
+                try
                 {
                     foreach (ValueTaskResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
                     {
@@ -255,6 +234,11 @@ namespace OoLunar.HyperSharp.Responders
                     }
 
                     return Result.Success<TOutput>();
+                }
+                catch (Exception error)
+                {
+                    _logger.LogError(error, "An exception was thrown while executing a responder.");
+                    return Result.Failure<TOutput>(new Error("An exception was thrown while executing the responder.", error));
                 }
             };
         }
