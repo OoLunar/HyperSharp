@@ -59,7 +59,7 @@ namespace OoLunar.HyperSharp.Protocol
                 connection.StreamReader.AdvanceTo(sequencePosition);
 
                 // End of headers
-                if (headerResult.Value == default)
+                if (name is null && value is null)
                 {
                     break;
                 }
@@ -150,7 +150,7 @@ namespace OoLunar.HyperSharp.Protocol
                 return Result.Failure("Invalid HTTP method specified.");
             }
 
-            if (!Uri.TryCreate(Encoding.ASCII.GetString(startLine[(firstSpaceIndex + 1)..lastSpaceIndex]), UriKind.RelativeOrAbsolute, out route))
+            if (!Uri.TryCreate(Encoding.ASCII.GetString(startLine[(firstSpaceIndex + 1)..lastSpaceIndex]), UriKind.Relative, out route))
             {
                 return Result.Failure("Invalid route specified.");
             }
