@@ -1,6 +1,6 @@
 using System.Linq;
-using OoLunar.HyperSharp.Results;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using OoLunar.HyperSharp.Results;
 
 namespace OoLunar.HyperSharp.Tests.Results
 {
