@@ -6,9 +6,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
+using OoLunar.HyperSharp.Benchmarks.Responders;
 using OoLunar.HyperSharp.Protocol;
 using OoLunar.HyperSharp.Responders;
-using OoLunar.HyperSharp.Benchmarks.Responders;
 
 namespace OoLunar.HyperSharp.Benchmarks.Cases
 {
