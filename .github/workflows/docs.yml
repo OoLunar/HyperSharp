@@ -29,6 +29,8 @@ jobs:
     - name: Install DocFX
       run: dotnet tool update -g docfx --prerelease
       continue-on-error: true
+    - name: Build the project
+      run: dotnet build
     - name: Build documentation
       run: docfx docs/docfx.json
     - name: Upload GitHub Pages artifact
