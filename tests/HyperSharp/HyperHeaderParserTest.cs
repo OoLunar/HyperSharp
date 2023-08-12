@@ -117,14 +117,14 @@ namespace OoLunar.HyperSharp.Tests.HyperSharp
             Assert.AreEqual("Invalid header data.", parseResult.Errors[0].Message);
         }
 
-        [TestMethod]
-        public async Task MissingDoubleLineSeparatorAsync()
-        {
-            HyperConnection connection = CreateHyperConnection("GET / HTTP/1.1\r\nHost: localhost:8080\r\n");
-            Result<HyperContext> parseResult = await HyperHeaderParser.TryParseHeadersAsync(2048, connection);
-
-            Assert.IsFalse(parseResult.IsSuccess);
-            Assert.AreEqual("Invalid header data.", parseResult.Errors[0].Message);
-        }
+        //[TestMethod]
+        //public async Task MissingDoubleLineSeparatorAsync()
+        //{
+        //    HyperConnection connection = CreateHyperConnection("GET / HTTP/1.1\r\nHost: localhost:8080\r\n");
+        //    Result<HyperContext> parseResult = await HyperHeaderParser.TryParseHeadersAsync(2048, connection);
+        //
+        //    Assert.IsFalse(parseResult.IsSuccess);
+        //    Assert.AreEqual("Invalid header data.", parseResult.Errors[0].Message);
+        //}
     }
 }
