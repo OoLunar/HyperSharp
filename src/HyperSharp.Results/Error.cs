@@ -12,7 +12,7 @@ namespace OoLunar.HyperSharp.Results
         private static readonly Error[] _empty = Array.Empty<Error>();
 
         public string Message { get; init; }
-        public IEnumerable<Error> Errors { get; init; }
+        public IReadOnlyList<Error> Errors { get; init; }
         public Exception? Exception { get; init; }
 
         public Error()
@@ -30,13 +30,13 @@ namespace OoLunar.HyperSharp.Results
         public Error(string message, Error error)
         {
             Message = message;
-            Errors = Enumerable.Repeat(error, 1);
+            Errors = new Error[1] { error };
         }
 
         public Error(string message, IEnumerable<Error> errors)
         {
             Message = message;
-            Errors = errors;
+            Errors = errors.ToArray();
         }
 
         public Error(Exception exception)
@@ -50,14 +50,14 @@ namespace OoLunar.HyperSharp.Results
         {
             Message = exception.Message;
             Exception = exception;
-            Errors = Enumerable.Repeat(error, 1);
+            Errors = new Error[1] { error };
         }
 
         public Error(Exception exception, IEnumerable<Error> errors)
         {
             Message = exception.Message;
             Exception = exception;
-            Errors = errors;
+            Errors = errors.ToArray();
         }
 
         public Error(string message, Exception exception)
@@ -71,14 +71,14 @@ namespace OoLunar.HyperSharp.Results
         {
             Message = message;
             Exception = exception;
-            Errors = Enumerable.Repeat(error, 1);
+            Errors = new Error[1] { error };
         }
 
         public Error(string message, Exception exception, IEnumerable<Error> errors)
         {
             Message = message;
             Exception = exception;
-            Errors = errors;
+            Errors = errors.ToArray();
         }
     }
 }

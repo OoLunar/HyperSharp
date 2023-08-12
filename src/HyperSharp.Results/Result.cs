@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using OoLunar.HyperSharp.Results.Json;
+using System.Linq;
 
 namespace OoLunar.HyperSharp.Results
 {
@@ -11,7 +12,7 @@ namespace OoLunar.HyperSharp.Results
         internal static readonly Error[] _emptyErrors = Array.Empty<Error>();
 
         public readonly object? Value;
-        public readonly IEnumerable<Error> Errors;
+        public readonly IReadOnlyList<Error> Errors;
         public readonly ResultStatus Status;
         public bool IsSuccess => Status.HasFlag(ResultStatus.IsSuccess);
         public bool HasValue => Status.HasFlag(ResultStatus.HasValue);
@@ -40,7 +41,7 @@ namespace OoLunar.HyperSharp.Results
         internal Result(IEnumerable<Error> errors)
         {
             Value = null;
-            Errors = errors;
+            Errors = errors.ToArray();
             Status = ResultStatus.None;
         }
 
@@ -54,7 +55,7 @@ namespace OoLunar.HyperSharp.Results
         internal Result(object? value, IEnumerable<Error> errors)
         {
             Value = value;
-            Errors = errors;
+            Errors = errors.ToArray();
             Status = ResultStatus.HasValue;
         }
 
