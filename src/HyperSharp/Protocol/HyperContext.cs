@@ -44,7 +44,7 @@ namespace OoLunar.HyperSharp.Protocol
             Headers = headers;
             Connection = connection;
             Route = headers.TryGetValue("Host", out IReadOnlyList<string>? host)
-                ? new Uri($"http://{host[0]}/{route.OriginalString}")
+                ? new Uri($"http://{host[0]}{route.OriginalString}")
                 : new Uri(connection.Server.Configuration.Host, route);
         }
 
