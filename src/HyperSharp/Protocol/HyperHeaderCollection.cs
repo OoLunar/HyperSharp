@@ -128,7 +128,7 @@ namespace OoLunar.HyperSharp.Protocol
             if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
                 existingValues = new List<byte[]>();
-                _headers.Add(name, existingValues);
+                _headers.Add(name, values.Select(Encoding.ASCII.GetBytes).ToList());
                 return;
             }
 
@@ -236,8 +236,26 @@ namespace OoLunar.HyperSharp.Protocol
             name = NormalizeHeaderName(name);
         }
 
-        public static bool IsValidName(string value)
+        public static bool IsValidHeader(string header)
         {
+            if (string.IsNullOrEmpty(header))
+            {
+                return false;
+            }
+
+            int colonIndex = header.IndexOf(':');
+            return colonIndex != -1
+                && IsValidName(header.AsSpan(0, colonIndex))
+                && IsValidValue(header.AsSpan(colonIndex + 1));
+        }
+
+        public static bool IsValidName(ReadOnlySpan<char> value)
+        {
+            if (value.IsEmpty)
+            {
+                return false;
+            }
+
             Span<char> validNameSpan = _validHeaderNameCharacters.AsSpan();
             foreach (char character in value)
             {
