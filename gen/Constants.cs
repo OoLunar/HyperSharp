@@ -9,7 +9,7 @@ namespace HyperSharp.Generators;
 
 [global::System.AttributeUsage(global::System.AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
 [global::System.CodeDom.Compiler.GeneratedCode("hypersharp-status-creation-generator", "0.1.0")]
-internal sealed class GenerateStatusCreationAttribute : global::System.Attribute;
+internal sealed class GenerateStatusCreationAttribute : global::System.Attribute {}
 """;
 
     // could extract this from HttpStatusCode
