@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
-using OoLunar.HyperSharp.Results.Json;
+using HyperSharp.Results.Json;
 
-namespace OoLunar.HyperSharp.Results
+namespace HyperSharp.Results
 {
     [JsonConverter(typeof(ErrorJsonConverter))]
     public record Error

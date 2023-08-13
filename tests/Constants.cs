@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace OoLunar.HyperSharp.Tests
+namespace HyperSharp.Tests
 {
     public static class Constants
     {

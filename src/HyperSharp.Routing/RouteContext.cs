@@ -1,6 +1,6 @@
-using OoLunar.HyperSharp.Protocol;
+using HyperSharp.Protocol;
 
-namespace OoLunar.HyperSharp.Routing
+namespace HyperSharp.Routing
 {
     public sealed record RouteContext(HyperContext HyperContext, Route Route);
 }

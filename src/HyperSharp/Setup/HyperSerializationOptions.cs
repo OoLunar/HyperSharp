@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace OoLunar.HyperSharp.Setup
+namespace HyperSharp.Setup
 {
     public static class HyperJsonSerializationOptions
     {

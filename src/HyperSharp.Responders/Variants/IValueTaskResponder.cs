@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Responders
+namespace HyperSharp.Responders
 {
     public delegate ValueTask<Result<TOutput>> ValueTaskResponderDelegate<TContext, TOutput>(TContext context, CancellationToken cancellationToken = default);
 

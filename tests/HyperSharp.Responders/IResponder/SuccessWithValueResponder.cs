@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
-using OoLunar.HyperSharp.Responders;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Responders;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Tests.Responders.IResponder
+namespace HyperSharp.Tests.Responders.IResponder
 {
     public sealed class SuccessWithValueResponder : IResponder<string, string>
     {

@@ -10,7 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OoLunar.HyperSharp.Protocol
+namespace HyperSharp.Protocol
 {
     [DebuggerDisplay("{ToString(),nq}")]
     public class HyperContext

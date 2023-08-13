@@ -1,6 +1,6 @@
 using System;
 
-namespace OoLunar.HyperSharp.Routing
+namespace HyperSharp.Routing
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Delegate, AllowMultiple = true, Inherited = false)]
     public sealed class RouteAttribute : Attribute

@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace OoLunar.HyperSharp.Results.Json
+namespace HyperSharp.Results.Json
 {
     public sealed class ResultJsonConverter : JsonConverter<Result>
     {

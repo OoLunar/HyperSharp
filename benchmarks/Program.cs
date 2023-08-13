@@ -9,8 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
-using OoLunar.HyperSharp.Setup;
-using OoLunar.HyperSharp.Benchmarks.Responders;
+using HyperSharp.Setup;
+using HyperSharp.Benchmarks.Responders;
 using System.IO;
 using System.Text;
 using System.Linq;
@@ -22,7 +22,7 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 #endif
 
-namespace OoLunar.HyperSharp.Benchmarks
+namespace HyperSharp.Benchmarks
 {
     public sealed class Program
     {

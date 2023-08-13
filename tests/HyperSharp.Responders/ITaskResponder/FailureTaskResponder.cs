@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using OoLunar.HyperSharp.Responders;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Responders;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Tests.Responders.ITaskResponder
+namespace HyperSharp.Tests.Responders.ITaskResponder
 {
     public sealed class FailureTaskResponder : ITaskResponder<string, string>
     {

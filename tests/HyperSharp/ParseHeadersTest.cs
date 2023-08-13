@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OoLunar.HyperSharp.Protocol;
+using HyperSharp.Protocol;
 
-namespace OoLunar.HyperSharp.Tests.HyperSharp
+namespace HyperSharp.Tests.HyperSharp
 {
     [TestClass]
     public sealed class ParseHeadersTest

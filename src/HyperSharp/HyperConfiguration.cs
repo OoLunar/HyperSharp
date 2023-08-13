@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OoLunar.HyperSharp.Protocol;
-using OoLunar.HyperSharp.Responders;
-using OoLunar.HyperSharp.Setup;
+using HyperSharp.Protocol;
+using HyperSharp.Responders;
+using HyperSharp.Setup;
 
-namespace OoLunar.HyperSharp
+namespace HyperSharp
 {
     public sealed record HyperConfiguration
     {

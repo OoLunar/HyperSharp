@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace OoLunar.HyperSharp.Responders
+namespace HyperSharp.Responders
 {
     public interface IResponderBase
     {

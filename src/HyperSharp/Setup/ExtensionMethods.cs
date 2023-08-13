@@ -1,8 +1,8 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
-using OoLunar.HyperSharp.Responders;
+using HyperSharp.Responders;
 
-namespace OoLunar.HyperSharp.Setup
+namespace HyperSharp.Setup
 {
     public static class ExtensionMethods
     {

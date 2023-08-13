@@ -1,11 +1,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OoLunar.HyperSharp.Responders;
-using OoLunar.HyperSharp.Results;
-using OoLunar.HyperSharp.Tests.Responders.IValueTaskResponder;
+using HyperSharp.Responders;
+using HyperSharp.Results;
+using HyperSharp.Tests.Responders.IValueTaskResponder;
 
-namespace OoLunar.HyperSharp.Tests.Responders
+namespace HyperSharp.Tests.Responders
 {
     [TestClass]
     public sealed class ValueTaskResponderDelegateTests

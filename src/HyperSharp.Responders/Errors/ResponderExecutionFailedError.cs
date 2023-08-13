@@ -1,6 +1,6 @@
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Responders.Errors
+namespace HyperSharp.Responders.Errors
 {
     public sealed record ResponderExecutionFailedError : Error;
 }

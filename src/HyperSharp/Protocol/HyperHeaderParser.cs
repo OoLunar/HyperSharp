@@ -6,9 +6,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Protocol
+namespace HyperSharp.Protocol
 {
     public static class HyperHeaderParser
     {

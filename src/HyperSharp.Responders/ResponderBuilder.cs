@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OoLunar.HyperSharp.Responders
+namespace HyperSharp.Responders
 {
     internal sealed record ResponderBuilder
     {

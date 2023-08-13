@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
-using OoLunar.HyperSharp.Responders;
+using HyperSharp.Responders;
 
-namespace OoLunar.HyperSharp.Setup
+namespace HyperSharp.Setup
 {
     public sealed class HyperConfigurationBuilder
     {

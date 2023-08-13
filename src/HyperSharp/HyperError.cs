@@ -1,6 +1,6 @@
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp
+namespace HyperSharp
 {
     public sealed record HyperError(string message) : Error(message);
 }

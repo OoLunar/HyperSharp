@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Responders
+namespace HyperSharp.Responders
 {
     public sealed class ResponderCompiler
     {

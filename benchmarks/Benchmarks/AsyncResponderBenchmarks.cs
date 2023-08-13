@@ -6,11 +6,11 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
-using OoLunar.HyperSharp.Benchmarks.Responders;
-using OoLunar.HyperSharp.Protocol;
-using OoLunar.HyperSharp.Responders;
+using HyperSharp.Benchmarks.Responders;
+using HyperSharp.Protocol;
+using HyperSharp.Responders;
 
-namespace OoLunar.HyperSharp.Benchmarks.Cases
+namespace HyperSharp.Benchmarks.Cases
 {
     [JsonExporterAttribute.Brief]
     public class AsyncResponderBenchmarks

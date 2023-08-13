@@ -2,11 +2,11 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using OoLunar.HyperSharp.Protocol;
-using OoLunar.HyperSharp.Responders;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Protocol;
+using HyperSharp.Responders;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Benchmarks.Responders
+namespace HyperSharp.Benchmarks.Responders
 {
     public readonly record struct HelloWorldValueTaskResponder : IValueTaskResponder<HyperContext, HyperStatus>
     {

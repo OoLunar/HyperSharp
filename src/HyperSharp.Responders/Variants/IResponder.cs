@@ -1,7 +1,7 @@
 using System.Threading;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Responders
+namespace HyperSharp.Responders
 {
     public delegate Result<TOutput> ResponderDelegate<TContext, TOutput>(TContext context, CancellationToken cancellationToken = default);
 

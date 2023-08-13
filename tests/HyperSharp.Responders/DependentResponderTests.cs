@@ -1,10 +1,10 @@
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OoLunar.HyperSharp.Responders;
-using OoLunar.HyperSharp.Results;
-using OoLunar.HyperSharp.Tests.Responders.IResponder;
+using HyperSharp.Responders;
+using HyperSharp.Results;
+using HyperSharp.Tests.Responders.IResponder;
 
-namespace OoLunar.HyperSharp.Tests.Responders
+namespace HyperSharp.Tests.Responders
 {
     [TestClass]
     public sealed class DependentResponderTests

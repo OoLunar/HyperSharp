@@ -6,11 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using OoLunar.HyperSharp.Protocol;
-using OoLunar.HyperSharp.Results;
-using OoLunar.HyperSharp.Setup;
+using HyperSharp.Protocol;
+using HyperSharp.Results;
+using HyperSharp.Setup;
 
-namespace OoLunar.HyperSharp
+namespace HyperSharp
 {
     public sealed class HyperServer
     {

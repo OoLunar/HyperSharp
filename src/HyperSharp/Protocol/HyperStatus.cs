@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using HyperSharp.SourceGenerators;
 
-namespace OoLunar.HyperSharp.Protocol
+namespace HyperSharp.Protocol
 {
     [DebuggerDisplay("{ToString(),nq}")]
     public readonly partial record struct HyperStatus

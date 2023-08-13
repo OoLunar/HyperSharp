@@ -1,8 +1,8 @@
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Tests.Results
+namespace HyperSharp.Tests.Results
 {
     [TestClass]
     public sealed class ResultsTest

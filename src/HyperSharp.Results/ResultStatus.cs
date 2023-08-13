@@ -1,6 +1,6 @@
 using System;
 
-namespace OoLunar.HyperSharp.Results
+namespace HyperSharp.Results
 {
     [Flags]
     public enum ResultStatus

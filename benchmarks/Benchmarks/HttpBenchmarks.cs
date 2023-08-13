@@ -3,9 +3,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
-using OoLunar.HyperSharp.Protocol;
+using HyperSharp.Protocol;
 
-namespace OoLunar.HyperSharp.Benchmarks.Cases
+namespace HyperSharp.Benchmarks.Cases
 {
     [JsonExporterAttribute.Brief]
     public class HttpBenchmarks

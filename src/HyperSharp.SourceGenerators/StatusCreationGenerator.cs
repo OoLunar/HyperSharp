@@ -28,7 +28,7 @@ public class StatusCreationGenerator : IIncrementalGenerator
         context.RegisterImplementationSourceOutput<ConstructorModel>
         (
             source: constructors,
-            action: (ctx, model) => ctx.AddSource($"{model.EnclosingType}.g.cs", StatusCreationEmitter.Emit(model))
+            action: (ctx, model) => ctx.AddSource($"{model.EnclosingType}-{Guid.NewGuid()}.g.cs", StatusCreationEmitter.Emit(model))
         );
     }
 

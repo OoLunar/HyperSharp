@@ -4,10 +4,10 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OoLunar.HyperSharp.Protocol;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Protocol;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Tests.HyperSharp
+namespace HyperSharp.Tests.HyperSharp
 {
     [TestClass]
     public sealed class HyperHeaderParserTests

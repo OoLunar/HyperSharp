@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Attributes;
-using OoLunar.HyperSharp.Results;
+using HyperSharp.Results;
 
-namespace OoLunar.HyperSharp.Benchmarks.Cases
+namespace HyperSharp.Benchmarks.Cases
 {
     [JsonExporterAttribute.Brief, SuppressMessage("Roslyn", "CA1822", Justification = "BenchmarkDotNet does not support static methods.")]
     public class ErrorBenchmarks
