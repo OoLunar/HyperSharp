@@ -1,14 +1,12 @@
 <Project InitialTargets="GenerateHttpConstructor">
   <UsingTask TaskName="HttpConstructorGenerator" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
     <Task>
-      <Reference Include="$(ProjectRoot)/tools/MakeShiftSourceGeneration/libs/Namotion.Reflection.dll" PrivateAssets="all" ExcludeAssets="Runtime" />
       <Using Namespace="System" />
       <Using Namespace="System.IO" />
       <Using Namespace="System.Net" />
       <Using Namespace="System.Text" />
       <Using Namespace="Microsoft.Build.Framework" />
       <Using Namespace="Microsoft.Build.Utilities" />
-      <Using Namespace="Namotion.Reflection" />
       <Code Type="Fragment" Language="cs">
         <![CDATA[
             const string codeTemplate =
@@ -20,24 +18,20 @@ namespace HyperSharp.Protocol
 {
     public readonly partial record struct HyperStatus
     {
-        /// <summary>
-        /// {{Summary}}
-        /// </summary>
+        /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
         public static HyperStatus {{Code}}() => new(global::System.Net.HttpStatusCode.{{Code}}, new HyperHeaderCollection(), null);
 
-        /// <summary>
-        /// {{Summary}}
-        /// </summary>
+        /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
+        /// <param name="body">The body of the response.</param>
         public static HyperStatus {{Code}}(object? body) => new(global::System.Net.HttpStatusCode.{{Code}}, new HyperHeaderCollection(), body);
 
-        /// <summary>
-        /// {{Summary}}
-        /// </summary>
+        /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
+        /// <param name="headers">The headers of the response.</param>
         public static HyperStatus {{Code}}(HyperHeaderCollection headers) => new(global::System.Net.HttpStatusCode.{{Code}}, headers, null);
 
-        /// <summary>
-        /// {{Summary}}
-        /// </summary>
+        /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
+        /// <param name="headers">The headers of the response.</param>
+        /// <param name="body">The body of the response.</param>
         public static HyperStatus {{Code}}(HyperHeaderCollection headers, object? body) => new(global::System.Net.HttpStatusCode.{{Code}}, headers, body);
     }
 }
@@ -49,8 +43,6 @@ namespace HyperSharp.Protocol
             {
                 StringBuilder stringBuilder = new(codeTemplate);
                 stringBuilder.Replace("{{Code}}", httpStatus);
-                stringBuilder.Replace("{{Summary}}", typeof(HttpStatusCode).GetField(httpStatus).GetXmlDocsSummary());
-
                 File.WriteAllText($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs", stringBuilder.ToString());
             }
         ]]>
