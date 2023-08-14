@@ -1,9 +1,9 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using HyperSharp.Responders;
 using HyperSharp.Results;
 using HyperSharp.Tests.Responders.IValueTaskResponder;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HyperSharp.Tests.Responders
 {
@@ -61,7 +61,7 @@ namespace HyperSharp.Tests.Responders
             ValueTaskResponderDelegate<string, string> responder = compiler.CompileAsyncResponders<string, string>(Constants.ServiceProvider);
 
             Result<string> result = await responder(string.Empty);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsFalse(result.IsSuccess);
             Assert.IsFalse(result.HasValue);
             Assert.IsNull(result.Value);
@@ -76,8 +76,8 @@ namespace HyperSharp.Tests.Responders
 
             string responseValue = "Failure with value.";
             Result<string> result = await responder(responseValue);
-            Assert.AreEqual(1, result.Errors.Count());
-            Assert.AreEqual("Failure Error", result.Errors.First().Message);
+            Assert.AreEqual(1, result.Errors.Count);
+            Assert.AreEqual("Failure Error", result.Errors[0].Message);
             Assert.IsFalse(result.IsSuccess);
             Assert.IsTrue(result.HasValue);
             Assert.AreEqual(responseValue, result.Value);
@@ -91,7 +91,7 @@ namespace HyperSharp.Tests.Responders
             ValueTaskResponderDelegate<string, string> responder = compiler.CompileAsyncResponders<string, string>(Constants.ServiceProvider);
 
             Result<string> result = await responder(string.Empty);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsFalse(result.IsSuccess);
             Assert.IsFalse(result.HasValue);
             Assert.IsNull(result.Value);

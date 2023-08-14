@@ -1,8 +1,8 @@
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using HyperSharp.Responders;
 using HyperSharp.Results;
 using HyperSharp.Tests.Responders.IResponder;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HyperSharp.Tests.Responders
 {
@@ -46,7 +46,7 @@ namespace HyperSharp.Tests.Responders
             ResponderDelegate<string, string> responder = compiler.CompileResponders<string, string>(Constants.ServiceProvider);
 
             Result<string> result = responder(string.Empty);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsFalse(result.IsSuccess);
             Assert.IsFalse(result.HasValue);
             Assert.IsNull(result.Value);
@@ -61,7 +61,7 @@ namespace HyperSharp.Tests.Responders
 
             string responseValue = "Failure with value.";
             Result<string> result = responder(responseValue);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsFalse(result.IsSuccess);
             Assert.IsTrue(result.HasValue);
             Assert.AreEqual(responseValue, result.Value);
@@ -75,7 +75,7 @@ namespace HyperSharp.Tests.Responders
             ResponderDelegate<string, string> responder = compiler.CompileResponders<string, string>(Constants.ServiceProvider);
 
             Result<string> result = responder(string.Empty);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsFalse(result.IsSuccess);
             Assert.IsFalse(result.HasValue);
             Assert.IsNull(result.Value);

@@ -4,10 +4,10 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using BenchmarkDotNet.Attributes;
-using Microsoft.Extensions.DependencyInjection;
 using HyperSharp.Benchmarks.Responders;
 using HyperSharp.Protocol;
 using HyperSharp.Responders;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HyperSharp.Benchmarks.Cases
 {

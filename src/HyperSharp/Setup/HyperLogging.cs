@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using Microsoft.Extensions.Logging;
 using HyperSharp.Protocol;
 using HyperSharp.Results;
+using Microsoft.Extensions.Logging;
 
 namespace HyperSharp.Setup
 {

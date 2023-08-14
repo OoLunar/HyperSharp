@@ -5,7 +5,7 @@ using System.Net;
 namespace HyperSharp.Protocol
 {
     [DebuggerDisplay("{ToString(),nq}")]
-    public readonly record struct HyperStatus
+    public readonly partial record struct HyperStatus
     {
         public HttpStatusCode Code { get; init; }
         public HyperHeaderCollection Headers { get; init; }

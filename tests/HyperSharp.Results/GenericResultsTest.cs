@@ -1,6 +1,6 @@
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using HyperSharp.Results;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HyperSharp.Tests.Results
 {
@@ -34,10 +34,10 @@ namespace HyperSharp.Tests.Results
             string errorMessage = "An error occurred.";
             Result<int> result = Result.Failure<int>(errorMessage);
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsFalse(result.HasValue);
             Assert.AreEqual(default, result.Value);
-            Assert.AreEqual(errorMessage, result.Errors.First().Message);
+            Assert.AreEqual(errorMessage, result.Errors[0].Message);
         }
 
         [TestMethod]
@@ -46,10 +46,10 @@ namespace HyperSharp.Tests.Results
             Error error = new("Another error.");
             Result<int> result = Result.Failure<int>(error);
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsFalse(result.HasValue);
             Assert.AreEqual(default, result.Value);
-            Assert.AreEqual(error.Message, result.Errors.First().Message);
+            Assert.AreEqual(error.Message, result.Errors[0].Message);
         }
 
         [TestMethod]
@@ -64,7 +64,7 @@ namespace HyperSharp.Tests.Results
 
             Result<int> result = Result.Failure<int>(errors);
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual(errors.Length, result.Errors.Count());
+            Assert.AreEqual(errors.Length, result.Errors.Count);
             Assert.IsFalse(result.HasValue);
             Assert.AreEqual(default, result.Value);
             CollectionAssert.AreEqual(errors.Select(e => e.Message).ToArray(), result.Errors.Select(e => e.Message).ToArray());
@@ -78,10 +78,10 @@ namespace HyperSharp.Tests.Results
 
             Result<int> result = Result.Failure(someValue, error);
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual(1, result.Errors.Count());
+            Assert.AreEqual(1, result.Errors.Count);
             Assert.IsTrue(result.HasValue);
             Assert.AreEqual(someValue, result.Value);
-            Assert.AreEqual(error.Message, result.Errors.First().Message);
+            Assert.AreEqual(error.Message, result.Errors[0].Message);
         }
 
         [TestMethod]
@@ -96,7 +96,7 @@ namespace HyperSharp.Tests.Results
 
             Result<int> result = Result.Failure(someValue, errors);
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual(errors.Length, result.Errors.Count());
+            Assert.AreEqual(errors.Length, result.Errors.Count);
             Assert.IsTrue(result.HasValue);
             Assert.AreEqual(someValue, result.Value);
             CollectionAssert.AreEqual(errors.Select(e => e.Message).ToArray(), result.Errors.Select(e => e.Message).ToArray());

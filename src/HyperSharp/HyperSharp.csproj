@@ -5,6 +5,7 @@
     <PackageId>OoLunar.HyperSharp</PackageId>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../tools/MakeShiftSourceGeneration/HyperSharp.Tools.MakeShiftSourceGeneration.csproj" PrivateAssets="all" />
     <ProjectReference Include="../HyperSharp.Results/HyperSharp.Results.csproj" />
     <ProjectReference Include="../HyperSharp.Responders/HyperSharp.Responders.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />

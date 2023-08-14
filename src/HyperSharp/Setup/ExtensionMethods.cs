@@ -1,6 +1,6 @@
 using System;
-using Microsoft.Extensions.DependencyInjection;
 using HyperSharp.Responders;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HyperSharp.Setup
 {

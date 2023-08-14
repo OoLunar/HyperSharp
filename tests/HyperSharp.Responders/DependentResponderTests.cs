@@ -1,8 +1,8 @@
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using HyperSharp.Responders;
 using HyperSharp.Results;
 using HyperSharp.Tests.Responders.IResponder;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HyperSharp.Tests.Responders
 {

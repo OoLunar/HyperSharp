@@ -3,11 +3,11 @@ using System.Net;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using HyperSharp.Protocol;
 using HyperSharp.Responders;
 using HyperSharp.Setup;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace HyperSharp
 {

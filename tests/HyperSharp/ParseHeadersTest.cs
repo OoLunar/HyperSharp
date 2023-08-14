@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using HyperSharp.Protocol;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HyperSharp.Tests.HyperSharp
 {

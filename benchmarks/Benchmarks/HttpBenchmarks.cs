@@ -2,8 +2,8 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using Microsoft.Extensions.DependencyInjection;
 using HyperSharp.Protocol;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HyperSharp.Benchmarks.Cases
 {
