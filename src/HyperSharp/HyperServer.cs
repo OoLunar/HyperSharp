@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -173,11 +172,11 @@ namespace HyperSharp
                 HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
                 if (status.IsSuccess)
                 {
-                    await context.Value.RespondAsync(status.HasValue ? status.Value : new HyperStatus(HttpStatusCode.NoContent), Configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(status.HasValue ? status.Value : HyperStatus.NoContent(), Configuration.JsonSerializerOptions);
                 }
                 else
                 {
-                    await context.Value.RespondAsync(new HyperStatus(HttpStatusCode.InternalServerError), Configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
                 }
             }
 

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
   </PropertyGroup>
   <PropertyGroup>
     <Authors>OoLunar</Authors>
@@ -11,6 +12,7 @@
     <PackageProjectUrl>https://github.com/OoLunar/HyperSharp</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ProjectRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), "HyperSharp.sln"))</ProjectRoot>
   </PropertyGroup>
   <ItemGroup>
