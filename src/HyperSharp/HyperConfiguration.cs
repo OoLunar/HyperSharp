@@ -11,19 +11,65 @@ using Microsoft.Extensions.Options;
 
 namespace HyperSharp
 {
+    /// <summary>
+    /// Represents the configuration of a HyperSharp server.
+    /// </summary>
     public sealed record HyperConfiguration
     {
+        /// <summary>
+        /// The default server name to use for the Server header.
+        /// </summary>
         public string ServerName { get; init; }
+
+        /// <summary>
+        /// The maximum size of each header, name and value combined.
+        /// </summary>
         public int MaxHeaderSize { get; init; }
-        public Uri Host { get; init; }
+
+        /// <summary>
+        /// The timeout for a request.
+        /// </summary>
         public TimeSpan Timeout { get; init; }
+
+        /// <summary>
+        /// The endpoint to listen on.
+        /// </summary>
         public IPEndPoint ListeningEndpoint { get; init; }
+
+        /// <summary>
+        /// The default JSON serializer options to use for <see cref="HyperContext.RespondAsync(HyperStatus, JsonSerializerOptions?, CancellationToken)"/>.
+        /// </summary>
         public JsonSerializerOptions JsonSerializerOptions { get; init; }
+
+        /// <summary>
+        /// The delegate to invoke when a request is received. This is set by the <see cref="ResponderCompiler"/>.
+        /// </summary>
         public ValueTaskResponderDelegate<HyperContext, HyperStatus> RespondersDelegate { get; init; }
 
+        internal Uri _host { get; init; }
+
+        /// <summary>
+        /// Creates a new <see cref="HyperConfiguration"/> with the default values.
+        /// </summary>
         public HyperConfiguration() : this(new ServiceCollection().AddHyperSharp(), new HyperConfigurationBuilder()) { }
+
+        /// <summary>
+        /// Creates a new <see cref="HyperConfiguration"/> with the specified values.
+        /// </summary>
+        /// <param name="builder">The <see cref="HyperConfigurationBuilder"/> to use.</param>
         public HyperConfiguration(HyperConfigurationBuilder builder) : this(new ServiceCollection().AddHyperSharp(), builder) { }
+
+        /// <summary>
+        /// Creates a new <see cref="HyperConfiguration"/> using the specified <see cref="IServiceCollection"/>.
+        /// </summary>
+        /// <param name="serviceDescriptors">The <see cref="IServiceCollection"/> to use when creating the responders.</param>
         public HyperConfiguration(IServiceCollection serviceDescriptors) : this(serviceDescriptors, new HyperConfigurationBuilder()) { }
+
+        /// <summary>
+        /// Creates a new <see cref="HyperConfiguration"/> using the specified <see cref="IServiceCollection"/> and <see cref="HyperConfigurationBuilder"/>.
+        /// </summary>
+        /// <param name="serviceDescriptors">The <see cref="IServiceCollection"/> to use when creating the responders.</param>
+        /// <param name="builder">The <see cref="HyperConfigurationBuilder"/> to use.</param>
         public HyperConfiguration(IServiceCollection serviceDescriptors, HyperConfigurationBuilder builder)
         {
             ArgumentNullException.ThrowIfNull(serviceDescriptors, nameof(serviceDescriptors));
@@ -35,7 +81,7 @@ namespace HyperSharp
                 throw new ArgumentException("The listening endpoint is invalid.", nameof(builder));
             }
 
-            Host = host;
+            _host = host;
             ListeningEndpoint = builder.ListeningEndpoint;
             MaxHeaderSize = builder.MaxHeaderSize;
             JsonSerializerOptions = serviceProvider.GetService<IOptionsSnapshot<JsonSerializerOptions>>()?.Get(builder.JsonSerializerOptionsName) ?? HyperJsonSerializationOptions.Default;

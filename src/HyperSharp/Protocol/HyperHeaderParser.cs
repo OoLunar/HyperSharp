@@ -10,8 +10,18 @@ using HyperSharp.Results;
 
 namespace HyperSharp.Protocol
 {
+    /// <summary>
+    /// Provides methods for parsing HTTP headers, including the start line.
+    /// </summary>
     public static class HyperHeaderParser
     {
+        /// <summary>
+        /// Parses the headers of an HTTP request, returning a <see cref="HyperContext"/> if successful.
+        /// </summary>
+        /// <param name="maxHeaderSize">The maximum size of each header.</param>
+        /// <param name="connection">The connection to read the headers from.</param>
+        /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+        /// <returns>A <see cref="Result{T}"/> containing a <see cref="HyperContext"/>.</returns>
         public static async ValueTask<Result<HyperContext>> TryParseHeadersAsync(int maxHeaderSize, HyperConnection connection, CancellationToken cancellationToken = default)
         {
             if (maxHeaderSize < 1)

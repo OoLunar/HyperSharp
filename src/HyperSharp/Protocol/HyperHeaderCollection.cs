@@ -7,6 +7,9 @@ using System.Text;
 
 namespace HyperSharp.Protocol
 {
+    /// <summary>
+    /// Represents a collection of headers with string keys and lists of string values.
+    /// </summary>
     public sealed class HyperHeaderCollection : IReadOnlyDictionary<string, IReadOnlyList<string>>
     {
         // https://developers.cloudflare.com/rules/transform/request-header-modification/reference/header-format
@@ -27,8 +30,13 @@ namespace HyperSharp.Protocol
 
         private readonly Dictionary<string, List<byte[]>> _headers = new();
 
+        /// <inheritdoc/>
         public int Count => _headers.Count;
+
+        /// <inheritdoc/>
         public IEnumerable<string> Keys => _headers.Keys;
+
+        /// <inheritdoc/>
         public IEnumerable<IReadOnlyList<string>> Values
         {
             get
@@ -40,9 +48,16 @@ namespace HyperSharp.Protocol
             }
         }
 
+        /// <inheritdoc/>
         public bool ContainsKey(string key) => _headers.ContainsKey(key);
+
+        /// <inheritdoc/>
         public IReadOnlyList<string> this[string key] => _headers[key].Select(Encoding.ASCII.GetString).ToList();
+
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, IReadOnlyList<string>>> GetEnumerator()
         {
             foreach (KeyValuePair<string, List<byte[]>> header in _headers)
@@ -51,6 +66,14 @@ namespace HyperSharp.Protocol
             }
         }
 
+        /// <summary>
+        /// Adds a header with a single value. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="value">The value of the header.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="value"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
         public void Add(string name, string value)
         {
             ValidateArgumentParameters(ref name, value);
@@ -64,6 +87,15 @@ namespace HyperSharp.Protocol
             }
         }
 
+
+        /// <summary>
+        /// Adds a header with multiple values. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="values">The values of the header.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="values"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="values"/> contains invalid characters.</exception>
         public void Add(string name, IEnumerable<string> values)
         {
             ValidateArgumentParameters(ref name, values);
@@ -79,10 +111,21 @@ namespace HyperSharp.Protocol
             }
         }
 
+        /// <summary>
+        /// Adds a header with a single value if the header does not already exist. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="value">The value of the header.</param>
+        /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
         public bool TryAdd(string name, string value)
         {
-            ValidateArgumentParameters(ref name, value);
-            if (_headers.ContainsKey(name))
+            if (name is null || !IsValidName(name))
+            {
+                return false;
+            }
+
+            name = NormalizeHeaderName(name);
+            if (_headers.ContainsKey(name) || value is null || !IsValidValue(value))
             {
                 return false;
             }
@@ -91,24 +134,48 @@ namespace HyperSharp.Protocol
             return true;
         }
 
+        /// <summary>
+        /// Adds a header with multiple values if the header does not already exist. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="values">The values of the header.</param>
+        /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
         public bool TryAdd(string name, IEnumerable<string> values)
         {
-            ValidateArgumentParameters(ref name, values);
+            if (name is null || !IsValidName(name) || values is null)
+            {
+                return false;
+            }
+
+            name = NormalizeHeaderName(name);
             if (_headers.ContainsKey(name))
             {
                 return false;
             }
 
-            List<byte[]> existingValues = new();
+            List<byte[]> newValues = new();
             foreach (string value in values)
             {
-                existingValues.Add(Encoding.ASCII.GetBytes(value));
+                if (!IsValidValue(value))
+                {
+                    return false;
+                }
+
+                newValues.Add(Encoding.ASCII.GetBytes(value));
             }
 
-            _headers.Add(name, existingValues);
+            _headers.Add(name, newValues);
             return true;
         }
 
+        /// <summary>
+        /// Sets a header with a single value. The header name will be normalized from x-Header-name to X-Header-Name format. If the header already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="value">The value of the header.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="value"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
         public void Set(string name, string value)
         {
             ValidateArgumentParameters(ref name, value);
@@ -122,6 +189,14 @@ namespace HyperSharp.Protocol
             values.Add(Encoding.ASCII.GetBytes(value));
         }
 
+        /// <summary>
+        /// Sets a header with multiple values. The header name will be normalized from x-Header-name to X-Header-Name format. If the header already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="values">The values of the header.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="values"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="values"/> contains invalid characters.</exception>
         public void Set(string name, IEnumerable<string> values)
         {
             ValidateArgumentParameters(ref name, values);
@@ -139,12 +214,23 @@ namespace HyperSharp.Protocol
             }
         }
 
+        /// <summary>
+        /// Removes the header with the specified name and all of its values. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
+        /// </summary>
+        /// <param name="name">The name of the header to remove.</param>
+        /// <returns><see langword="true"/> if the header was found and removed; otherwise, <see langword="false"/>.</returns>
         public bool Remove(string name)
         {
             ValidateArgumentParameters(ref name, string.Empty);
             return _headers.Remove(name);
         }
 
+        /// <summary>
+        /// Searches for the header with the specified name and returns the first value. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
+        /// </summary>
+        /// <param name="name">The name of the header to search for.</param>
+        /// <param name="value">The first value of the header if found; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out string value)
         {
             ValidateArgumentParameters(ref name, string.Empty);
@@ -158,6 +244,12 @@ namespace HyperSharp.Protocol
             return true;
         }
 
+        /// <summary>
+        /// Searches for the header with the specified name and returns all of its values. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
+        /// </summary>
+        /// <param name="name">The name of the header to search for.</param>
+        /// <param name="values">All of the values of the header if found; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<string> values)
         {
             ValidateArgumentParameters(ref name, string.Empty);
@@ -171,6 +263,12 @@ namespace HyperSharp.Protocol
             return true;
         }
 
+        /// <summary>
+        /// Searches for the header with the specified name and returns the first value in ASCII byte form. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
+        /// </summary>
+        /// <param name="name">The name of the header to search for.</param>
+        /// <param name="value">The first value of the header if found; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out byte[] value)
         {
             ValidateArgumentParameters(ref name, string.Empty);
@@ -184,6 +282,12 @@ namespace HyperSharp.Protocol
             return true;
         }
 
+        /// <summary>
+        /// Searches for the header with the specified name and returns all of its values in ASCII byte form. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
+        /// </summary>
+        /// <param name="name">The name of the header to search for.</param>
+        /// <param name="values">All of the values of the header if found; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<byte[]> values)
         {
             ValidateArgumentParameters(ref name, string.Empty);
@@ -197,6 +301,14 @@ namespace HyperSharp.Protocol
             return true;
         }
 
+        /// <summary>
+        /// Validates and normalizes the header name and value parameters, throwing exceptions if invalid characters were found.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="value">The value of the header.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="value"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
         private static void ValidateArgumentParameters(ref string name, string value)
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
@@ -215,27 +327,40 @@ namespace HyperSharp.Protocol
             name = NormalizeHeaderName(name);
         }
 
-        private static void ValidateArgumentParameters(ref string name, IEnumerable<string> value)
+        /// <summary>
+        /// Validates and normalizes the header name and value parameters, throwing exceptions if invalid characters were found.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="values">The values of the header.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="values"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="values"/> contains invalid characters.</exception>
+        private static void ValidateArgumentParameters(ref string name, IEnumerable<string> values)
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             if (!IsValidName(name))
             {
                 throw new ArgumentException($"Invalid header name: {name}", nameof(name));
             }
 
-            foreach (string item in value)
+            foreach (string item in values)
             {
                 if (!IsValidValue(item))
                 {
-                    throw new ArgumentException($"Invalid header value: {item}", nameof(value));
+                    throw new ArgumentException($"Invalid header value: {item}", nameof(values));
                 }
             }
 
             name = NormalizeHeaderName(name);
         }
 
+        /// <summary>
+        /// Validates that the header is in the format of <c>name: value</c>.
+        /// </summary>
+        /// <param name="header">The header to validate.</param>
+        /// <returns><see langword="true"/> if the header is valid; otherwise, <see langword="false"/>.</returns>
         public static bool IsValidHeader(string header)
         {
             if (string.IsNullOrEmpty(header))
@@ -249,6 +374,11 @@ namespace HyperSharp.Protocol
                 && IsValidValue(header.AsSpan(colonIndex + 1));
         }
 
+        /// <summary>
+        /// Validates that the header name does not contain invalid characters.
+        /// </summary>
+        /// <param name="value">The header name to validate.</param>
+        /// <returns><see langword="true"/> if the header name is valid; otherwise, <see langword="false"/>.</returns>
         public static bool IsValidName(ReadOnlySpan<char> value)
         {
             if (value.IsEmpty)
@@ -268,6 +398,11 @@ namespace HyperSharp.Protocol
             return true;
         }
 
+        /// <summary>
+        /// Validates that the header value does not contain invalid characters.
+        /// </summary>
+        /// <param name="value">The header value to validate.</param>
+        /// <returns><see langword="true"/> if the header value is valid; otherwise, <see langword="false"/>.</returns>
         public static bool IsValidValue(ReadOnlySpan<char> value)
         {
             Span<char> validValueSpan = _validHeaderValueCharacters.AsSpan();
@@ -282,6 +417,11 @@ namespace HyperSharp.Protocol
             return true;
         }
 
+        /// <summary>
+        /// Normalizes the header name from x-Header-name to X-Header-Name format.
+        /// </summary>
+        /// <param name="value">The header name to normalize.</param>
+        /// <returns>The normalized header name.</returns>
         public static string NormalizeHeaderName(ReadOnlySpan<char> value)
         {
             if (value.IsEmpty)

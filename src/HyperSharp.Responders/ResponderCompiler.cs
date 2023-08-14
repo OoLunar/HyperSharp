@@ -10,16 +10,36 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HyperSharp.Responders
 {
+    /// <summary>
+    /// Compiles responders into a single delegate.
+    /// </summary>
     public sealed class ResponderCompiler
     {
         private readonly Dictionary<Type, ResponderBuilder> _resolvedResponders = new();
         private readonly List<ResponderBuilder> _builders = new();
         private readonly ILogger<ResponderCompiler> _logger;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="ResponderCompiler"/> with an optional logger.
+        /// </summary>
+        /// <param name="logger">Defaults to <see cref="NullLogger{T}"/>.</param>
         public ResponderCompiler(ILogger<ResponderCompiler>? logger = null) => _logger = logger ?? NullLogger<ResponderCompiler>.Instance;
 
+        /// <summary>
+        /// Searches the entry assembly for responders.
+        /// </summary>
         public void Search() => Search(Assembly.GetEntryAssembly() ?? throw new InvalidOperationException("Could not find entry assembly."));
+
+        /// <summary>
+        /// Searches the given assembly for responders.
+        /// </summary>
+        /// <param name="assembly">The assembly to search.</param>
         public void Search(Assembly assembly) => Search(assembly.GetTypes());
+
+        /// <summary>
+        /// Searches the given types for responders.
+        /// </summary>
+        /// <param name="types">The types to search.</param>
         public void Search(IEnumerable<Type> types)
         {
             foreach (Type type in types)
@@ -34,6 +54,10 @@ namespace HyperSharp.Responders
             }
         }
 
+        /// <summary>
+        /// Validates the responders to ensure that there are no circular or missing dependencies.
+        /// </summary>
+        /// <returns><see langword="true"/> if the responders are valid; otherwise, <see langword="false"/>.</returns>
         public bool Validate()
         {
             foreach (ResponderBuilder responderBuilder in _builders)
@@ -92,8 +116,17 @@ namespace HyperSharp.Responders
             return false;
         }
 
+        /// <summary>
+        /// Returns <see langword="true"/> if all responders are syncronous; otherwise, <see langword="false"/>.
+        /// </summary>
+        /// <returns><see langword="true"/> if all responders are syncronous; otherwise, <see langword="false"/>.</returns>
         public bool IsSynchronous() => _builders.TrueForAll(builder => builder.IsSyncronous);
 
+        /// <summary>
+        /// Compiles the responders into a single syncronous delegate.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider to use when resolving dependencies.</param>
+        /// <returns>A syncronous delegate that represents the compiled responders.</returns>
         public ResponderDelegate<TContext, TOutput> CompileResponders<TContext, TOutput>(IServiceProvider serviceProvider)
         {
             if (!Validate())
@@ -194,6 +227,11 @@ namespace HyperSharp.Responders
             };
         }
 
+        /// <summary>
+        /// Compiles the responders into a single asyncronous delegate.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider to use when resolving dependencies.</param>
+        /// <returns>An asyncronous delegate that represents the compiled responders.</returns>
         public ValueTaskResponderDelegate<TContext, TOutput> CompileAsyncResponders<TContext, TOutput>(IServiceProvider serviceProvider)
         {
             if (!Validate())
