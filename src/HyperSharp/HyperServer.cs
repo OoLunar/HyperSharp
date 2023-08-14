@@ -69,25 +69,14 @@ namespace HyperSharp
             _mainCancellationTokenSource.Token.Register(() =>
             {
                 HyperLogging.ServerStopping(_logger, Configuration.ListeningEndpoint, null);
-                while (!_openConnections.IsEmpty)
+
+                if (!_openConnections.IsEmpty)
                 {
                     HyperLogging.ConnectionsPending(_logger, _openConnections.Count, null);
-                    foreach (HyperConnection connection in _openConnections.Values)
+                    while (!_openConnections.IsEmpty)
                     {
-                        _openConnections.TryRemove(connection.Id, out _);
-
-                        // Check if the connection has closed during iteration.
-                        if (!connection.Client.Connected)
-                        {
-                            HyperLogging.ConnectionAlreadyClosed(_logger, connection.Id, null);
-                            continue;
-                        }
-
-                        HyperLogging.ConnectionClosing(_logger, connection.Id, null);
-                        connection.StreamReader.Complete();
-                        connection.StreamWriter.Complete();
-                        connection.Client.Dispose();
-                        HyperLogging.ConnectionClosed(_logger, connection.Id, null);
+                        // I'm dying inside.
+                        Thread.Sleep(100);
                     }
                 }
 
@@ -158,29 +147,31 @@ namespace HyperSharp
             // Start parsing the HTTP Headers.
             await using NetworkStream networkStream = client.GetStream();
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
-            if (!context.IsSuccess)
+            if (context.IsSuccess)
+            {
+                // Execute any registered responders.
+                HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
+                Result<HyperStatus> status = await Configuration.RespondersDelegate(context.Value, cancellationTokenSource.Token);
+                if (!context.Value.HasResponded)
+                {
+                    HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
+                    if (status.IsSuccess)
+                    {
+                        await context.Value.RespondAsync(status.HasValue ? status.Value : HyperStatus.NoContent(), Configuration.JsonSerializerOptions);
+                    }
+                    else
+                    {
+                        await context.Value.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
+                    }
+
+                    HyperLogging.HttpResponded(_logger, connection.Id, status.Value, null);
+                }
+            }
+            else
             {
                 HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Errors, null);
-                return;
             }
 
-            // Execute any registered responders.
-            HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
-            Result<HyperStatus> status = await Configuration.RespondersDelegate(context.Value, cancellationTokenSource.Token);
-            if (!context.Value.HasResponded)
-            {
-                HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
-                if (status.IsSuccess)
-                {
-                    await context.Value.RespondAsync(status.HasValue ? status.Value : HyperStatus.NoContent(), Configuration.JsonSerializerOptions);
-                }
-                else
-                {
-                    await context.Value.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
-                }
-            }
-
-            HyperLogging.HttpResponded(_logger, connection.Id, status.Value, null);
             HyperLogging.ConnectionClosing(_logger, connection.Id, null);
             client.Dispose();
             _openConnections.TryRemove(connection.Id, out _);
