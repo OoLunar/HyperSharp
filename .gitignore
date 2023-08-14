@@ -485,3 +485,4 @@ logs/
 res/config.debug.json
 benchmark-results.md
 docs/_site/
+HyperStatus.*.cs

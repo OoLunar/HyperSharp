@@ -1,0 +1,64 @@
+<Project InitialTargets="GenerateHttpConstructor">
+  <UsingTask TaskName="HttpConstructorGenerator" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <Task>
+      <Reference Include="$(ProjectRoot)/tools/MakeShiftSourceGeneration/libs/Namotion.Reflection.dll" PrivateAssets="all" ExcludeAssets="Runtime" />
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Net" />
+      <Using Namespace="System.Text" />
+      <Using Namespace="Microsoft.Build.Framework" />
+      <Using Namespace="Microsoft.Build.Utilities" />
+      <Using Namespace="Namotion.Reflection" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+            const string codeTemplate =
+"""
+using System.Net;
+
+namespace HyperSharp.Protocol
+{
+    public readonly partial record struct HyperStatus
+    {
+        /// <summary>
+        /// {Summary}
+        /// </summary>
+        public static HyperStatus {Code}() => new(HttpStatusCode.{Code}, new HyperHeaderCollection(), null);
+
+        /// <summary>
+        /// {Summary}
+        /// </summary>
+        public static HyperStatus {Code}(object? body) => new(HttpStatusCode.{Code}, new HyperHeaderCollection(), body);
+
+        /// <summary>
+        /// {Summary}
+        /// </summary>
+        public static HyperStatus {Code}(HyperHeaderCollection headers) => new(HttpStatusCode.{Code}, headers, null);
+
+        /// <summary>
+        /// {Summary}
+        /// </summary>
+        public static HyperStatus {Code}(HyperHeaderCollection headers, object? body) => new(HttpStatusCode.{Code}, headers, body);
+    }
+}
+
+""";
+
+            string[] httpStatuses = Enum.GetNames(typeof(HttpStatusCode));
+            foreach (string httpStatus in httpStatuses)
+            {
+                StringBuilder stringBuilder = new(codeTemplate);
+                _ = stringBuilder.Replace("{Code}", httpStatus);
+                _ = stringBuilder.Replace("{Summary}", typeof(HttpStatusCode).GetField(httpStatus).GetXmlDocsSummary());
+
+                File.WriteAllText($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.cs", stringBuilder.ToString());
+            }
+
+            return true;
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  <Target Name="GenerateHttpConstructor" BeforeTargets="CoreCompile">
+    <HttpConstructorGenerator />
+  </Target>
+</Project>
