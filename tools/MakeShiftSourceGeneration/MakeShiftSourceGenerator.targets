@@ -53,13 +53,11 @@ namespace HyperSharp.Protocol
 
                 File.WriteAllText($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs", stringBuilder.ToString());
             }
-
-            return true;
         ]]>
       </Code>
     </Task>
   </UsingTask>
-  <Target Name="GenerateHttpConstructor" BeforeTargets="CoreCompile">
+  <Target Name="GenerateHttpConstructor" BeforeTargets="CoreCompile" Condition="!Exists('$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.OK.g.cs')" >
     <HttpConstructorGenerator />
   </Target>
 </Project>
