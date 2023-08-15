@@ -1,24 +1,4 @@
 {
-  "metadata": [
-    {
-      "src": [
-        {
-          "src": "../src/",
-          "files": [
-            "**/**.csproj"
-          ]
-        }
-      ],
-      "dest": "api",
-      "includePrivateMembers": false,
-      "disableGitFeatures": false,
-      "disableDefaultFilter": false,
-      "noRestore": false,
-      "namespaceLayout": "flattened",
-      "memberLayout": "samePage",
-      "allowCompilationErrors": false
-    }
-  ],
   "build": {
     "content": [
       {
@@ -36,22 +16,31 @@
         ]
       }
     ],
+    "output": "_site",
     "resource": [
       {
         "files": [
+          "favicon.ico",
           "images/**"
         ]
       }
     ],
-    "output": "_site",
-    "globalMetadataFiles": [],
-    "fileMetadataFiles": [],
     "template": [
       "default",
       "modern"
-    ],
-    "postProcessors": [],
-    "keepFileLink": false,
-    "disableGitFeatures": false
-  }
+    ]
+  },
+  "metadata": [
+    {
+      "dest": "api",
+      "src": [
+        {
+          "files": [
+            "**/**.csproj"
+          ],
+          "src": "../src/"
+        }
+      ]
+    }
+  ]
 }
