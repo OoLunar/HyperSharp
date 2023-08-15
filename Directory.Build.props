@@ -1,22 +1,24 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <PropertyGroup>
     <Authors>OoLunar</Authors>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/OoLunar/HyperSharp</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/OoLunar/HyperSharp</PackageProjectUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageIcon>logo.png</PackageIcon>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/OoLunar/HyperSharp</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <ProjectRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), "HyperSharp.sln"))</ProjectRoot>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/OoLunar/HyperSharp</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="$(ProjectRoot)/LICENSE" Pack="true" PackagePath="" />
-    <EmbeddedResource Include="$(ProjectRoot)/README.md" Pack="true" PackagePath="" />
+    <EmbeddedResource Include="$(ProjectRoot)/res/*.png" Pack="true" PackagePath=""/>
+    <EmbeddedResource Include="$(ProjectRoot)/LICENSE" Pack="true" PackagePath=""/>
+    <EmbeddedResource Include="$(ProjectRoot)/README.md" Pack="true" PackagePath=""/>
   </ItemGroup>
 </Project>
