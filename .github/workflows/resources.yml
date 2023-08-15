@@ -8,8 +8,6 @@ on:
       - "res/**/*.png"
       - "res/**/*.ico"
       - "tools/generate-assets.sh"
-    paths-ignore:
-      - "res/config.json"
   workflow_dispatch:
 
 permissions: write-all
