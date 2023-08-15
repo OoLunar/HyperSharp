@@ -7,9 +7,11 @@ on:
     paths:
       - ".github/workflows/docs.yml"
       - "docs/**"
+      - "res/logo*"
       - "src/**"
       - "tools/**"
       - "Directory.Build.props"
+      - "README.md"
       - "*.sln"
   workflow_dispatch:
 
