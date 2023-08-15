@@ -7,7 +7,7 @@ To request support, you may open up a new GitHub issue, discussion or join the [
 
 To report bugs or request new features, please use GitHub issues.
 
-Lastly, all API documentation and tutorials are available on the [website](https://oolunar.github.io/HyperSharp/), which is generated from the latest commit at the [docs](docs) folder.
+Lastly, all API documentation and tutorials are available on the [website](https://oolunar.github.io/HyperSharp/), which is generated from the latest commit at the [docs](https://github.com/OoLunar/HyperSharp/tree/master/docs) folder.
 
 # Table of Contents
  - [Core Concept: Responders](#core-concept-responders)
