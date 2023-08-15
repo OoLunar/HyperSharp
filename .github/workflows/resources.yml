@@ -4,7 +4,9 @@ on:
   push:
     paths:
       - ".github/workflows/resources.yml"
-      - "res/**"
+      - "res/**/*.svg"
+      - "res/**/*.png"
+      - "res/**/*.ico"
       - "tools/generate-assets.sh"
     paths-ignore:
       - "res/config.json"
