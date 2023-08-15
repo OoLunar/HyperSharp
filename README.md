@@ -1,5 +1,5 @@
 # HyperSharp Overview
-HyperSharp is a C# implementation of the HTTP 1.1 protocol. It's designed with emphasis on speed, lightweight nature, and most importantly: user-friendliness.
+HyperSharp is a C# implementation of the [HTTP 1.1 protocol](https://www.rfc-editor.org/rfc/rfc9110). It's designed with emphasis on speed, lightweight nature, and most importantly: user-friendliness.
 
 To get started, you can install the [NuGet package](https://www.nuget.org/packages/HyperSharp/) and follow the [setup](#setup) instructions.
 
@@ -27,7 +27,7 @@ Lastly, all API documentation and tutorials are available on the [website](https
 # Response Handling
 
  - Responders use results and errors for handling responses.
- - Synchronous (void) and asynchronous (Task/ValueTask) execution modes are supported, with no additional setup required from the user.
+ - Synchronous (`void`) and asynchronous (`Task`/`ValueTask`) execution modes are supported, with no additional setup required from the user.
 
 # Setup
 
