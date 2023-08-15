@@ -13,8 +13,11 @@ regenerate()
   # Optimize the SVG file
   svgo --multipass --quiet "$1"
 
+  # Small size for DocFX
+  convert -background none -resize 64x64 "$1" "${1%.*}_small.png"
+
   # Convert to PNG
-  convert -size 1024x1024 -background none "$1" "${1%.*}.png"
+  convert -background none "$1" "${1%.*}.png"
 
   # Convert to ICO
   # https://stackoverflow.com/a/15104985

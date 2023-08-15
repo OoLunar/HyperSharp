@@ -17,7 +17,7 @@
       }
     ],
     "globalMetadata": {
-      "_appLogoPath": "favicon.ico"
+      "_appLogoPath": "images/favicon.png"
     },
     "output": "_site",
     "resource": [
