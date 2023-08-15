@@ -3,9 +3,9 @@
     {
       "src": [
         {
-	  "src": "../src/",
+          "src": "../src/",
           "files": [
-            "**/bin/**/**.dll"
+            "**/**.csproj"
           ]
         }
       ],
