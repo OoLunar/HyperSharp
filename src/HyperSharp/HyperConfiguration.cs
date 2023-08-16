@@ -7,6 +7,8 @@ using HyperSharp.Protocol;
 using HyperSharp.Responders;
 using HyperSharp.Setup;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace HyperSharp
@@ -51,13 +53,13 @@ namespace HyperSharp
         /// <summary>
         /// Creates a new <see cref="HyperConfiguration"/> with the default values.
         /// </summary>
-        public HyperConfiguration() : this(new ServiceCollection().AddHyperSharp(), new HyperConfigurationBuilder()) { }
+        public HyperConfiguration() : this(new ServiceCollection().AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance)).AddHyperSharp(), new HyperConfigurationBuilder()) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperConfiguration"/> with the specified values.
         /// </summary>
         /// <param name="builder">The <see cref="HyperConfigurationBuilder"/> to use.</param>
-        public HyperConfiguration(HyperConfigurationBuilder builder) : this(new ServiceCollection().AddHyperSharp(), builder) { }
+        public HyperConfiguration(HyperConfigurationBuilder builder) : this(new ServiceCollection().AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance)).AddHyperSharp(), builder) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperConfiguration"/> using the specified <see cref="IServiceCollection"/>.
@@ -82,10 +84,11 @@ namespace HyperSharp
             }
 
             _host = host;
-            ListeningEndpoint = builder.ListeningEndpoint;
-            MaxHeaderSize = builder.MaxHeaderSize;
-            JsonSerializerOptions = serviceProvider.GetService<IOptionsSnapshot<JsonSerializerOptions>>()?.Get(builder.JsonSerializerOptionsName) ?? HyperJsonSerializationOptions.Default;
             ServerName = builder.ServerName;
+            MaxHeaderSize = builder.MaxHeaderSize;
+            Timeout = builder.Timeout;
+            ListeningEndpoint = builder.ListeningEndpoint;
+            JsonSerializerOptions = serviceProvider.GetService<IOptionsSnapshot<JsonSerializerOptions>>()?.Get(builder.JsonSerializerOptionsName) ?? HyperJsonSerializationOptions.Default;
 
             ResponderCompiler responderCompiler = serviceProvider.GetRequiredService<ResponderCompiler>();
             responderCompiler.Search(builder.Responders);

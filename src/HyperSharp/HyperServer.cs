@@ -132,16 +132,10 @@ namespace HyperSharp
             HyperLogging.ConnectionOpened(_logger, connection.RemoteEndPoint, connection.Id, null);
 
             // Try to reuse an existing cancellation token source. If none are available, create a new one.
-            CancellationTokenSource? cancellationTokenSource = null;
-            while (!_cancellationTokenSources.IsEmpty)
+            if (!_cancellationTokenSources.TryPop(out CancellationTokenSource? cancellationTokenSource))
             {
-                if (_cancellationTokenSources.TryPop(out cancellationTokenSource) && cancellationTokenSource.TryReset())
-                {
-                    break;
-                }
+                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_mainCancellationTokenSource!.Token);
             }
-
-            cancellationTokenSource ??= CancellationTokenSource.CreateLinkedTokenSource(_mainCancellationTokenSource!.Token);
             cancellationTokenSource.CancelAfter(Configuration.Timeout);
 
             // Start parsing the HTTP Headers.
@@ -155,14 +149,13 @@ namespace HyperSharp
                 if (!context.Value.HasResponded)
                 {
                     HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
-                    if (status.IsSuccess)
+
+                    await context.Value.RespondAsync(status.Status switch
                     {
-                        await context.Value.RespondAsync(status.HasValue ? status.Value : HyperStatus.NoContent(), Configuration.JsonSerializerOptions);
-                    }
-                    else
-                    {
-                        await context.Value.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
-                    }
+                        ResultStatus.IsSuccess | ResultStatus.HasValue => status.Value,
+                        ResultStatus.IsSuccess => HyperStatus.OK(),
+                        _ => HyperStatus.InternalServerError()
+                    }, Configuration.JsonSerializerOptions);
 
                     HyperLogging.HttpResponded(_logger, connection.Id, status.Value, null);
                 }
@@ -173,9 +166,21 @@ namespace HyperSharp
             }
 
             HyperLogging.ConnectionClosing(_logger, connection.Id, null);
-            client.Dispose();
+            await connection.StreamReader.CompleteAsync();
+            await connection.StreamWriter.CompleteAsync();
+            connection.Dispose();
             _openConnections.TryRemove(connection.Id, out _);
-            _cancellationTokenSources.Push(cancellationTokenSource);
+
+            if (cancellationTokenSource.TryReset())
+            {
+                _cancellationTokenSources.Push(cancellationTokenSource);
+            }
+            else
+            {
+                // Dispose of the token source if it's not reusable.
+                cancellationTokenSource.Dispose();
+            }
+
             HyperLogging.ConnectionClosed(_logger, connection.Id, null);
         }
     }

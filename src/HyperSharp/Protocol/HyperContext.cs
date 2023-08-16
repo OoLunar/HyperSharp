@@ -26,6 +26,8 @@ namespace HyperSharp.Protocol
             [HttpVersion.Version10] = "HTTP/1.0 "u8.ToArray(),
             [HttpVersion.Version11] = "HTTP/1.1 "u8.ToArray(),
         }.ToFrozenDictionary();
+        private static readonly ReadOnlyMemory<byte> _newLine = new("\r\n"u8.ToArray());
+        private static readonly byte[] _emptyBody = Array.Empty<byte>();
 
         /// <summary>
         /// The HTTP method of the request.
@@ -106,10 +108,12 @@ namespace HyperSharp.Protocol
             // Write request line
             await Connection.StreamWriter.WriteAsync(_httpVersions[Version], cancellationToken);
             await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"), cancellationToken);
-            await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+            await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
 
             // Serialize body ahead of time due to headers
-            byte[] content = JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? Connection.Server.Configuration.JsonSerializerOptions);
+            byte[] content = status.Body is null
+                ? _emptyBody
+                : JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? Connection.Server.Configuration.JsonSerializerOptions);
 
             // Write headers
             status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
@@ -125,7 +129,7 @@ namespace HyperSharp.Protocol
                 if (!status.Headers.TryGetValue(headerName, out IReadOnlyList<byte[]>? headerValues))
                 {
                     // This shouldn't be able to happen, but just in case.
-                    await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+                    await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
                     continue;
                 }
 
@@ -142,9 +146,9 @@ namespace HyperSharp.Protocol
                     }
                 }
 
-                await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+                await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
             }
-            await Connection.StreamWriter.WriteAsync("\r\n"u8.ToArray(), cancellationToken);
+            await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
 
             // Write body
             if (content.Length != 0)
@@ -152,8 +156,6 @@ namespace HyperSharp.Protocol
                 await Connection.StreamWriter.WriteAsync(content, cancellationToken);
             }
 
-            await BodyReader.CompleteAsync();
-            await Connection.StreamWriter.CompleteAsync();
             HasResponded = true;
         }
 

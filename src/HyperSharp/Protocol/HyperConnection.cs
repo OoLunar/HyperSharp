@@ -8,7 +8,7 @@ namespace HyperSharp.Protocol
     /// <summary>
     /// Represents a client connection to the Hyper server.
     /// </summary>
-    public sealed record HyperConnection
+    public sealed record HyperConnection : IDisposable
     {
         /// <summary>
         /// The unique identifier of the connection, containing the timestamp of when the connection was created.
@@ -46,6 +46,8 @@ namespace HyperSharp.Protocol
         /// </summary>
         private Stream _baseStream { get; set; }
 
+        private bool _isDisposed;
+
         /// <summary>
         /// Creates a new client connection to the Hyper server.
         /// </summary>
@@ -82,6 +84,21 @@ namespace HyperSharp.Protocol
             _baseStream = baseStream;
             StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
             StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            StreamReader.Complete();
+            StreamWriter.Complete();
+            _baseStream.Dispose();
+            Client.Dispose();
+            _isDisposed = true;
         }
     }
 }
