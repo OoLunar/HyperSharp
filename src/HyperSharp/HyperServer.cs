@@ -149,15 +149,17 @@ namespace HyperSharp
                 if (!context.Value.HasResponded)
                 {
                     HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
-
-                    await context.Value.RespondAsync(status.Status switch
+                    HyperStatus response = status.Status switch
                     {
                         ResultStatus.IsSuccess | ResultStatus.HasValue => status.Value,
                         ResultStatus.IsSuccess => HyperStatus.OK(),
-                        _ => HyperStatus.InternalServerError()
-                    }, Configuration.JsonSerializerOptions);
+                        ResultStatus.HasValue => HyperStatus.InternalServerError(status.Value.Headers, status.Value.Body),
+                        ResultStatus.None => HyperStatus.InternalServerError(),
+                        _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
+                    };
 
-                    HyperLogging.HttpResponded(_logger, connection.Id, status.Value, null);
+                    await context.Value.RespondAsync(response, Configuration.JsonSerializerOptions);
+                    HyperLogging.HttpResponded(_logger, connection.Id, response, null);
                 }
             }
             else

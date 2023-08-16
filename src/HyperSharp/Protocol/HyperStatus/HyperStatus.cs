@@ -66,6 +66,6 @@ namespace HyperSharp.Protocol
         }
 
         /// <inheritdoc />
-        public override string ToString() => $"{(int)Code} {Code}, {Headers.Count:N0} header{(Headers.Count == 1 ? "" : "s")}";
+        public override string ToString() => $"{(int)Code} {Code}, {Headers?.Count:N0 ?? 0} header{(Headers?.Count == 1 ? "" : "s")}";
     }
 }
