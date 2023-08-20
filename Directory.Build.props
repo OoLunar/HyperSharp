@@ -1,8 +1,11 @@
 <Project>
   <PropertyGroup>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Nullable>enable</Nullable>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <PropertyGroup>
     <Authors>OoLunar</Authors>
@@ -13,6 +16,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <ProjectRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), "HyperSharp.sln"))</ProjectRoot>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/OoLunar/HyperSharp</RepositoryUrl>
   </PropertyGroup>
@@ -20,5 +24,6 @@
     <EmbeddedResource Include="$(ProjectRoot)/res/*.png" Pack="true" PackagePath=""/>
     <EmbeddedResource Include="$(ProjectRoot)/LICENSE" Pack="true" PackagePath=""/>
     <EmbeddedResource Include="$(ProjectRoot)/README.md" Pack="true" PackagePath=""/>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
   </ItemGroup>
 </Project>
