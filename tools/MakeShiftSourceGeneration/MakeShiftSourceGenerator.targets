@@ -53,7 +53,7 @@ namespace HyperSharp.Protocol
             string? dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
             if (dotnetRoot is null)
             {
-                Log.LogError("DOTNET_ROOT is not set.");
+                Log.LogError("The DOTNET_ROOT environment variable is not set.");
                 return false;
             }
 
@@ -63,7 +63,7 @@ namespace HyperSharp.Protocol
                 string msBuildDependenciesJsonPath = Path.Combine(sdkVersion, "Microsoft.NETCore.App.runtimeconfig.json");
                 if (!File.Exists(msBuildDependenciesJsonPath))
                 {
-                    Log.LogWarning($"Skipping '{sdkVersion}' because '{msBuildDependenciesJsonPath}' does not exist."});
+                    Log.LogWarning($"Skipping '{sdkVersion}' because '{msBuildDependenciesJsonPath}' does not exist.");
                     continue;
                 }
 
