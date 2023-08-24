@@ -25,6 +25,8 @@ namespace HyperSharp.Protocol
 {
     public readonly partial record struct HyperStatus
     {
+        #if {{NetVersion}}_OR_GREATER
+
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
         public static HyperStatus {{Code}}() => new(global::System.Net.HttpStatusCode.{{Code}}, new HyperHeaderCollection(), null);
 
@@ -40,6 +42,8 @@ namespace HyperSharp.Protocol
         /// <param name="headers">The headers of the response.</param>
         /// <param name="body">The body of the response.</param>
         public static HyperStatus {{Code}}(HyperHeaderCollection headers, object? body) => new(global::System.Net.HttpStatusCode.{{Code}}, headers, body);
+
+        #endif
     }
 }
 
@@ -53,7 +57,7 @@ namespace HyperSharp.Protocol
                 return false;
             }
 
-            Dictionary<NuGetFramework, string> nuGetFrameworks = new();
+            Dictionary<NuGetFramework, (string, string)> nuGetFrameworks = new();
             foreach (string sdkVersion in Directory.GetDirectories(Path.Combine(dotnetRoot, "shared/Microsoft.NETCore.App/")))
             {
                 string msBuildDependenciesJsonPath = Path.Combine(sdkVersion, "Microsoft.NETCore.App.runtimeconfig.json");
@@ -84,19 +88,29 @@ namespace HyperSharp.Protocol
                     continue;
                 }
 
-                nuGetFrameworks.Add(NuGetFramework.Parse(targetFrameworkMoniker), Path.GetDirectoryName(msBuildDependenciesJsonPath)!);
+                nuGetFrameworks.Add(NuGetFramework.Parse(targetFrameworkMoniker), (msBuildDependenciesJsonPath, targetFrameworkMoniker));
             }
 
-            FrameworkReducer frameworkReducer = new();
-            NuGetFramework selectedFramework = frameworkReducer.ReduceDownwards(nuGetFrameworks.Keys).First();
-
-            Assembly assembly = Assembly.LoadFile(Path.Combine(nuGetFrameworks[selectedFramework], "System.Net.Primitives.dll"));
-            string[] httpStatuses = Enum.GetNames(assembly.GetType("System.Net.HttpStatusCode")!);
-            foreach (string httpStatus in httpStatuses)
+            foreach (KeyValuePair<NuGetFramework, (string, string)> kvp in nuGetFrameworks.OrderBy(framework => framework.Key, new NuGetFrameworkSorter()))
             {
-                StringBuilder stringBuilder = new(codeTemplate);
-                stringBuilder.Replace("{{Code}}", httpStatus);
-                File.WriteAllText($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs", stringBuilder.ToString());
+                NuGetFramework nuGetFramework = kvp.Key;
+                string msBuildDependenciesJsonPath = kvp.Value.Item1;
+                string targetFrameworkMoniker = kvp.Value.Item2;
+
+                Assembly assembly = Assembly.LoadFile(Path.Combine(Path.GetDirectoryName(msBuildDependenciesJsonPath), "System.Net.Primitives.dll"));
+                string[] httpStatuses = Enum.GetNames(assembly.GetType("System.Net.HttpStatusCode")!);
+                foreach (string httpStatus in httpStatuses)
+                {
+                    if(File.Exists($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs"))
+                    {
+                        continue;
+                    }
+
+                    StringBuilder stringBuilder = new(codeTemplate);
+                    stringBuilder.Replace("{{NetVersion}}", targetFrameworkMoniker.Replace('.', '_').ToUpperInvariant());
+                    stringBuilder.Replace("{{Code}}", httpStatus);
+                    File.WriteAllText($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs", stringBuilder.ToString());
+                }
             }
         ]]>
       </Code>
