@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using HyperSharp.Setup;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace HyperSharp.Examples.Intro
 {
@@ -11,6 +12,14 @@ namespace HyperSharp.Examples.Intro
         {
             // Create a new service collection and add HyperSharp to it.
             IServiceCollection services = new ServiceCollection();
+            services.AddLogging(loggingBuilder => // Optional, but recommended.
+            {
+                LoggerConfiguration configuration = new();
+                configuration.MinimumLevel.Debug();
+                configuration.WriteTo.Console();
+
+                loggingBuilder.AddSerilog(configuration.CreateLogger());
+            });
             services.AddHyperSharp();
 
             // Build the service provider and get the HyperServer instance.

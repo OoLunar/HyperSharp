@@ -6,4 +6,9 @@
   <ItemGroup>
     <ProjectReference Include="$(ProjectRoot)/src/HyperSharp/HyperSharp.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="3.0.1" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+  </ItemGroup>
 </Project>

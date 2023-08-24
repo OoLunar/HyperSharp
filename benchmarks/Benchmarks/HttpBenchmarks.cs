@@ -27,7 +27,7 @@ namespace HyperSharp.Benchmarks.Cases
         public void Setup() => _hyperServer.Start();
 
         [GlobalCleanup]
-        public Task CleanupAsync() => _hyperServer.StopAsync();
+        public void Cleanup() => _hyperServer.Stop();
 
         [WarmupCount(5), Benchmark]
         public async Task HttpClientTestAsync() => await _client.GetAsync("http://localhost:8080/");
