@@ -94,14 +94,14 @@ namespace HyperSharp
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the server is not running.</exception>
-        public async Task StopAsync()
+        public void Stop()
         {
             if (_mainCancellationTokenSource is null)
             {
                 throw new InvalidOperationException("The server is not running.");
             }
 
-            await _mainCancellationTokenSource.CancelAsync();
+            _mainCancellationTokenSource.Cancel();
             _mainCancellationTokenSource.Dispose();
             _mainCancellationTokenSource = null;
         }

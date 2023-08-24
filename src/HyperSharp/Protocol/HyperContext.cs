@@ -1,5 +1,9 @@
 using System;
+#if NET8_0_OR_GREATER
 using System.Collections.Frozen;
+#else
+using System.Collections.Immutable;
+#endif
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Pipelines;
@@ -21,11 +25,16 @@ namespace HyperSharp.Protocol
         /// <summary>
         /// The currently supported HTTP versions.
         /// </summary>
-        private static readonly FrozenDictionary<Version, byte[]> _httpVersions = new Dictionary<Version, byte[]>()
+        private static readonly IReadOnlyDictionary<Version, byte[]> _httpVersions = new Dictionary<Version, byte[]>()
         {
             [HttpVersion.Version10] = "HTTP/1.0 "u8.ToArray(),
             [HttpVersion.Version11] = "HTTP/1.1 "u8.ToArray(),
-        }.ToFrozenDictionary();
+        }
+#if NET8_0_OR_GREATER
+        .ToFrozenDictionary();
+#else
+        .ToImmutableDictionary();
+#endif
         private static readonly ReadOnlyMemory<byte> _newLine = new("\r\n"u8.ToArray());
         private static readonly byte[] _emptyBody = Array.Empty<byte>();
 
