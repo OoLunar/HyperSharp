@@ -29,7 +29,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8
+          dotnet-version: |
+            8
+            7
       - name: Build Project
         run: dotnet build
   test_commit:
@@ -40,7 +42,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8
+          dotnet-version: |
+            8
+            7
       - name: Test Project
         run: dotnet test
   benchmark_commit:
@@ -53,7 +57,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8
+          dotnet-version: |
+            8
+            7
       - name: Benchmark Project
         run: dotnet run -c Release --project benchmarks/HyperSharp.Benchmarks.csproj
       - name: Output Test Results

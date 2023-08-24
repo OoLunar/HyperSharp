@@ -53,7 +53,7 @@ namespace HyperSharp.Protocol
             string? dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
             if (dotnetRoot is null)
             {
-                Log.LogError("DOTNET_ROOT is not set.");
+                BuildEngine.LogErrorEvent(new BuildErrorEventArgs("MakeShiftSourceGenerator", "DotNetRootNotFound", "The environment variable DOTNET_ROOT was not found.", "MakeShiftSourceGenerator.targets", 0, 0, 0, 0));
                 return false;
             }
 
@@ -63,28 +63,33 @@ namespace HyperSharp.Protocol
                 string msBuildDependenciesJsonPath = Path.Combine(sdkVersion, "Microsoft.NETCore.App.runtimeconfig.json");
                 if (!File.Exists(msBuildDependenciesJsonPath))
                 {
+                    BuildEngine.LogWarningEvent(new BuildWarningEventArgs("MakeShiftSourceGenerator", "MsBuildDependenciesJsonNotFound", $"The file {msBuildDependenciesJsonPath} was not found.", "MakeShiftSourceGenerator.targets", 0, 0, 0, 0));
                     continue;
                 }
 
                 JsonDocument? jsonDocument = JsonDocument.Parse(File.ReadAllText(msBuildDependenciesJsonPath));
                 if (jsonDocument is null)
                 {
+                    BuildEngine.LogWarningEvent(new BuildWarningEventArgs("MakeShiftSourceGenerator", "MsBuildDependenciesJsonNotParsed", $"The file {msBuildDependenciesJsonPath} could not be parsed.", "MakeShiftSourceGenerator.targets", 0, 0, 0, 0));
                     continue;
                 }
 
                 // runtimeOptions.tfm
                 if (!jsonDocument.RootElement.TryGetProperty("runtimeOptions", out JsonElement runtimeOptions) || !runtimeOptions.TryGetProperty("tfm", out JsonElement tfm))
                 {
+                    BuildEngine.LogWarningEvent(new BuildWarningEventArgs("MakeShiftSourceGenerator", "MsBuildDependenciesJsonNotParsed", $"The file {msBuildDependenciesJsonPath} was missing the expected \"runtimeOptions.tfm\" property.", "MakeShiftSourceGenerator.targets", 0, 0, 0, 0));
                     continue;
                 }
 
                 string? targetFrameworkMoniker = tfm.GetString();
                 if (targetFrameworkMoniker is null)
                 {
+                    BuildEngine.LogWarningEvent(new BuildWarningEventArgs("MakeShiftSourceGenerator", "MsBuildDependenciesJsonNotParsed", $"The file {msBuildDependenciesJsonPath} was \"runtimeOptions.tfm\" property has an unexpected null value.", "MakeShiftSourceGenerator.targets", 0, 0, 0, 0));
                     continue;
                 }
                 else if (!targetedFrameworks.Any(framework => framework.StartsWith(targetFrameworkMoniker, StringComparison.OrdinalIgnoreCase)))
                 {
+                    BuildEngine.LogDebugEvent(new BuildMessageEventArgs($"Skipping target framework {targetFrameworkMoniker} because it is not targeted by the project.", "MakeShiftSourceGenerator.targets", "MakeShiftSourceGenerator", MessageImportance.Low));
                     continue;
                 }
 

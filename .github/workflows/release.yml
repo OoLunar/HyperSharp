@@ -30,7 +30,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8
+          dotnet-version: |
+            8
+            7
       - name: Publish NuGet packages
         run: |
           mkdir build
@@ -60,7 +62,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8
+          dotnet-version: |
+            8
+            7
       - name: Publish NuGet packages
         run: |
           mkdir build
