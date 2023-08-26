@@ -28,7 +28,7 @@ namespace HyperSharp.Protocol
             ' ', ':', ';', '.', ',', '\\', '/', '"', '\'', '!', '?', '(', ')', '{', '}', '[', ']', '@', '<', '>', '=', '+', '*', '#', '$', '&', '`', '|', '~', '^', '%'
         };
 
-        private readonly Dictionary<string, List<byte[]>> _headers = new();
+        private readonly Dictionary<string, List<byte[]>> _headers = new(StringComparer.OrdinalIgnoreCase);
 
         /// <inheritdoc/>
         public int Count => _headers.Count;
@@ -76,7 +76,7 @@ namespace HyperSharp.Protocol
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
         public void Add(string name, string value)
         {
-            ValidateArgumentParameters(ref name, value);
+            ValidateArgumentParameters(name, value);
             if (_headers.TryGetValue(name, out List<byte[]>? values))
             {
                 values.Add(Encoding.ASCII.GetBytes(value));
@@ -98,7 +98,7 @@ namespace HyperSharp.Protocol
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="values"/> contains invalid characters.</exception>
         public void Add(string name, IEnumerable<string> values)
         {
-            ValidateArgumentParameters(ref name, values);
+            ValidateArgumentParameters(name, values);
             if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
                 existingValues = new List<byte[]>();
@@ -119,13 +119,7 @@ namespace HyperSharp.Protocol
         /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
         public bool TryAdd(string name, string value)
         {
-            if (name is null || !IsValidName(name))
-            {
-                return false;
-            }
-
-            name = NormalizeHeaderName(name);
-            if (_headers.ContainsKey(name) || value is null || !IsValidValue(value))
+            if (name is null || !IsValidName(name) || _headers.ContainsKey(name) || value is null || !IsValidValue(value))
             {
                 return false;
             }
@@ -142,13 +136,7 @@ namespace HyperSharp.Protocol
         /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
         public bool TryAdd(string name, IEnumerable<string> values)
         {
-            if (name is null || !IsValidName(name) || values is null)
-            {
-                return false;
-            }
-
-            name = NormalizeHeaderName(name);
-            if (_headers.ContainsKey(name))
+            if (name is null || !IsValidName(name) || values is null || _headers.ContainsKey(name))
             {
                 return false;
             }
@@ -178,7 +166,7 @@ namespace HyperSharp.Protocol
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
         public void Set(string name, string value)
         {
-            ValidateArgumentParameters(ref name, value);
+            ValidateArgumentParameters(name, value);
             if (!_headers.TryGetValue(name, out List<byte[]>? values))
             {
                 _headers.Add(name, new List<byte[]> { Encoding.ASCII.GetBytes(value) });
@@ -199,7 +187,7 @@ namespace HyperSharp.Protocol
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="values"/> contains invalid characters.</exception>
         public void Set(string name, IEnumerable<string> values)
         {
-            ValidateArgumentParameters(ref name, values);
+            ValidateArgumentParameters(name, values);
             if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
                 existingValues = new List<byte[]>();
@@ -221,7 +209,7 @@ namespace HyperSharp.Protocol
         /// <returns><see langword="true"/> if the header was found and removed; otherwise, <see langword="false"/>.</returns>
         public bool Remove(string name)
         {
-            ValidateArgumentParameters(ref name, string.Empty);
+            ValidateArgumentParameters(name, string.Empty);
             return _headers.Remove(name);
         }
 
@@ -233,7 +221,7 @@ namespace HyperSharp.Protocol
         /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out string value)
         {
-            ValidateArgumentParameters(ref name, string.Empty);
+            ValidateArgumentParameters(name, string.Empty);
             if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
                 value = null;
@@ -252,7 +240,7 @@ namespace HyperSharp.Protocol
         /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<string> values)
         {
-            ValidateArgumentParameters(ref name, string.Empty);
+            ValidateArgumentParameters(name, string.Empty);
             if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
                 values = null;
@@ -271,7 +259,7 @@ namespace HyperSharp.Protocol
         /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out byte[] value)
         {
-            ValidateArgumentParameters(ref name, string.Empty);
+            ValidateArgumentParameters(name, string.Empty);
             if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
                 value = null;
@@ -290,7 +278,7 @@ namespace HyperSharp.Protocol
         /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<byte[]> values)
         {
-            ValidateArgumentParameters(ref name, string.Empty);
+            ValidateArgumentParameters(name, string.Empty);
             if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
             {
                 values = null;
@@ -309,7 +297,7 @@ namespace HyperSharp.Protocol
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="value"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
-        private static void ValidateArgumentParameters(ref string name, string value)
+        private static void ValidateArgumentParameters(string name, string value)
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
             ArgumentNullException.ThrowIfNull(value, nameof(value));
@@ -318,13 +306,10 @@ namespace HyperSharp.Protocol
             {
                 throw new ArgumentException($"Invalid header name: {name}", nameof(name));
             }
-
-            if (!IsValidValue(value))
+            else if (!IsValidValue(value))
             {
                 throw new ArgumentException($"Invalid header value: {value}", nameof(value));
             }
-
-            name = NormalizeHeaderName(name);
         }
 
         /// <summary>
@@ -335,7 +320,7 @@ namespace HyperSharp.Protocol
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="values"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="values"/> contains invalid characters.</exception>
-        private static void ValidateArgumentParameters(ref string name, IEnumerable<string> values)
+        private static void ValidateArgumentParameters(string name, IEnumerable<string> values)
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
             ArgumentNullException.ThrowIfNull(values, nameof(values));
@@ -352,8 +337,6 @@ namespace HyperSharp.Protocol
                     throw new ArgumentException($"Invalid header value: {item}", nameof(values));
                 }
             }
-
-            name = NormalizeHeaderName(name);
         }
 
         /// <summary>
@@ -433,7 +416,7 @@ namespace HyperSharp.Protocol
             characters[0] = char.ToUpperInvariant(value[0]);
             for (int i = 1; i < value.Length; i++)
             {
-                if (value[i] == '-' || value[i] == '_')
+                if (value[i] is '-' or '_')
                 {
                     characters[i + 1] = char.ToUpperInvariant(value[i + 1]);
                 }
