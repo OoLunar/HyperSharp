@@ -61,19 +61,20 @@ namespace HyperSharp.Protocol
                     return Result.Failure<HyperContext>("Data exceeds the max header size.");
                 }
 
-                Result<bool> headerResult = TryParseHeader(readResult, maxHeaderSize, ref sequencePosition, ref headers);
+                Result headerResult = TryParseHeader(readResult, maxHeaderSize, ref sequencePosition, out string? name, out string? value);
                 if (!headerResult.IsSuccess)
                 {
                     return Result.Failure<HyperContext>(headerResult.Errors);
                 }
-
                 connection.StreamReader.AdvanceTo(sequencePosition);
-                if (!headerResult.Value)
+
+                // End of headers
+                if (name is null && value is null)
                 {
-                    // We've reached the end of the headers
                     break;
                 }
 
+                headers.Add(name!, value!);
                 readResult = await connection.StreamReader.ReadAsync(cancellationToken);
             }
 
@@ -188,35 +189,39 @@ namespace HyperSharp.Protocol
             return Result.Success();
         }
 
-        private static Result<bool> TryParseHeader(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition, ref HyperHeaderCollection headers)
+        private static Result TryParseHeader(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition, out string? name, out string? value)
         {
+            name = default;
+            value = default;
+
             SequenceReader<byte> sequenceReader = new(result.Buffer);
             if (!sequenceReader.TryReadTo(out ReadOnlySpan<byte> header, "\r\n"u8, advancePastDelimiter: true))
             {
-                return Result.Failure<bool>("Invalid header data.");
+                return Result.Failure("Invalid header data.");
             }
             else if (header.Length > maxHeaderSize)
             {
-                return Result.Failure<bool>("Header line length exceeds max header size.");
+                return Result.Failure("Header line length exceeds max header size.");
             }
             else if (header.Length == 0)
             {
                 // We've reached the end of the headers
                 // Skip the next two bytes (\r\n)
                 sequencePosition = sequenceReader.Position;
-                return Result.Success(false);
+                return Result.Success();
             }
 
             // Find the index of the separator (':') in the header line
             int separatorIndex = header.IndexOf((byte)':');
             if (separatorIndex == -1)
             {
-                return Result.Failure<bool>("Invalid header data.");
+                return Result.Failure("Invalid header data.");
             }
 
-            headers.Add(Encoding.Latin1.GetString(header[..separatorIndex]).Trim(), header[(separatorIndex + 1)..]);
+            name = Encoding.ASCII.GetString(header[..separatorIndex]).Trim();
+            value = Encoding.ASCII.GetString(header[(separatorIndex + 1)..]).Trim();
             sequencePosition = sequenceReader.Position;
-            return Result.Success(true);
+            return Result.Success();
         }
     }
 }
