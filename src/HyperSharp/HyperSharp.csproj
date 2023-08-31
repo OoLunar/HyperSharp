@@ -1,16 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="GenerateHttpConstructor">
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="Generate">
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <Description>A C# implementation of the HTTP 1.1 protocol.</Description>
     <PackageId>OoLunar.HyperSharp</PackageId>
+    <RestoreSources>$(ProjectRoot)/src/HyperSharp.SourceGeneration/bin/Debug;$(RestoreSources)</RestoreSources>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../HyperSharp.Results/HyperSharp.Results.csproj" />
     <ProjectReference Include="../HyperSharp.Responders/HyperSharp.Responders.csproj" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.2" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
     <PackageReference Include="System.IO.Pipelines" Version="7.0.0" />
     <PackageReference Include="Ulid" Version="1.2.6" />
   </ItemGroup>
-  <Import Project="$(ProjectRoot)/tools/MakeShiftSourceGeneration/MakeShiftSourceGenerator.targets" />
+  <Target Name="Generate">
+    <Exec Command="dotnet run --project $(ProjectRoot)/src/HyperSharp.SourceGeneration/HyperSharp.SourceGeneration.csproj -- --targetFrameworks='$(TargetFrameworks)'" WorkingDirectory="$(ProjectRoot)/src/HyperSharp/" />
+  </Target>
 </Project>

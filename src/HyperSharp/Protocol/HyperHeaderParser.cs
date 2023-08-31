@@ -61,20 +61,19 @@ namespace HyperSharp.Protocol
                     return Result.Failure<HyperContext>("Data exceeds the max header size.");
                 }
 
-                Result headerResult = TryParseHeader(readResult, maxHeaderSize, ref sequencePosition, out string? name, out string? value);
+                Result<bool> headerResult = TryParseHeader(readResult, maxHeaderSize, ref sequencePosition, ref headers);
                 if (!headerResult.IsSuccess)
                 {
                     return Result.Failure<HyperContext>(headerResult.Errors);
                 }
-                connection.StreamReader.AdvanceTo(sequencePosition);
 
-                // End of headers
-                if (name is null && value is null)
+                connection.StreamReader.AdvanceTo(sequencePosition);
+                if (!headerResult.Value)
                 {
+                    // We've reached the end of the headers
                     break;
                 }
 
-                headers.Add(name!, value!);
                 readResult = await connection.StreamReader.ReadAsync(cancellationToken);
             }
 
@@ -117,7 +116,6 @@ namespace HyperSharp.Protocol
 
             // https://www.rfc-editor.org/rfc/rfc9110#section-9.1
             // All HTTP methods are case-sensitive.
-            // TODO: Source gen
             ReadOnlySpan<byte> methodSpan = startLine[..firstSpaceIndex];
             if (methodSpan.SequenceEqual("GET"u8))
             {
@@ -190,40 +188,35 @@ namespace HyperSharp.Protocol
             return Result.Success();
         }
 
-        private static Result TryParseHeader(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition, out string? name, out string? value)
+        private static Result<bool> TryParseHeader(ReadResult result, int maxHeaderSize, ref SequencePosition sequencePosition, ref HyperHeaderCollection headers)
         {
-            name = default;
-            value = default;
-
             SequenceReader<byte> sequenceReader = new(result.Buffer);
             if (!sequenceReader.TryReadTo(out ReadOnlySpan<byte> header, "\r\n"u8, advancePastDelimiter: true))
             {
-                return Result.Failure("Invalid header data.");
+                return Result.Failure<bool>("Invalid header data.");
             }
             else if (header.Length > maxHeaderSize)
             {
-                return Result.Failure("Header line length exceeds max header size.");
+                return Result.Failure<bool>("Header line length exceeds max header size.");
             }
             else if (header.Length == 0)
             {
                 // We've reached the end of the headers
                 // Skip the next two bytes (\r\n)
                 sequencePosition = sequenceReader.Position;
-                return Result.Success();
+                return Result.Success(false);
             }
 
             // Find the index of the separator (':') in the header line
             int separatorIndex = header.IndexOf((byte)':');
             if (separatorIndex == -1)
             {
-                return Result.Failure("Invalid header data.");
+                return Result.Failure<bool>("Invalid header data.");
             }
 
-            // TODO: Pass the header name and value as ReadOnlySpan<byte> to avoid allocations
-            name = Encoding.ASCII.GetString(header[..separatorIndex]).Trim();
-            value = Encoding.ASCII.GetString(header[(separatorIndex + 1)..]).Trim();
+            headers.Add(Encoding.Latin1.GetString(header[..separatorIndex]).Trim(), header[(separatorIndex + 1)..]);
             sequencePosition = sequenceReader.Position;
-            return Result.Success();
+            return Result.Success(true);
         }
     }
 }

@@ -67,7 +67,7 @@ namespace HyperSharp.Protocol
         }
 
         /// <summary>
-        /// Adds a header with a single value. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// Adds a header with a single value.
         /// </summary>
         /// <param name="name">The name of the header.</param>
         /// <param name="value">The value of the header.</param>
@@ -89,7 +89,7 @@ namespace HyperSharp.Protocol
 
 
         /// <summary>
-        /// Adds a header with multiple values. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// Adds a header with multiple values.
         /// </summary>
         /// <param name="name">The name of the header.</param>
         /// <param name="values">The values of the header.</param>
@@ -112,7 +112,52 @@ namespace HyperSharp.Protocol
         }
 
         /// <summary>
-        /// Adds a header with a single value if the header does not already exist. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// Adds a header with a single value in ASCII byte form.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="value">The value of the header, in 7-bit ASCII form.</param>
+        public void Add(string name, ReadOnlySpan<byte> value)
+        {
+            if (name is null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+            else if (!IsValidName(name))
+            {
+                throw new ArgumentException($"Invalid header name: {name}", nameof(name));
+            }
+
+            ReadOnlySpan<char> validCharSpan = _validHeaderValueCharacters.AsSpan();
+            byte[] characters = new byte[value.Length];
+            for (int i = 0; i < value.Length; i++)
+            {
+                char asciiCharacter = (char)(value[i] & 255);
+                if (!validCharSpan.Contains(asciiCharacter))
+                {
+                    throw new ArgumentException($"Invalid header value: {characters}", nameof(value));
+                }
+
+                // Trim leading whitespace
+                if (char.IsWhiteSpace(asciiCharacter) && i == 0)
+                {
+                    continue;
+                }
+
+                characters[i] = (byte)asciiCharacter;
+            }
+
+            if (_headers.TryGetValue(name, out List<byte[]>? values))
+            {
+                values.Add(characters);
+            }
+            else
+            {
+                _headers.Add(name, new List<byte[]> { characters });
+            }
+        }
+
+        /// <summary>
+        /// Adds a header with a single value if the header does not already exist.
         /// </summary>
         /// <param name="name">The name of the header.</param>
         /// <param name="value">The value of the header.</param>
@@ -129,7 +174,7 @@ namespace HyperSharp.Protocol
         }
 
         /// <summary>
-        /// Adds a header with multiple values if the header does not already exist. The header name will be normalized from x-Header-name to X-Header-Name format.
+        /// Adds a header with multiple values if the header does not already exist.
         /// </summary>
         /// <param name="name">The name of the header.</param>
         /// <param name="values">The values of the header.</param>
@@ -157,7 +202,43 @@ namespace HyperSharp.Protocol
         }
 
         /// <summary>
-        /// Sets a header with a single value. The header name will be normalized from x-Header-name to X-Header-Name format. If the header already exists, it will be overwritten.
+        /// Adds a header with a single value in ASCII byte form if the header does not already exist.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="value">The value of the header, in 7-bit ASCII form.</param>
+        /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
+        public bool TryAdd(string name, ReadOnlySpan<byte> value)
+        {
+            if (name is null || !IsValidName(name) || _headers.ContainsKey(name))
+            {
+                return false;
+            }
+
+            ReadOnlySpan<char> validCharSpan = _validHeaderValueCharacters.AsSpan();
+            byte[] characters = new byte[value.Length];
+            for (int i = 0; i < value.Length; i++)
+            {
+                char asciiCharacter = (char)(value[i] & 255);
+                if (!validCharSpan.Contains(asciiCharacter))
+                {
+                    return false;
+                }
+
+                // Trim leading whitespace
+                if (char.IsWhiteSpace(asciiCharacter) && i == 0)
+                {
+                    continue;
+                }
+
+                characters[i] = (byte)asciiCharacter;
+            }
+
+            _headers.Add(name, new List<byte[]> { characters });
+            return true;
+        }
+
+        /// <summary>
+        /// Sets a header with a single value.  If the header already exists, it will be overwritten.
         /// </summary>
         /// <param name="name">The name of the header.</param>
         /// <param name="value">The value of the header.</param>
@@ -178,7 +259,7 @@ namespace HyperSharp.Protocol
         }
 
         /// <summary>
-        /// Sets a header with multiple values. The header name will be normalized from x-Header-name to X-Header-Name format. If the header already exists, it will be overwritten.
+        /// Sets a header with multiple values.  If the header already exists, it will be overwritten.
         /// </summary>
         /// <param name="name">The name of the header.</param>
         /// <param name="values">The values of the header.</param>
@@ -372,7 +453,7 @@ namespace HyperSharp.Protocol
             Span<char> validNameSpan = _validHeaderNameCharacters.AsSpan();
             foreach (char character in value)
             {
-                if (validNameSpan.IndexOf(character) == -1)
+                if (!validNameSpan.Contains(character))
                 {
                     return false;
                 }
@@ -391,7 +472,7 @@ namespace HyperSharp.Protocol
             Span<char> validValueSpan = _validHeaderValueCharacters.AsSpan();
             foreach (char character in value)
             {
-                if (validValueSpan.IndexOf(character) == -1)
+                if (!validValueSpan.Contains(character))
                 {
                     return false;
                 }

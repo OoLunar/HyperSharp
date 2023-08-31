@@ -37,9 +37,15 @@ namespace HyperSharp
         private readonly ConcurrentStack<CancellationTokenSource> _cancellationTokenSources = new();
 
         /// <summary>
+        /// The TCP listener instance for accepting incoming connections.
+        /// </summary>
+        private TcpListener? _tcpListener;
+
+        /// <summary>
         /// The main cancellation token source for controlling the server's lifecycle.
         /// </summary>
         private CancellationTokenSource? _mainCancellationTokenSource;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="HyperServer"/> class with the specified configuration and optional logger.
         /// </summary>
@@ -64,28 +70,19 @@ namespace HyperSharp
             }
 
             HyperLogging.ServerStarting(_logger, Configuration.ListeningEndpoint, null);
-            TcpListener listener = new(Configuration.ListeningEndpoint);
+            _tcpListener = new(Configuration.ListeningEndpoint);
             _mainCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _mainCancellationTokenSource.Token.Register(() =>
             {
                 HyperLogging.ServerStopping(_logger, Configuration.ListeningEndpoint, null);
-
                 if (!_openConnections.IsEmpty)
                 {
                     HyperLogging.ConnectionsPending(_logger, _openConnections.Count, null);
-                    while (!_openConnections.IsEmpty)
-                    {
-                        // I'm dying inside.
-                        Thread.Sleep(100);
-                    }
                 }
-
-                listener.Stop();
-                HyperLogging.ServerStopped(_logger, Configuration.ListeningEndpoint, null);
             });
 
-            listener.Start();
-            _ = ListenForConnectionsAsync(listener);
+            _tcpListener.Start();
+            _ = ListenForConnectionsAsync(_tcpListener);
             HyperLogging.ServerStarted(_logger, Configuration.ListeningEndpoint, null);
         }
 
@@ -94,7 +91,7 @@ namespace HyperSharp
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the server is not running.</exception>
-        public void Stop()
+        public async Task StopAsync()
         {
             if (_mainCancellationTokenSource is null)
             {
@@ -104,6 +101,13 @@ namespace HyperSharp
             _mainCancellationTokenSource.Cancel();
             _mainCancellationTokenSource.Dispose();
             _mainCancellationTokenSource = null;
+            while (!_openConnections.IsEmpty)
+            {
+                await Task.Delay(50);
+            }
+
+            _tcpListener?.Stop();
+            HyperLogging.ServerStopped(_logger, Configuration.ListeningEndpoint, null);
         }
 
         /// <summary>
@@ -116,7 +120,7 @@ namespace HyperSharp
             while (!_mainCancellationTokenSource!.IsCancellationRequested)
             {
                 // Throw the connection onto the async thread pool and wait for the next connection.
-                _ = HandleConnectionAsync(await listener.AcceptTcpClientAsync());
+                _ = HandleConnectionAsync(await listener.AcceptTcpClientAsync(_mainCancellationTokenSource.Token));
             }
         }
 
@@ -141,7 +145,11 @@ namespace HyperSharp
             // Start parsing the HTTP Headers.
             await using NetworkStream networkStream = client.GetStream();
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
-            if (context.IsSuccess)
+            if (cancellationTokenSource.IsCancellationRequested)
+            {
+                await context.Value!.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
+            }
+            else if (context.IsSuccess)
             {
                 // Execute any registered responders.
                 HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
@@ -151,6 +159,7 @@ namespace HyperSharp
                     HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
                     HyperStatus response = status.Status switch
                     {
+                        _ when cancellationTokenSource.IsCancellationRequested => HyperStatus.InternalServerError(),
                         ResultStatus.IsSuccess | ResultStatus.HasValue => status.Value,
                         ResultStatus.IsSuccess => HyperStatus.OK(),
                         ResultStatus.HasValue => HyperStatus.InternalServerError(status.Value.Headers, status.Value.Body),
@@ -158,7 +167,7 @@ namespace HyperSharp
                         _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
                     };
 
-                    await context.Value.RespondAsync(response, Configuration.JsonSerializerOptions);
+                    await context.Value.RespondAsync(response, Configuration.JsonSerializerOptions, cancellationTokenSource.Token);
                     HyperLogging.HttpResponded(_logger, connection.Id, response, null);
                 }
             }
