@@ -5,6 +5,8 @@
     <OutputType>Library</OutputType>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>HyperSharp.SourceGeneration</PackageId>
     <!-- Suppresses the warnings about the package not having assemblies in lib/*/.dll.-->
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <!-- Change the default location where NuGet will put the build output -->
@@ -12,8 +14,8 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- pack the props files -->
-    <Content Include="build/HyperSharp.SourceGeneration.props" PackagePath="build/HyperSharp.SourceGeneration.props" />
-    <Content Include="build/HyperSharp.SourceGeneration.targets" PackagePath="build/HyperSharp.SourceGeneration.targets" />
+    <Content Include="build/HyperSharp.SourceGeneration.props" PackagePath="build/" />
+    <Content Include="build/HyperSharp.SourceGeneration.targets" PackagePath="build/" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Remove="Microsoft.SourceLink.GitHub" />
