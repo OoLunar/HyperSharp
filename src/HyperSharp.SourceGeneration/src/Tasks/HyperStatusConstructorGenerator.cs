@@ -8,7 +8,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using NuGet.Frameworks;
 
-namespace HyperSharp.SourceGeneration
+namespace HyperSharp.SourceGeneration.Tasks
 {
     public sealed class HyperStatusConstructorGenerator : ITask
     {
