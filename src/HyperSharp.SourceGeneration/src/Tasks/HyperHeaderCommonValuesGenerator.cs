@@ -20,9 +20,9 @@ namespace HyperSharp.Protocol
     /// <remarks>
     /// This enum is NOT exhaustive. It only contains the most common header names.
     /// </remarks>
-    public enum HyperHeaderNames
+    public enum HyperHeaderName
     {
-        {{HeaderNames}}
+        {{HeaderName}}
     }
 }
 
@@ -53,9 +53,9 @@ namespace HyperSharp.Protocol
                 ));
             }
 
-            string code = CODE_TEMPLATE.Replace("{{HeaderNames}}", headerNames.ToString().TrimStart().TrimEnd('\n', ','));
+            string code = CODE_TEMPLATE.Replace("{{HeaderName}}", headerNames.ToString().TrimStart().TrimEnd('\n', ','));
             string projectRoot = Directory.GetCurrentDirectory();
-            File.WriteAllText(Path.Combine(projectRoot, "Protocol", "HyperHeaderNames.g.cs"), code);
+            File.WriteAllText(Path.Combine(projectRoot, "Protocol", "HyperHeaderName.g.cs"), code);
 
             return true;
         }
