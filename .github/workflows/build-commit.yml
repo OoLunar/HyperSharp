@@ -61,7 +61,7 @@ jobs:
             8
             7
       - name: Benchmark Project
-        run: dotnet run -c Release --project benchmarks/HyperSharp.Benchmarks.csproj
+        run: dotnet run -c Release --project benchmarks/HyperSharp.Benchmarks.csproj --framework net8.0
       - name: Output Test Results
         id: test-results
         run: |
