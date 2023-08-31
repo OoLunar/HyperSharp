@@ -1,28 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <OutputType>Library</OutputType>
-    <LangVersion>preview</LangVersion>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>HyperSharp.SourceGeneration</PackageId>
-    <!-- Suppresses the warnings about the package not having assemblies in lib/*/.dll.-->
-    <NoPackageAnalysis>true</NoPackageAnalysis>
-    <!-- Change the default location where NuGet will put the build output -->
-    <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <!-- pack the props files -->
-    <Content Include="build/HyperSharp.SourceGeneration.props" PackagePath="build/" />
-    <Content Include="build/HyperSharp.SourceGeneration.targets" PackagePath="build/" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Remove="Microsoft.SourceLink.GitHub" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.7.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="NuGet.Frameworks" Version="6.7.0" />
-    <PackageReference Include="System.Text.Json" Version="7.0.3" />
-    <!-- marks all packages as 'local only' so they don't end up in the nuspec -->
-    <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
   </ItemGroup>
 </Project>

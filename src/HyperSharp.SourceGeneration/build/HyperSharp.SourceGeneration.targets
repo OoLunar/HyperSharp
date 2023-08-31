@@ -1,5 +1,0 @@
-<Project>
-  <Target Name="SourceGenerate" BeforeTargets="BeforeCompile">
-    <HyperSharp.SourceGeneration.HyperStatusConstructorGenerator TargetFrameworks="net7.0;net8.0" ProjectRoot="/home/lunar/Code/OoLunar/HyperSharp/" />
-  </Target>
-</Project>
