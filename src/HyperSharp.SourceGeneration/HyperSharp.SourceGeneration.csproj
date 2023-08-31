@@ -1,18 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
-    <NoWarn>NU1701</NoWarn>
+    <!-- Suppresses the warnings about the package not having assemblies in lib/*/.dll.-->
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <!-- Change the default location where NuGet will put the build output -->
+    <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.7.2" PrivateAssets="all" />
-    <PackageReference Include="NuGet.Frameworks" Version="6.7.0" PrivateAssets="all" />
-    <PackageReference Include="System.Text.Json" Version="7.0.3" PrivateAssets="all" />
+    <!-- pack the props files -->
+    <Content Include="build/HyperSharp.SourceGeneration.props" PackagePath="build/HyperSharp.SourceGeneration.props" />
+    <Content Include="build/HyperSharp.SourceGeneration.targets" PackagePath="build/HyperSharp.SourceGeneration.targets" />
   </ItemGroup>
-  <UsingTask TaskName="HyperSharp.SourceGeneration.HyperStatusConstructorGenerator" AssemblyFile="$(ProjectRoot)/src/HyperSharp.SourceGeneration/bin/Debug/netstandard2.0/HyperSharp.SourceGeneration.dll"/>
-  <Target Name="SourceGenerate" BeforeTargets="CoreCompile">
-    <HyperStatusConstructorGenerator />
-  </Target>
+  <ItemGroup>
+    <PackageReference Remove="Microsoft.SourceLink.GitHub" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.7.2" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.7.0" />
+    <PackageReference Include="System.Text.Json" Version="7.0.3" />
+    <!-- marks all packages as 'local only' so they don't end up in the nuspec -->
+    <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

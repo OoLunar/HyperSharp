@@ -45,21 +45,15 @@ namespace HyperSharp.Protocol
 
 """;
 
+        [Required]
+        public string TargetFrameworks { get; set; } = null!;
+
+        [Required]
+        public string ProjectRoot { get; set; } = null!;
+
         public override bool Execute()
         {
-            Log.LogError("Global properties:");
-            foreach (KeyValuePair<string, string> property in BuildEngine6.GetGlobalProperties())
-            {
-                Log.LogError($"Global property '{property.Key}' = '{property.Value}'");
-            }
-
-            if (!BuildEngine6.GetGlobalProperties().TryGetValue("TargetFrameworks", out string? targetFrameworks))
-            {
-                Log.LogError("Failed to locate the project's 'TargetFrameworks' property.");
-                return false;
-            }
-
-            string[] targetedFrameworks = targetFrameworks.Split(';');
+            string[] targetedFrameworks = TargetFrameworks.Split(';');
             string? dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
             if (dotnetRoot is null)
             {
@@ -115,7 +109,7 @@ namespace HyperSharp.Protocol
                 string[] httpStatuses = Enum.GetNames(assembly.GetType("System.Net.HttpStatusCode")!);
                 foreach (string httpStatus in httpStatuses)
                 {
-                    if (File.Exists($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs"))
+                    if (File.Exists($"{ProjectRoot}/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs"))
                     {
                         continue;
                     }
@@ -123,7 +117,7 @@ namespace HyperSharp.Protocol
                     StringBuilder stringBuilder = new StringBuilder(CODE_TEMPLATE)
                         .Replace("{{NetVersion}}", targetFrameworkMoniker.Replace('.', '_').ToUpperInvariant())
                         .Replace("{{Code}}", httpStatus);
-                    File.WriteAllText($"$(ProjectRoot)/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs", stringBuilder.ToString());
+                    File.WriteAllText($"{ProjectRoot}/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs", stringBuilder.ToString());
                 }
             }
 

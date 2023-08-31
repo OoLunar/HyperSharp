@@ -1,0 +1,3 @@
+<Project>
+  <UsingTask TaskName="HyperSharp.SourceGeneration.HyperStatusConstructorGenerator" AssemblyFile="$(MSBuildThisFileDirectory)/../tasks/netstandard2.0/HyperSharp.SourceGeneration.dll" />
+</Project>

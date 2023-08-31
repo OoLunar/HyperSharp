@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="SourceGenerate" BeforeTargets="CoreCompile">
+    <HyperStatusConstructorGenerator TargetFrameworks="net7.0;net8.0" ProjectRoot="$(ProjectRoot)" />
+  </Target>
+</Project>
