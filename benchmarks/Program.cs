@@ -26,12 +26,12 @@ namespace HyperSharp.Benchmarks
 {
     public sealed class Program
     {
-        public static void Main()
+        public static void Main(string[] args)
         {
 #if DEBUG
-            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly, ManualConfig.CreateMinimumViable().WithOptions(ConfigOptions.DisableOptimizationsValidator).AddJob(Job.Dry));
+            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly, ManualConfig.CreateMinimumViable().WithOptions(ConfigOptions.DisableOptimizationsValidator).AddJob(Job.Dry), args);
 #else
-            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly);
+            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly, args: args);
 #endif
             Summary firstSummary = summaries[0];
             File.WriteAllText("benchmark-results.md", string.Empty);

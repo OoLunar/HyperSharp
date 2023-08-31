@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using HyperSharp.Protocol;
+using HyperSharp.Results;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HyperSharp.Benchmarks.Cases
@@ -27,10 +28,10 @@ namespace HyperSharp.Benchmarks.Cases
         public void Setup() => _hyperServer.Start();
 
         [GlobalCleanup]
-        public void Cleanup() => _hyperServer.Stop();
+        public async Task CleanupAsync() => await _hyperServer.StopAsync();
 
         [WarmupCount(5), Benchmark]
-        public async Task HttpClientTestAsync() => await _client.GetAsync("http://localhost:8080/");
+        public Task HttpClientTestAsync() => _client.GetAsync("http://localhost:8080/");
 
         [IterationSetup(Target = nameof(ParseHeadersTestAsync))]
         public void HeaderIterationSetup()
@@ -40,7 +41,7 @@ namespace HyperSharp.Benchmarks.Cases
             _connection = new(stream, _hyperServer);
         }
 
-        [Benchmark]
-        public async ValueTask ParseHeadersTestAsync() => await HyperHeaderParser.TryParseHeadersAsync(_hyperServer.Configuration.MaxHeaderSize, _connection, default);
+        [WarmupCount(5), Benchmark]
+        public ValueTask<Result<HyperContext>> ParseHeadersTestAsync() => HyperHeaderParser.TryParseHeadersAsync(_hyperServer.Configuration.MaxHeaderSize, _connection, default);
     }
 }

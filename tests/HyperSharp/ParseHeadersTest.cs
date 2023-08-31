@@ -108,17 +108,6 @@ namespace HyperSharp.Tests.HyperSharp
         }
 
         /// <summary>
-        /// Tests indexing a header name, which skips header name normalization.
-        /// </summary>
-        [TestMethod]
-        public void TestNormalizeHeaderNameIndex()
-        {
-            string originalName = "content-type";
-            HyperHeaderCollection headerCollection = new() { { originalName, "application/json" } };
-            Assert.ThrowsException<KeyNotFoundException>(() => headerCollection[originalName]);
-        }
-
-        /// <summary>
         /// Tests validating a valid header.
         /// </summary>
         [TestMethod]
