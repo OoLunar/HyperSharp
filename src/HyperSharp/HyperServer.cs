@@ -143,7 +143,6 @@ namespace HyperSharp
             cancellationTokenSource.CancelAfter(Configuration.Timeout);
 
             // Start parsing the HTTP Headers.
-            await using NetworkStream networkStream = client.GetStream();
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
             if (cancellationTokenSource.IsCancellationRequested)
             {
