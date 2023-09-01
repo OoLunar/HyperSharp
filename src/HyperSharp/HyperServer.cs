@@ -133,7 +133,7 @@ namespace HyperSharp
         {
             HyperConnection connection = new(client, this);
             _openConnections.TryAdd(connection.Id, connection);
-            HyperLogging.ConnectionOpened(_logger, connection.RemoteEndPoint, connection.Id, null);
+            HyperLogging.ConnectionOpened(_logger, connection.Id, null);
 
             // Try to reuse an existing cancellation token source. If none are available, create a new one.
             if (!_cancellationTokenSources.TryPop(out CancellationTokenSource? cancellationTokenSource))

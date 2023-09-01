@@ -20,7 +20,7 @@ namespace HyperSharp.Setup
         public static readonly Action<ILogger, Ulid, Exception?> ConnectionAlreadyClosed = LoggerMessage.Define<Ulid>(LogLevel.Debug, new EventId(2, nameof(ConnectionAlreadyClosed)), "Connection {ConnectionId} is already closed.");
         public static readonly Action<ILogger, Ulid, Exception?> ConnectionClosing = LoggerMessage.Define<Ulid>(LogLevel.Trace, new EventId(2, nameof(ConnectionClosing)), "Closing connection {ConnectionId}...");
         public static readonly Action<ILogger, Ulid, Exception?> ConnectionClosed = LoggerMessage.Define<Ulid>(LogLevel.Debug, new EventId(2, nameof(ConnectionClosed)), "Connection {ConnectionId} has closed.");
-        public static readonly Action<ILogger, string, Ulid, Exception?> ConnectionOpened = LoggerMessage.Define<string, Ulid>(LogLevel.Trace, new EventId(2, nameof(ConnectionOpened)), "Received connection from {RemoteEndPoint} with Id {ConnectionId}.");
+        public static readonly Action<ILogger, Ulid, Exception?> ConnectionOpened = LoggerMessage.Define<Ulid>(LogLevel.Trace, new EventId(2, nameof(ConnectionOpened)), "New connection: {ConnectionId}.");
 
         // HTTP related logs
         public static readonly Action<ILogger, Ulid, IEnumerable<Error>, Exception?> HttpInvalidHeaders = LoggerMessage.Define<Ulid, IEnumerable<Error>>(LogLevel.Warning, new EventId(3, nameof(HttpInvalidHeaders)), "Failed to parse headers from {ConnectionId}: {Error}");

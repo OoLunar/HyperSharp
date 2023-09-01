@@ -26,11 +26,6 @@ namespace HyperSharp.Protocol
         public HyperServer Server { get; init; }
 
         /// <summary>
-        /// The remote endpoint of the connection.
-        /// </summary>
-        public string RemoteEndPoint { get; init; }
-
-        /// <summary>
         /// A pipe reader for the connection.
         /// </summary>
         public PipeReader StreamReader { get; private set; }
@@ -61,7 +56,6 @@ namespace HyperSharp.Protocol
             Id = Ulid.NewUlid();
             Client = client;
             Server = server;
-            RemoteEndPoint = Client.Client.RemoteEndPoint?.ToString() ?? "<Unknown Network EndPoint>";
             _baseStream = Client.GetStream();
             StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
             StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
@@ -80,7 +74,6 @@ namespace HyperSharp.Protocol
             Id = Ulid.NewUlid();
             Client = new TcpClient();
             Server = server;
-            RemoteEndPoint = "<Unknown Network EndPoint>";
             _baseStream = baseStream;
             StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
             StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
