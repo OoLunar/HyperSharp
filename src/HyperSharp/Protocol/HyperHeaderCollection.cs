@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 
 namespace HyperSharp.Protocol
 {
@@ -28,7 +27,7 @@ namespace HyperSharp.Protocol
             ' ', ':', ';', '.', ',', '\\', '/', '"', '\'', '!', '?', '(', ')', '{', '}', '[', ']', '@', '<', '>', '=', '+', '*', '#', '$', '&', '`', '|', '~', '^', '%'
         };
 
-        private readonly Dictionary<string, List<byte[]>> _headers = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<string>> _headers = new(StringComparer.OrdinalIgnoreCase);
 
         /// <inheritdoc/>
         public int Count => _headers.Count;
@@ -41,9 +40,9 @@ namespace HyperSharp.Protocol
         {
             get
             {
-                foreach (List<byte[]> values in _headers.Values)
+                foreach (List<string> values in _headers.Values)
                 {
-                    yield return values.Select(Encoding.ASCII.GetString).ToList();
+                    yield return values;
                 }
             }
         }
@@ -52,7 +51,7 @@ namespace HyperSharp.Protocol
         public bool ContainsKey(string key) => _headers.ContainsKey(key);
 
         /// <inheritdoc/>
-        public IReadOnlyList<string> this[string key] => _headers[key].Select(Encoding.ASCII.GetString).ToList();
+        public IReadOnlyList<string> this[string key] => _headers[key];
 
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -60,9 +59,9 @@ namespace HyperSharp.Protocol
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, IReadOnlyList<string>>> GetEnumerator()
         {
-            foreach (KeyValuePair<string, List<byte[]>> header in _headers)
+            foreach (KeyValuePair<string, List<string>> header in _headers)
             {
-                yield return new KeyValuePair<string, IReadOnlyList<string>>(header.Key, header.Value.Select(Encoding.ASCII.GetString).ToList());
+                yield return new KeyValuePair<string, IReadOnlyList<string>>(header.Key, header.Value);
             }
         }
 
@@ -77,13 +76,13 @@ namespace HyperSharp.Protocol
         public void Add(string name, string value)
         {
             ValidateArgumentParameters(name, value);
-            if (_headers.TryGetValue(name, out List<byte[]>? values))
+            if (_headers.TryGetValue(name, out List<string>? values))
             {
-                values.Add(Encoding.ASCII.GetBytes(value));
+                values.Add(value);
             }
             else
             {
-                _headers.Add(name, new List<byte[]> { Encoding.ASCII.GetBytes(value) });
+                _headers.Add(name, new List<string> { value });
             }
         }
 
@@ -99,60 +98,15 @@ namespace HyperSharp.Protocol
         public void Add(string name, IEnumerable<string> values)
         {
             ValidateArgumentParameters(name, values);
-            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            if (!_headers.TryGetValue(name, out List<string>? existingValues))
             {
-                existingValues = new List<byte[]>();
+                existingValues = new List<string>();
                 _headers.Add(name, existingValues);
             }
 
             foreach (string value in values)
             {
-                existingValues.Add(Encoding.ASCII.GetBytes(value));
-            }
-        }
-
-        /// <summary>
-        /// Adds a header with a single value in ASCII byte form.
-        /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="value">The value of the header, in 7-bit ASCII form.</param>
-        public void Add(string name, ReadOnlySpan<byte> value)
-        {
-            if (name is null)
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
-            else if (!IsValidName(name))
-            {
-                throw new ArgumentException($"Invalid header name: {name}", nameof(name));
-            }
-
-            ReadOnlySpan<char> validCharSpan = _validHeaderValueCharacters.AsSpan();
-            byte[] characters = new byte[value.Length];
-            for (int i = 0; i < value.Length; i++)
-            {
-                char asciiCharacter = (char)(value[i] & 255);
-                if (!validCharSpan.Contains(asciiCharacter))
-                {
-                    throw new ArgumentException($"Invalid header value: {characters}", nameof(value));
-                }
-
-                // Trim leading whitespace
-                if (char.IsWhiteSpace(asciiCharacter) && i == 0)
-                {
-                    continue;
-                }
-
-                characters[i] = (byte)asciiCharacter;
-            }
-
-            if (_headers.TryGetValue(name, out List<byte[]>? values))
-            {
-                values.Add(characters);
-            }
-            else
-            {
-                _headers.Add(name, new List<byte[]> { characters });
+                existingValues.Add(value);
             }
         }
 
@@ -169,7 +123,7 @@ namespace HyperSharp.Protocol
                 return false;
             }
 
-            _headers.Add(name, new List<byte[]> { Encoding.ASCII.GetBytes(value) });
+            _headers.Add(name, new List<string> { value });
             return true;
         }
 
@@ -186,54 +140,15 @@ namespace HyperSharp.Protocol
                 return false;
             }
 
-            List<byte[]> newValues = new();
             foreach (string value in values)
             {
                 if (!IsValidValue(value))
                 {
                     return false;
                 }
-
-                newValues.Add(Encoding.ASCII.GetBytes(value));
             }
 
-            _headers.Add(name, newValues);
-            return true;
-        }
-
-        /// <summary>
-        /// Adds a header with a single value in ASCII byte form if the header does not already exist.
-        /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="value">The value of the header, in 7-bit ASCII form.</param>
-        /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
-        public bool TryAdd(string name, ReadOnlySpan<byte> value)
-        {
-            if (name is null || !IsValidName(name) || _headers.ContainsKey(name))
-            {
-                return false;
-            }
-
-            ReadOnlySpan<char> validCharSpan = _validHeaderValueCharacters.AsSpan();
-            byte[] characters = new byte[value.Length];
-            for (int i = 0; i < value.Length; i++)
-            {
-                char asciiCharacter = (char)(value[i] & 255);
-                if (!validCharSpan.Contains(asciiCharacter))
-                {
-                    return false;
-                }
-
-                // Trim leading whitespace
-                if (char.IsWhiteSpace(asciiCharacter) && i == 0)
-                {
-                    continue;
-                }
-
-                characters[i] = (byte)asciiCharacter;
-            }
-
-            _headers.Add(name, new List<byte[]> { characters });
+            _headers.Add(name, values.ToList());
             return true;
         }
 
@@ -248,14 +163,14 @@ namespace HyperSharp.Protocol
         public void Set(string name, string value)
         {
             ValidateArgumentParameters(name, value);
-            if (!_headers.TryGetValue(name, out List<byte[]>? values))
+            if (!_headers.TryGetValue(name, out List<string>? values))
             {
-                _headers.Add(name, new List<byte[]> { Encoding.ASCII.GetBytes(value) });
+                _headers.Add(name, new List<string> { value });
                 return;
             }
 
             values.Clear();
-            values.Add(Encoding.ASCII.GetBytes(value));
+            values.Add(value);
         }
 
         /// <summary>
@@ -269,17 +184,16 @@ namespace HyperSharp.Protocol
         public void Set(string name, IEnumerable<string> values)
         {
             ValidateArgumentParameters(name, values);
-            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            if (!_headers.TryGetValue(name, out List<string>? existingValues))
             {
-                existingValues = new List<byte[]>();
-                _headers.Add(name, values.Select(Encoding.ASCII.GetBytes).ToList());
+                _headers.Add(name, values.ToList());
                 return;
             }
 
             existingValues.Clear();
             foreach (string value in values)
             {
-                existingValues.Add(Encoding.ASCII.GetBytes(value));
+                existingValues.Add(value);
             }
         }
 
@@ -303,13 +217,13 @@ namespace HyperSharp.Protocol
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out string value)
         {
             ValidateArgumentParameters(name, string.Empty);
-            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            if (!_headers.TryGetValue(name, out List<string>? existingValues))
             {
                 value = null;
                 return false;
             }
 
-            value = Encoding.ASCII.GetString(existingValues[0]);
+            value = existingValues[0];
             return true;
         }
 
@@ -322,45 +236,7 @@ namespace HyperSharp.Protocol
         public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<string> values)
         {
             ValidateArgumentParameters(name, string.Empty);
-            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
-            {
-                values = null;
-                return false;
-            }
-
-            values = existingValues.Select(Encoding.ASCII.GetString).ToList();
-            return true;
-        }
-
-        /// <summary>
-        /// Searches for the header with the specified name and returns the first value in ASCII byte form. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
-        /// </summary>
-        /// <param name="name">The name of the header to search for.</param>
-        /// <param name="value">The first value of the header if found; otherwise, <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
-        public bool TryGetValue(string name, [MaybeNullWhen(false)] out byte[] value)
-        {
-            ValidateArgumentParameters(name, string.Empty);
-            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
-            {
-                value = null;
-                return false;
-            }
-
-            value = existingValues[0];
-            return true;
-        }
-
-        /// <summary>
-        /// Searches for the header with the specified name and returns all of its values in ASCII byte form. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
-        /// </summary>
-        /// <param name="name">The name of the header to search for.</param>
-        /// <param name="values">All of the values of the header if found; otherwise, <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
-        public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<byte[]> values)
-        {
-            ValidateArgumentParameters(name, string.Empty);
-            if (!_headers.TryGetValue(name, out List<byte[]>? existingValues))
+            if (!_headers.TryGetValue(name, out List<string>? existingValues))
             {
                 values = null;
                 return false;
