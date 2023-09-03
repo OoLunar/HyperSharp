@@ -14,6 +14,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Globalization;
+using Microsoft.Toolkit.HighPerformance;
 
 namespace HyperSharp.Protocol
 {
@@ -36,7 +37,7 @@ namespace HyperSharp.Protocol
 #else
         .ToImmutableDictionary();
 #endif
-        private static readonly ReadOnlyMemory<byte> _newLine = new("\r\n"u8.ToArray());
+        private static readonly byte[] _newLine = "\r\n"u8.ToArray();
         private static readonly byte[] _emptyBody = Array.Empty<byte>();
 
         /// <summary>
@@ -116,9 +117,9 @@ namespace HyperSharp.Protocol
             // TODO: Find a solution which allows modification of the body (Gzip) and the base stream (SSL).
 
             // Write request line
-            await Connection.StreamWriter.WriteAsync(_httpVersions[Version], cancellationToken);
-            await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"), cancellationToken);
-            await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
+            Connection.StreamWriter.Write<byte>(_httpVersions[Version]);
+            Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
+            Connection.StreamWriter.Write<byte>(_newLine);
 
             // Serialize body ahead of time due to headers
             byte[] content = status.Body is null
@@ -133,20 +134,21 @@ namespace HyperSharp.Protocol
 
             foreach ((string headerName, byte[] value) in status.Headers)
             {
-                await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(headerName), cancellationToken);
-                await Connection.StreamWriter.WriteAsync(": "u8.ToArray(), cancellationToken);
-                await Connection.StreamWriter.WriteAsync(value, cancellationToken);
-                await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
+                Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(headerName));
+                Connection.StreamWriter.Write<byte>(": "u8.ToArray());
+                Connection.StreamWriter.Write<byte>(value);
+                Connection.StreamWriter.Write<byte>(_newLine);
             }
-            await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
+            Connection.StreamWriter.Write<byte>(_newLine);
 
             // Write body
             if (content.Length != 0)
             {
-                await Connection.StreamWriter.WriteAsync(content, cancellationToken);
+                Connection.StreamWriter.Write<byte>(content);
             }
 
             HasResponded = true;
+            await Connection.StreamWriter.FlushAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
