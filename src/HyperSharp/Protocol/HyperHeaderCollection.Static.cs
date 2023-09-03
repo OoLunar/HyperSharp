@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Microsoft.Toolkit.HighPerformance.Buffers;
 
 namespace HyperSharp.Protocol
@@ -20,6 +21,21 @@ namespace HyperSharp.Protocol
             }
         }
 
+        // https://developers.cloudflare.com/rules/transform/request-header-modification/reference/header-format
+        private static readonly char[] _validHeaderNameCharacters = new char[]
+        {
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+        };
+
+        private static readonly char[] _validHeaderNameValues = new char[] {
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_',
+            ' ', ':', ';', '.', ',', '\\', '/', '"', '\'', '!', '?', '(', ')', '{', '}', '[', ']', '@', '<', '>', '=', '+', '*', '#', '$', '&', '`', '|', '~', '^', '%'
+        };
+
         /// <summary>
         /// Validates that the header name does not contain invalid characters.
         /// </summary>
@@ -32,15 +48,23 @@ namespace HyperSharp.Protocol
                 return false;
             }
 
-#pragma warning disable IDE0055 // Maybe don't put all of the characters on new lines?
-            // https://developers.cloudflare.com/rules/transform/request-header-modification/reference/header-format
-            ReadOnlySpan<char> validHeaderNameCharacters = stackalloc char[]
+            ReadOnlySpan<char> validHeaderNameCharacters = _validHeaderNameCharacters.AsSpan();
+            return name.IndexOfAnyExcept(validHeaderNameCharacters) < 0;
+        }
+
+        /// <summary>
+        /// Validates that the header value does not contain invalid characters.
+        /// </summary>
+        /// <param name="name">The header value to validate.</param>
+        /// <returns><see langword="true"/> if the header value is valid; otherwise, <see langword="false"/>.</returns>
+        public static bool IsValidName(ReadOnlySpan<byte> name)
+        {
+            if (name.IsEmpty)
             {
-                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-                'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
-            };
-#pragma warning restore IDE0055
+                return false;
+            }
+
+            ReadOnlySpan<byte> validHeaderNameCharacters = MemoryMarshal.AsBytes(_validHeaderNameCharacters.AsSpan());
             return name.IndexOfAnyExcept(validHeaderNameCharacters) < 0;
         }
 
@@ -56,16 +80,23 @@ namespace HyperSharp.Protocol
                 return false;
             }
 
-#pragma warning disable IDE0055 // Maybe don't put all of the characters on new lines?
-            // https://developers.cloudflare.com/rules/transform/request-header-modification/reference/header-format
-            ReadOnlySpan<char> validHeaderValueCharacters = stackalloc char[]
+            ReadOnlySpan<char> validHeaderValueCharacters = _validHeaderNameValues.AsSpan();
+            return value.IndexOfAnyExcept(validHeaderValueCharacters) < 0;
+        }
+
+        /// <summary>
+        /// Validates that the header value does not contain invalid characters.
+        /// </summary>
+        /// <param name="value">The header value to validate.</param>
+        /// <returns><see langword="true"/> if the header value is valid; otherwise, <see langword="false"/>.</returns>
+        public static bool IsValidValue(ReadOnlySpan<byte> value)
+        {
+            if (value.IsEmpty)
             {
-                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-                'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_',
-                ' ', ':', ';', '.', ',', '\\', '/', '"', '\'', '!', '?', '(', ')', '{', '}', '[', ']', '@', '<', '>', '=', '+', '*', '#', '$', '&', '`', '|', '~', '^', '%'
-            };
-#pragma warning restore IDE0055
+                return false;
+            }
+
+            ReadOnlySpan<byte> validHeaderValueCharacters = MemoryMarshal.AsBytes(_validHeaderNameValues.AsSpan());
             return value.IndexOfAnyExcept(validHeaderValueCharacters) < 0;
         }
 
