@@ -2,384 +2,518 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using System.Text;
 
 namespace HyperSharp.Protocol
 {
     /// <summary>
     /// Represents a collection of headers with string keys and lists of string values.
     /// </summary>
-    public sealed class HyperHeaderCollection : IReadOnlyDictionary<string, IReadOnlyList<string>>
+    public sealed partial class HyperHeaderCollection : IList<KeyValuePair<string, byte[]>>
     {
-        // https://developers.cloudflare.com/rules/transform/request-header-modification/reference/header-format
-        private static readonly char[] _validHeaderNameCharacters = new char[]
+        private readonly List<KeyValuePair<string, byte[]>> _headers;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HyperHeaderCollection"/> class that is empty and has the default initial capacity.
+        /// </summary>
+        public HyperHeaderCollection() => _headers = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HyperHeaderCollection"/> class that is empty and has the specified initial capacity.
+        /// </summary>
+        /// <param name="capacity">The number of elements that the new list can initially store.</param>
+        public HyperHeaderCollection(int capacity) => _headers = new(capacity);
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HyperHeaderCollection"/> class that contains elements copied from the specified collection.
+        /// </summary>
+        /// <param name="headers">The collection whose elements are copied to the new list.</param>
+        public HyperHeaderCollection(IEnumerable<KeyValuePair<string, byte[]>> headers) => _headers = new(headers);
+
+        /// <inheritdoc />
+        public KeyValuePair<string, byte[]> this[int index]
         {
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
-        };
+            get => _headers[index];
+            set => _headers[index] = value;
+        }
 
-        private static readonly char[] _validHeaderValueCharacters = new char[]
-        {
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_',
-            ' ', ':', ';', '.', ',', '\\', '/', '"', '\'', '!', '?', '(', ')', '{', '}', '[', ']', '@', '<', '>', '=', '+', '*', '#', '$', '&', '`', '|', '~', '^', '%'
-        };
-
-        private readonly Dictionary<string, List<string>> _headers = new(StringComparer.OrdinalIgnoreCase);
-
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int Count => _headers.Count;
 
-        /// <inheritdoc/>
-        public IEnumerable<string> Keys => _headers.Keys;
+        /// <inheritdoc />
+        public bool IsReadOnly { get; init; }
 
-        /// <inheritdoc/>
-        public IEnumerable<IReadOnlyList<string>> Values
+        /// <inheritdoc />
+        public void Add(KeyValuePair<string, byte[]> item) => Add(item.Key, Encoding.ASCII.GetString(item.Value));
+
+        /// <summary>
+        /// Adds the specified header and value to the collection.
+        /// </summary>
+        /// <param name="key">The name of the header to add.</param>
+        /// <param name="value">The value of the header to add.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="key"/> or <paramref name="value"/> is invalid and against the HTTP specification.</exception>
+        public void Add(string key, string value)
         {
-            get
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+            if (!IsValidName(key))
             {
-                foreach (List<string> values in _headers.Values)
+                throw new ArgumentException($"The header name is invalid: {key}", nameof(key));
+            }
+            else if (!IsValidValue(value))
+            {
+                throw new ArgumentException($"The header value is invalid: {value}", nameof(value));
+            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            _headers.Add(new(key, Encoding.ASCII.GetBytes(value)));
+        }
+
+        /// <summary>
+        /// Adds the specified header and value to the collection, skipping the validation of the header value.
+        /// </summary>
+        /// <param name="key">The name of the header to add.</param>
+        /// <param name="value">The value of the header to add.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="key"/> is invalid and against the HTTP specification.</exception>
+        public void UnsafeAdd(string key, byte[] value)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            if (!IsValidName(key))
+            {
+                throw new ArgumentException($"The header name is invalid: {key}", nameof(key));
+            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            _headers.Add(new(key, value));
+        }
+
+        /// <inheritdoc />
+        public bool Contains(KeyValuePair<string, byte[]> item) => _headers.Contains(item);
+
+        /// <summary>
+        /// Determines whether the collection contains the specified header.
+        /// </summary>
+        /// <param name="key">The name of the header to locate.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <returns><see langword="true"/> if the collection contains the specified header; otherwise, <see langword="false"/>.</returns>
+        public bool Contains(string key)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            foreach (KeyValuePair<string, byte[]> header in _headers)
+            {
+                if (ReferenceEquals(header.Key, key))
                 {
-                    yield return values;
+                    return true;
                 }
             }
+
+            return false;
         }
 
-        /// <inheritdoc/>
-        public bool ContainsKey(string key) => _headers.ContainsKey(key);
+        /// <inheritdoc />
+        public void CopyTo(KeyValuePair<string, byte[]>[] array, int arrayIndex) => _headers.CopyTo(array, arrayIndex);
 
-        /// <inheritdoc/>
-        public IReadOnlyList<string> this[string key] => _headers[key];
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<string, IReadOnlyList<string>>> GetEnumerator()
+        /// <summary>
+        /// Gets the value of the first occurrence of the specified header in the collection.
+        /// </summary>
+        /// <param name="key">The name of the header to get.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="key"/> is invalid and against the HTTP specification.</exception>
+        /// <exception cref="KeyNotFoundException">The header was not found.</exception>
+        /// <returns>The value of the header.</returns>
+        public string Get(string key)
         {
-            foreach (KeyValuePair<string, List<string>> header in _headers)
+            ArgumentNullException.ThrowIfNull(key);
+            if (!IsValidName(key))
             {
-                yield return new KeyValuePair<string, IReadOnlyList<string>>(header.Key, header.Value);
+                throw new ArgumentException($"The header name is invalid: {key}", nameof(key));
             }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            foreach (KeyValuePair<string, byte[]> header in _headers)
+            {
+                if (ReferenceEquals(header.Key, key))
+                {
+                    return Encoding.ASCII.GetString(header.Value);
+                }
+            }
+
+            throw new KeyNotFoundException($"The header was not found: {key}");
+        }
+
+        /// <inheritdoc />
+        public int IndexOf(KeyValuePair<string, byte[]> item) => _headers.IndexOf(item);
+
+        /// <summary>
+        /// Determines the index of the first occurrence of the specified header in the collection.
+        /// </summary>
+        /// <param name="key">The name of the header to locate.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <returns>The index of the first occurrence of the specified header in the collection; otherwise, -1.</returns>
+        public int IndexOf(string key)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            for (int i = 0; i < _headers.Count; i++)
+            {
+                if (ReferenceEquals(_headers[i].Key, key))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <inheritdoc />
+        public void Insert(int index, KeyValuePair<string, byte[]> item) => Insert(index, item.Key, Encoding.ASCII.GetString(item.Value));
+
+        /// <summary>
+        /// Inserts the specified header and value into the collection at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index at which the header should be inserted.</param>
+        /// <param name="key">The name of the header to insert.</param>
+        /// <param name="value">The value of the header to insert.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="key"/> or <paramref name="value"/> is invalid and against the HTTP specification.</exception>
+        public void Insert(int index, string key, string value)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+            if (!IsValidName(key))
+            {
+                throw new ArgumentException($"The header name is invalid: {key}", nameof(key));
+            }
+            else if (!IsValidValue(value))
+            {
+                throw new ArgumentException($"The header value is invalid: {value}", nameof(value));
+            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            _headers.Insert(index, new(key, Encoding.ASCII.GetBytes(value)));
         }
 
         /// <summary>
-        /// Adds a header with a single value.
+        /// Inserts the specified header and value into the collection at the specified index, skipping the validation of the header value.
         /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="value">The value of the header.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="value"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
-        public void Add(string name, string value)
+        /// <param name="index">The zero-based index at which the header should be inserted.</param>
+        /// <param name="key">The name of the header to insert.</param>
+        /// <param name="value">The value of the header to insert.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="key"/> is invalid and against the HTTP specification.</exception>
+        public void UnsafeInsert(int index, string key, byte[] value)
         {
-            ValidateArgumentParameters(name, value);
-            if (_headers.TryGetValue(name, out List<string>? values))
+            ArgumentNullException.ThrowIfNull(key);
+            if (!IsValidName(key))
             {
-                values.Add(value);
+                throw new ArgumentException($"The header name is invalid: {key}", nameof(key));
             }
-            else
-            {
-                _headers.Add(name, new List<string> { value });
-            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            _headers.Insert(index, new(key, value));
         }
 
+        /// <inheritdoc />
+        public bool Remove(KeyValuePair<string, byte[]> item) => _headers.Remove(item);
 
         /// <summary>
-        /// Adds a header with multiple values.
+        /// Removes the first occurrence of the specified header from the collection.
         /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="values">The values of the header.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="values"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="values"/> contains invalid characters.</exception>
-        public void Add(string name, IEnumerable<string> values)
+        /// <param name="key">The name of the header to remove.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <returns><see langword="true"/> if the header was removed; otherwise, <see langword="false"/>.</returns>
+        public bool Remove(string key)
         {
-            ValidateArgumentParameters(name, values);
-            if (!_headers.TryGetValue(name, out List<string>? existingValues))
+            ArgumentNullException.ThrowIfNull(key);
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            for (int i = 0; i < _headers.Count; i++)
             {
-                existingValues = new List<string>();
-                _headers.Add(name, existingValues);
+                if (ReferenceEquals(_headers[i].Key, key))
+                {
+                    _headers.RemoveAt(i);
+                    return true;
+                }
             }
 
-            foreach (string value in values)
-            {
-                existingValues.Add(value);
-            }
+            return false;
         }
 
         /// <summary>
-        /// Adds a header with a single value if the header does not already exist.
+        /// Removes the first <paramref name="n"/> occurrences of the specified header from the collection.
         /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="value">The value of the header.</param>
-        /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
-        public bool TryAdd(string name, string value)
+        /// <param name="key">The name of the header to remove.</param>
+        /// <param name="n">The number of headers to remove.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <returns>The number of headers removed.</returns>
+        public int RemoveN(string key, int n)
         {
-            if (name is null || !IsValidName(name) || _headers.ContainsKey(name) || value is null || !IsValidValue(value))
+            ArgumentNullException.ThrowIfNull(key);
+            if (n == 0)
+            {
+                return 0;
+            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            int removed = 0;
+            for (int i = 0; i < _headers.Count; i++)
+            {
+                if (ReferenceEquals(_headers[i].Key, key))
+                {
+                    _headers.RemoveAt(i);
+                    i--; // We removed an item, so we need to go back one.
+                    removed++;
+                    if (removed == n)
+                    {
+                        return removed;
+                    }
+                }
+            }
+
+            return removed;
+        }
+
+        /// <summary>
+        /// Removes all occurrences of the specified header from the collection.
+        /// </summary>
+        /// <param name="key">The name of the header to remove.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <returns>The number of headers removed.</returns>
+        public int RemoveAll(string key)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            int count = 0;
+            for (int i = 0; i < _headers.Count; i++)
+            {
+                if (ReferenceEquals(_headers[i].Key, key))
+                {
+                    _headers.RemoveAt(i);
+                    i--; // We removed an item, so we need to go back one.
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Removes all pre-existing headers with the specified name and adds the specified header and value to the collection.
+        /// </summary>
+        /// <param name="key">The name of the header to add or replace.</param>
+        /// <param name="value">The value of the header to add or replace.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="key"/> or <paramref name="value"/> is invalid and against the HTTP specification.</exception>
+        public void Set(string key, string value)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+            if (!IsValidName(key))
+            {
+                throw new ArgumentException($"The header name is invalid: {key}", nameof(key));
+            }
+            else if (!IsValidValue(value))
+            {
+                throw new ArgumentException($"The header value is invalid: {value}", nameof(value));
+            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            _headers.RemoveAll(x => ReferenceEquals(x.Key, key));
+            _headers.Add(new(key, Encoding.ASCII.GetBytes(value)));
+        }
+
+        /// <summary>
+        /// Removes all pre-existing headers with the specified name and adds the specified header and value to the collection, skipping the validation of the header value.
+        /// </summary>
+        /// <param name="key">The name of the header to add or replace.</param>
+        /// <param name="value">The value of the header to add or replace.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="key"/> is invalid and against the HTTP specification.</exception>
+        public void UnsafeSet(string key, byte[] value)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            if (!IsValidName(key))
+            {
+                throw new ArgumentException($"The header name is invalid: {key}", nameof(key));
+            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            _headers.RemoveAll(x => ReferenceEquals(x.Key, key));
+            _headers.Add(new(key, value));
+        }
+
+        /// <summary>
+        /// Adds the specified header and value to the collection if the header does not already exist.
+        /// </summary>
+        /// <param name="key">The name of the header to add.</param>
+        /// <param name="value">The value of the header to add.</param>
+        /// <returns><see langword="true"/> if the header was added; otherwise, <see langword="false"/>. Additionally returns <see langword="false"/> if the <paramref name="key"/> or <paramref name="value"/> is either <see langword="null"/> or invalid and against the HTTP specification.</returns>
+        public bool TryAdd(string key, string value)
+        {
+            if (key is null || !IsValidName(key) || value is null || !IsValidValue(value))
             {
                 return false;
             }
 
-            _headers.Add(name, new List<string> { value });
-            return true;
-        }
-
-        /// <summary>
-        /// Adds a header with multiple values if the header does not already exist.
-        /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="values">The values of the header.</param>
-        /// <returns><see langword="true"/> if the parameters are valid and added to the collection; otherwise, <see langword="false"/>.</returns>
-        public bool TryAdd(string name, IEnumerable<string> values)
-        {
-            if (name is null || !IsValidName(name) || values is null || _headers.ContainsKey(name))
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            if (Contains(key))
             {
                 return false;
             }
 
-            foreach (string value in values)
-            {
-                if (!IsValidValue(value))
-                {
-                    return false;
-                }
-            }
-
-            _headers.Add(name, values.ToList());
+            _headers.Add(new(key, Encoding.ASCII.GetBytes(value)));
             return true;
         }
 
         /// <summary>
-        /// Sets a header with a single value.  If the header already exists, it will be overwritten.
+        /// Adds the specified header and value to the collection if the header does not already exist, skipping the validation of the header value.
         /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="value">The value of the header.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="value"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
-        public void Set(string name, string value)
+        /// <param name="key">The name of the header to add.</param>
+        /// <param name="value">The value of the header to add.</param>
+        /// <returns><see langword="true"/> if the header was added; otherwise, <see langword="false"/>. Additionally returns <see langword="false"/> if the <paramref name="key"/> is either <see langword="null"/> or invalid and against the HTTP specification.</returns>
+        public bool UnsafeTryAdd(string key, byte[] value)
         {
-            ValidateArgumentParameters(name, value);
-            if (!_headers.TryGetValue(name, out List<string>? values))
+            if (key is null || !IsValidName(key))
             {
-                _headers.Add(name, new List<string> { value });
-                return;
+                return false;
             }
 
-            values.Clear();
-            values.Add(value);
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            if (Contains(key))
+            {
+                return false;
+            }
+
+            _headers.Add(new(key, value));
+            return true;
         }
 
         /// <summary>
-        /// Sets a header with multiple values.  If the header already exists, it will be overwritten.
+        /// Attempts to get the value of the specified header.
         /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="values">The values of the header.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="values"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="values"/> contains invalid characters.</exception>
-        public void Set(string name, IEnumerable<string> values)
+        /// <param name="key">The name of the header to get.</param>
+        /// <param name="value">The value of the header if it exists; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header exists; otherwise, <see langword="false"/>. Additionally returns <see langword="false"/> if the <paramref name="key"/> is either <see langword="null"/> or invalid and against the HTTP specification.</returns>
+        public bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
         {
-            ValidateArgumentParameters(name, values);
-            if (!_headers.TryGetValue(name, out List<string>? existingValues))
-            {
-                _headers.Add(name, values.ToList());
-                return;
-            }
-
-            existingValues.Clear();
-            foreach (string value in values)
-            {
-                existingValues.Add(value);
-            }
-        }
-
-        /// <summary>
-        /// Removes the header with the specified name and all of its values. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
-        /// </summary>
-        /// <param name="name">The name of the header to remove.</param>
-        /// <returns><see langword="true"/> if the header was found and removed; otherwise, <see langword="false"/>.</returns>
-        public bool Remove(string name)
-        {
-            ValidateArgumentParameters(name, string.Empty);
-            return _headers.Remove(name);
-        }
-
-        /// <summary>
-        /// Searches for the header with the specified name and returns the first value. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
-        /// </summary>
-        /// <param name="name">The name of the header to search for.</param>
-        /// <param name="value">The first value of the header if found; otherwise, <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
-        public bool TryGetValue(string name, [MaybeNullWhen(false)] out string value)
-        {
-            ValidateArgumentParameters(name, string.Empty);
-            if (!_headers.TryGetValue(name, out List<string>? existingValues))
+            if (key is null || !IsValidName(key))
             {
                 value = null;
                 return false;
             }
 
-            value = existingValues[0];
-            return true;
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            foreach (KeyValuePair<string, byte[]> header in _headers)
+            {
+                if (ReferenceEquals(header.Key, key))
+                {
+                    value = Encoding.ASCII.GetString(header.Value);
+                    return true;
+                }
+            }
+
+            value = null;
+            return false;
         }
 
         /// <summary>
-        /// Searches for the header with the specified name and returns all of its values. <paramref name="name"/> will be normalized from x-Header-name to X-Header-Name format before being used.
+        /// Attempts to get the raw value of the specified header.
         /// </summary>
-        /// <param name="name">The name of the header to search for.</param>
-        /// <param name="values">All of the values of the header if found; otherwise, <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the header was found; otherwise, <see langword="false"/>.</returns>
-        public bool TryGetValue(string name, [MaybeNullWhen(false)] out IReadOnlyList<string> values)
+        /// <param name="key">The name of the header to get.</param>
+        /// <param name="value">The value of the header if it exists; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header exists; otherwise, <see langword="false"/>. Additionally returns <see langword="false"/> if the <paramref name="key"/> is either <see langword="null"/> or invalid and against the HTTP specification.</returns>
+        public bool TryGetValue(string key, [NotNullWhen(true)] out byte[]? value)
         {
-            ValidateArgumentParameters(name, string.Empty);
-            if (!_headers.TryGetValue(name, out List<string>? existingValues))
+            if (key is null || !IsValidName(key))
+            {
+                value = null;
+                return false;
+            }
+
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            foreach (KeyValuePair<string, byte[]> header in _headers)
+            {
+                if (ReferenceEquals(header.Key, key))
+                {
+                    value = header.Value;
+                    return true;
+                }
+            }
+
+            value = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to get the values of the specified header.
+        /// </summary>
+        /// <param name="key">The name of the header to get.</param>
+        /// <param name="values">The values of the header if it exists; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header exists; otherwise, <see langword="false"/>. Additionally returns <see langword="false"/> if the <paramref name="key"/> is either <see langword="null"/> or invalid and against the HTTP specification.</returns>
+        public bool TryGetValues(string key, [NotNullWhen(true)] out List<string>? values)
+        {
+            if (key is null || !IsValidName(key))
             {
                 values = null;
                 return false;
             }
 
-            values = existingValues;
-            return true;
-        }
-
-        /// <summary>
-        /// Validates and normalizes the header name and value parameters, throwing exceptions if invalid characters were found.
-        /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="value">The value of the header.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="value"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> or <paramref name="value"/> contains invalid characters.</exception>
-        private static void ValidateArgumentParameters(string name, string value)
-        {
-            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
-
-            if (!IsValidName(name))
+            values = null;
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            foreach (KeyValuePair<string, byte[]> header in _headers)
             {
-                throw new ArgumentException($"Invalid header name: {name}", nameof(name));
-            }
-            else if (!IsValidValue(value))
-            {
-                throw new ArgumentException($"Invalid header value: {value}", nameof(value));
-            }
-        }
-
-        /// <summary>
-        /// Validates and normalizes the header name and value parameters, throwing exceptions if invalid characters were found.
-        /// </summary>
-        /// <param name="name">The name of the header.</param>
-        /// <param name="values">The values of the header.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="values"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="values"/> contains invalid characters.</exception>
-        private static void ValidateArgumentParameters(string name, IEnumerable<string> values)
-        {
-            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-            ArgumentNullException.ThrowIfNull(values, nameof(values));
-
-            if (!IsValidName(name))
-            {
-                throw new ArgumentException($"Invalid header name: {name}", nameof(name));
-            }
-
-            foreach (string item in values)
-            {
-                if (!IsValidValue(item))
+                if (ReferenceEquals(header.Key, key))
                 {
-                    throw new ArgumentException($"Invalid header value: {item}", nameof(values));
+                    values ??= new();
+                    values.Add(Encoding.ASCII.GetString(header.Value));
                 }
             }
+
+            return values is not null;
         }
 
         /// <summary>
-        /// Validates that the header is in the format of <c>name: value</c>.
+        /// Attempts to get the raw values of the specified header.
         /// </summary>
-        /// <param name="header">The header to validate.</param>
-        /// <returns><see langword="true"/> if the header is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool IsValidHeader(string header)
+        /// <param name="key">The name of the header to get.</param>
+        /// <param name="values">The values of the header if it exists; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the header exists; otherwise, <see langword="false"/>. Additionally returns <see langword="false"/> if the <paramref name="key"/> is either <see langword="null"/> or invalid and against the HTTP specification.</returns>
+        public bool TryGetValues(string key, [NotNullWhen(true)] out List<byte[]>? values)
         {
-            if (string.IsNullOrEmpty(header))
+            if (key is null || !IsValidName(key))
             {
+                values = null;
                 return false;
             }
 
-            int colonIndex = header.IndexOf(':');
-            return colonIndex != -1
-                && IsValidName(header.AsSpan(0, colonIndex))
-                && IsValidValue(header.AsSpan(colonIndex + 1));
-        }
-
-        /// <summary>
-        /// Validates that the header name does not contain invalid characters.
-        /// </summary>
-        /// <param name="value">The header name to validate.</param>
-        /// <returns><see langword="true"/> if the header name is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool IsValidName(ReadOnlySpan<char> value)
-        {
-            if (value.IsEmpty)
+            key = _commonHeaderNames.GetOrAdd(NormalizeName(key));
+            values = null;
+            foreach (KeyValuePair<string, byte[]> header in _headers)
             {
-                return false;
-            }
-
-            Span<char> validNameSpan = _validHeaderNameCharacters.AsSpan();
-            foreach (char character in value)
-            {
-                if (!validNameSpan.Contains(character))
+                if (ReferenceEquals(header.Key, key))
                 {
-                    return false;
+                    values ??= new();
+                    values.Add(header.Value);
                 }
             }
 
-            return true;
+            return values is not null;
         }
 
-        /// <summary>
-        /// Validates that the header value does not contain invalid characters.
-        /// </summary>
-        /// <param name="value">The header value to validate.</param>
-        /// <returns><see langword="true"/> if the header value is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool IsValidValue(ReadOnlySpan<char> value)
-        {
-            Span<char> validValueSpan = _validHeaderValueCharacters.AsSpan();
-            foreach (char character in value)
-            {
-                if (!validValueSpan.Contains(character))
-                {
-                    return false;
-                }
-            }
+        /// <inheritdoc />
+        public void Clear() => _headers.Clear();
 
-            return true;
-        }
+        /// <inheritdoc />
+        public void RemoveAt(int index) => _headers.RemoveAt(index);
 
-        /// <summary>
-        /// Normalizes the header name from x-Header-name to X-Header-Name format.
-        /// </summary>
-        /// <param name="value">The header name to normalize.</param>
-        /// <returns>The normalized header name.</returns>
-        public static string NormalizeHeaderName(ReadOnlySpan<char> value)
-        {
-            if (value.IsEmpty)
-            {
-                return string.Empty;
-            }
-
-            Span<char> characters = value.ToArray();
-            characters[0] = char.ToUpperInvariant(value[0]);
-            for (int i = 1; i < value.Length; i++)
-            {
-                if (value[i] is '-' or '_')
-                {
-                    characters[i + 1] = char.ToUpperInvariant(value[i + 1]);
-                }
-            }
-
-            return characters.ToString();
-        }
+        /// <inheritdoc />
+        public IEnumerator<KeyValuePair<string, byte[]>> GetEnumerator() => _headers.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _headers.GetEnumerator();
     }
 }

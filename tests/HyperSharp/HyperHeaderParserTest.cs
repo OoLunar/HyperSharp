@@ -43,8 +43,8 @@ namespace HyperSharp.Tests.HyperSharp
             Assert.AreEqual("http://localhost:8080/", context.Route.OriginalString);
             Assert.AreEqual(HttpVersion.Version11, context.Version);
             Assert.AreEqual(15, context.Headers.Count);
-            Assert.AreEqual("localhost:8080", context.Headers["Host"][0]);
-            Assert.AreEqual("Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/116.0", context.Headers["User-Agent"][0]);
+            Assert.AreEqual("localhost:8080", context.Headers.Get("Host"));
+            Assert.AreEqual("Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/116.0", context.Headers.Get("User-Agent"));
         }
 
         [TestMethod]

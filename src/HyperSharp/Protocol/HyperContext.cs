@@ -99,8 +99,8 @@ namespace HyperSharp.Protocol
             Method = method;
             Headers = headers;
             Connection = connection;
-            Route = headers.TryGetValue("Host", out IReadOnlyList<string>? host)
-                ? new Uri($"http://{host[0]}{route.OriginalString}")
+            Route = headers.TryGetValue("Host", out string? host)
+                ? new Uri($"http://{host}{route.OriginalString}")
                 : new Uri(connection.Server.Configuration._host, route);
         }
 
@@ -128,34 +128,14 @@ namespace HyperSharp.Protocol
             // Write headers
             status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
             status.Headers.TryAdd("Content-Length", content.Length.ToString(CultureInfo.InvariantCulture));
-            status.Headers.TryAdd("Content-Type", "application/json; charset=utf-8");
+            status.Headers.UnsafeTryAdd("Content-Type", "application/json; charset=utf-8"u8.ToArray());
             status.Headers.TryAdd("Server", Connection.Server.Configuration.ServerName);
 
-            foreach (string headerName in status.Headers.Keys)
+            foreach ((string headerName, byte[] value) in status.Headers)
             {
                 await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(headerName), cancellationToken);
                 await Connection.StreamWriter.WriteAsync(": "u8.ToArray(), cancellationToken);
-
-                if (!status.Headers.TryGetValue(headerName, out IReadOnlyList<string>? headerValues))
-                {
-                    // This shouldn't be able to happen, but just in case.
-                    await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
-                    continue;
-                }
-
-                if (headerValues.Count == 1)
-                {
-                    await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(headerValues[0]), cancellationToken);
-                }
-                else
-                {
-                    foreach (string value in headerValues)
-                    {
-                        await Connection.StreamWriter.WriteAsync(Encoding.ASCII.GetBytes(value), cancellationToken);
-                        await Connection.StreamWriter.WriteAsync(", "u8.ToArray(), cancellationToken);
-                    }
-                }
-
+                await Connection.StreamWriter.WriteAsync(value, cancellationToken);
                 await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
             }
             await Connection.StreamWriter.WriteAsync(_newLine, cancellationToken);
