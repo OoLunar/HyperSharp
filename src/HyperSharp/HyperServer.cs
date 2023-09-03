@@ -29,7 +29,7 @@ namespace HyperSharp
         /// <summary>
         /// Dictionary to store currently open connections by their unique IDs.
         /// </summary>
-        private readonly ConcurrentDictionary<Ulid, HyperConnection> _openConnections = new();
+        private readonly ConcurrentStack<Task> _openConnections = new();
 
         /// <summary>
         /// Stack of cancellation token sources for reuse in handling connections.
@@ -103,7 +103,10 @@ namespace HyperSharp
             _mainCancellationTokenSource = null;
             while (!_openConnections.IsEmpty)
             {
-                await Task.Delay(50);
+                if (_openConnections.TryPop(out Task? task))
+                {
+                    await task;
+                }
             }
 
             _tcpListener?.Stop();
@@ -120,7 +123,7 @@ namespace HyperSharp
             while (!_mainCancellationTokenSource!.IsCancellationRequested)
             {
                 // Throw the connection onto the async thread pool and wait for the next connection.
-                _ = HandleConnectionAsync(await listener.AcceptTcpClientAsync(_mainCancellationTokenSource.Token));
+                _openConnections.Push(HandleConnectionAsync(await listener.AcceptTcpClientAsync(_mainCancellationTokenSource.Token)));
             }
         }
 
@@ -132,7 +135,6 @@ namespace HyperSharp
         private async Task HandleConnectionAsync(TcpClient client)
         {
             HyperConnection connection = new(client, this);
-            _openConnections.TryAdd(connection.Id, connection);
             HyperLogging.ConnectionOpened(_logger, connection.Id, null);
 
             // Try to reuse an existing cancellation token source. If none are available, create a new one.
@@ -179,8 +181,8 @@ namespace HyperSharp
             await connection.StreamReader.CompleteAsync();
             await connection.StreamWriter.CompleteAsync();
             connection.Dispose();
-            _openConnections.TryRemove(connection.Id, out _);
 
+            _openConnections.TryPop(out Task? _);
             if (cancellationTokenSource.TryReset())
             {
                 _cancellationTokenSources.Push(cancellationTokenSource);
