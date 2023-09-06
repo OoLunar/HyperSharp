@@ -38,6 +38,8 @@ jobs:
           mkdir build
           dotnet pack -c Release -o build /p:Version=${{ github.event.release.tag_name }}
           dotnet nuget push "build/*" --skip-duplicate -k ${{ secrets.NUGET_ORG_API_KEY }} -s https://api.nuget.org/v3/index.json
+          dotnet tool update -g docfx --prerelease
+          docfx docs/docfx.json
       - name: Upload NuGet packages to GitHub Actions
         uses: actions/upload-artifact@v3
         with:
@@ -52,6 +54,24 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           omitNameDuringUpdate: true # We don't want to update the name of the release.
           omitBodyDuringUpdate: true # We don't want to update the body of the release.
+  document_commit:
+    name: Document Commit
+    runs-on: self-hosted
+    needs: publish_release
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./docs/_site/
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
   test_release:
     name: Test Release
     runs-on: "self-hosted"
