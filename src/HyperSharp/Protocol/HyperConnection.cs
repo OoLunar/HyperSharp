@@ -16,11 +16,6 @@ namespace HyperSharp.Protocol
         public Ulid Id { get; init; }
 
         /// <summary>
-        /// The underlying TCP client.
-        /// </summary>
-        public TcpClient Client { get; init; }
-
-        /// <summary>
         /// The server that the connection is intended for.
         /// </summary>
         public HyperServer Server { get; init; }
@@ -48,18 +43,7 @@ namespace HyperSharp.Protocol
         /// </summary>
         /// <param name="client">The client that created the connection.</param>
         /// <param name="server">The server that the connection is intended for.</param>
-        public HyperConnection(TcpClient client, HyperServer server)
-        {
-            ArgumentNullException.ThrowIfNull(client);
-            ArgumentNullException.ThrowIfNull(server);
-
-            Id = Ulid.NewUlid();
-            Client = client;
-            Server = server;
-            _baseStream = Client.GetStream();
-            StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
-            StreamWriter = PipeWriter.Create(_baseStream, new StreamPipeWriterOptions(leaveOpen: true));
-        }
+        public HyperConnection(TcpClient client, HyperServer server) : this(client.GetStream(), server) { }
 
         /// <summary>
         /// Creates a new mock client connection to the Hyper server.
@@ -72,7 +56,6 @@ namespace HyperSharp.Protocol
             ArgumentNullException.ThrowIfNull(server);
 
             Id = Ulid.NewUlid();
-            Client = new TcpClient();
             Server = server;
             _baseStream = baseStream;
             StreamReader = PipeReader.Create(_baseStream, new StreamPipeReaderOptions(leaveOpen: true));
@@ -90,7 +73,6 @@ namespace HyperSharp.Protocol
             StreamReader.Complete();
             StreamWriter.Complete();
             _baseStream.Dispose();
-            Client.Dispose();
             _isDisposed = true;
         }
     }
