@@ -88,7 +88,10 @@ jobs:
       - name: Publish NuGet packages
         run: |
           mkdir build
+          dotnet build -c Release
           dotnet pack -c Release -o build
+          dotnet tool update -g docfx --prerelease
+          docfx docs/docfx.json
       - name: Upload NuGet packages to GitHub Actions
         uses: actions/upload-artifact@v3
         with:
