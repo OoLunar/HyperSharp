@@ -81,19 +81,19 @@ namespace HyperSharp.Protocol
 
                 if (!jsonDocument.RootElement.TryGetProperty("runtimeOptions", out JsonElement runtimeOptions) || !runtimeOptions.TryGetProperty("tfm", out JsonElement tfm))
                 {
-                    Console.WriteLine($"Skipping '{sdkVersion}' because '{msBuildDependenciesJsonPath}' does not contain a 'runtimeOptions.tfm' property.");
+                    Console.WriteLine($"Skipping '{sdkVersion}' because '{Path.GetFileName(msBuildDependenciesJsonPath)}' does not contain a 'runtimeOptions.tfm' property.");
                     continue;
                 }
 
                 string? targetFrameworkMoniker = tfm.GetString();
                 if (targetFrameworkMoniker is null)
                 {
-                    Console.WriteLine($"Skipping '{sdkVersion}' because '{msBuildDependenciesJsonPath}' the 'runtimeOptions.tfm' property contains a null value.");
+                    Console.WriteLine($"Skipping '{sdkVersion}' because in '{Path.GetFileName(msBuildDependenciesJsonPath)}', the 'runtimeOptions.tfm' property contains a null value.");
                     continue;
                 }
                 else if (!targetedFrameworks.Any(framework => framework.StartsWith(targetFrameworkMoniker, StringComparison.OrdinalIgnoreCase)))
                 {
-                    Console.WriteLine($"Skipping '{sdkVersion}' because '{msBuildDependenciesJsonPath}' the 'runtimeOptions.tfm' property contains a value that is not targeted by the project.");
+                    Console.WriteLine($"Skipping '{sdkVersion}' because in '{Path.GetFileName(msBuildDependenciesJsonPath)}' the 'runtimeOptions.tfm' property contains a value that is not targeted by the project.");
                     continue;
                 }
 
