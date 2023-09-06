@@ -146,40 +146,41 @@ namespace HyperSharp
 
             // Start parsing the HTTP Headers.
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
-            if (cancellationTokenSource.IsCancellationRequested)
+            if (!cancellationTokenSource.IsCancellationRequested)
             {
-                await context.Value!.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
-            }
-            else if (context.IsSuccess)
-            {
-                // Execute any registered responders.
-                HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
-                Result<HyperStatus> status = await Configuration.RespondersDelegate(context.Value, cancellationTokenSource.Token);
-                if (!context.Value.HasResponded)
+                if (context.IsSuccess)
                 {
-                    HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
-                    HyperStatus response = status.Status switch
+                    // Execute any registered responders.
+                    HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
+                    Result<HyperStatus> status = await Configuration.RespondersDelegate(context.Value, cancellationTokenSource.Token);
+                    if (!context.Value.HasResponded)
                     {
-                        _ when cancellationTokenSource.IsCancellationRequested => HyperStatus.InternalServerError(),
-                        ResultStatus.IsSuccess | ResultStatus.HasValue => status.Value,
-                        ResultStatus.IsSuccess => HyperStatus.OK(),
-                        ResultStatus.HasValue => HyperStatus.InternalServerError(status.Value.Headers, status.Value.Body),
-                        ResultStatus.None => HyperStatus.InternalServerError(),
-                        _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
-                    };
+                        HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
+                        HyperStatus response = status.Status switch
+                        {
+                            _ when cancellationTokenSource.IsCancellationRequested => HyperStatus.InternalServerError(),
+                            ResultStatus.IsSuccess | ResultStatus.HasValue => status.Value,
+                            ResultStatus.IsSuccess => HyperStatus.OK(),
+                            ResultStatus.HasValue => HyperStatus.InternalServerError(status.Value.Headers, status.Value.Body),
+                            ResultStatus.None => HyperStatus.InternalServerError(),
+                            _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
+                        };
 
-                    await context.Value.RespondAsync(response, Configuration.JsonSerializerOptions, cancellationTokenSource.Token);
-                    HyperLogging.HttpResponded(_logger, connection.Id, response, null);
+                        await context.Value.RespondAsync(response, Configuration.JsonSerializerOptions, cancellationTokenSource.Token);
+                        HyperLogging.HttpResponded(_logger, connection.Id, response, null);
+                    }
+                }
+                else
+                {
+                    HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Errors, null);
                 }
             }
             else
             {
-                HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Errors, null);
+                await context.Value!.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
             }
 
             HyperLogging.ConnectionClosing(_logger, connection.Id, null);
-            await connection.StreamReader.CompleteAsync();
-            await connection.StreamWriter.CompleteAsync();
             connection.Dispose();
 
             _openConnections.TryPop(out Task? _);
