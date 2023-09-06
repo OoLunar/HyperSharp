@@ -4,6 +4,7 @@
     <Description>A C# reinvention of events through delegates.</Description>
     <PackageId>OoLunar.HyperSharp.Responders</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../HyperSharp.Results/HyperSharp.Results.csproj" />

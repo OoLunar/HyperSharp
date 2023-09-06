@@ -6,6 +6,7 @@
     <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <PropertyGroup>
     <Authors>OoLunar</Authors>

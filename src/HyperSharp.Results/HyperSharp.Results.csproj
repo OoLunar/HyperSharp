@@ -3,5 +3,6 @@
     <OutputType>Library</OutputType>
     <Description>A C# implementation of Results.</Description>
     <PackageId>OoLunar.HyperSharp.Results</PackageId>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 </Project>
