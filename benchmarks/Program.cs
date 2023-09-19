@@ -60,8 +60,10 @@ namespace HyperSharp.Benchmarks
                 fileStream.Write(Encoding.UTF8.GetBytes(GetHumanizedNanoSeconds(summary.TotalTime.TotalNanoseconds)));
 
                 // baseline first, then order by success, then by name
-                foreach (BenchmarkReport report in summary.Reports.OrderBy(report => !summary.IsBaseline(report.BenchmarkCase)).ThenBy(report => !report.Success).ThenBy(report => report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo))
+                BenchmarkReport[] array = summary.Reports.OrderBy(report => !summary.IsBaseline(report.BenchmarkCase)).ThenBy(report => !report.Success).ThenBy(report => report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo).ToArray();
+                for (int i = 0; i < array.Length; i++)
                 {
+                    BenchmarkReport report = array[i];
                     fileStream.Write("\n### "u8);
                     fileStream.Write(Encoding.UTF8.GetBytes(report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo));
                     if (summary.IsBaseline(report.BenchmarkCase))
@@ -80,11 +82,28 @@ namespace HyperSharp.Benchmarks
                         continue;
                     }
 
+                    fileStream.Write(":"u8);
+
                     string mean = GetHumanizedNanoSeconds(report.ResultStatistics.Mean);
                     string standardError = GetHumanizedNanoSeconds(report.ResultStatistics.StandardError);
                     string standardDeviation = GetHumanizedNanoSeconds(report.ResultStatistics.StandardDeviation);
 
-                    fileStream.Write(":\nMean: "u8);
+                    // Calculate the ratio compared to the baseline (if not the baseline itself)
+                    if (!summary.IsBaseline(report.BenchmarkCase))
+                    {
+                        BenchmarkReport? baselineReport = summary.BenchmarksCases.Select(benchmarkCase => summary.Reports.FirstOrDefault(r => r.BenchmarkCase == benchmarkCase)).FirstOrDefault(r => summary.IsBaseline(r!.BenchmarkCase));
+                        if (baselineReport is not null && baselineReport.ResultStatistics is not null)
+                        {
+                            double ratio = baselineReport.ResultStatistics.Mean / report.ResultStatistics.Mean;
+                            double percentage = -(1 - ratio) * 100;
+                            fileStream.Write("\nRatio: "u8);
+                            fileStream.Write(Encoding.UTF8.GetBytes(percentage.ToString("N2", CultureInfo.InvariantCulture)));
+                            fileStream.Write("% "u8);
+                            fileStream.Write(double.IsPositive(percentage) ? "faster"u8 : "slower"u8);
+                        }
+                    }
+
+                    fileStream.Write("\nMean: "u8);
                     fileStream.Write(Encoding.UTF8.GetBytes(mean));
                     fileStream.Write("\nError: "u8);
                     fileStream.Write(Encoding.UTF8.GetBytes(standardError));
