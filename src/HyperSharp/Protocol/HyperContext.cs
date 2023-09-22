@@ -106,16 +106,53 @@ namespace HyperSharp.Protocol
         }
 
         /// <summary>
+        /// Responds to the request with the specified status in plain text.
+        /// </summary>
+        /// <param name="status">The status to respond with.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use when writing the response.</param>
+        public async Task RespondAsync(HyperStatus status, CancellationToken cancellationToken = default)
+        {
+            // Write request line
+            Connection.StreamWriter.Write<byte>(_httpVersions[Version]);
+            Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
+            Connection.StreamWriter.Write<byte>(_newLine);
+
+            // Serialize body ahead of time due to headers
+            byte[] content = Encoding.UTF8.GetBytes(status.Body?.ToString() ?? "");
+
+            // Write headers
+            status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
+            status.Headers.TryAdd("Content-Length", content.Length.ToString(CultureInfo.InvariantCulture));
+            status.Headers.UnsafeTryAdd("Content-Type", "text/plain; charset=utf-8"u8.ToArray());
+            status.Headers.TryAdd("Server", Connection.Server.Configuration.ServerName);
+
+            foreach ((string headerName, byte[] value) in status.Headers)
+            {
+                Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(headerName));
+                Connection.StreamWriter.Write<byte>(": "u8.ToArray());
+                Connection.StreamWriter.Write<byte>(value);
+                Connection.StreamWriter.Write<byte>(_newLine);
+            }
+            Connection.StreamWriter.Write<byte>(_newLine);
+
+            // Write body
+            if (content.Length != 0)
+            {
+                Connection.StreamWriter.Write<byte>(content);
+            }
+
+            HasResponded = true;
+            await Connection.StreamWriter.FlushAsync(cancellationToken);
+        }
+
+        /// <summary>
         /// Responds to the request with the specified status, and serializes the body using the specified <see cref="JsonSerializerOptions"/>.
         /// </summary>
         /// <param name="status">The status to respond with.</param>
         /// <param name="serializerOptions">The <see cref="JsonSerializerOptions"/> to use when serializing the body.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use when writing the response.</param>
-        public virtual async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null, CancellationToken cancellationToken = default)
+        public async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null, CancellationToken cancellationToken = default)
         {
-            // Grab the base network stream to write our ASCII headers to.
-            // TODO: Find a solution which allows modification of the body (Gzip) and the base stream (SSL).
-
             // Write request line
             Connection.StreamWriter.Write<byte>(_httpVersions[Version]);
             Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
