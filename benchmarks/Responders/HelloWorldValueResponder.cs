@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using HyperSharp.Protocol;
@@ -12,9 +11,10 @@ namespace HyperSharp.Benchmarks.Responders
     {
         public static Type[] Needs => Type.EmptyTypes;
 
-        public ValueTask<Result<HyperStatus>> RespondAsync(HyperContext context, CancellationToken cancellationToken = default) => ValueTask.FromResult(Result.Success(new HyperStatus(
-            HttpStatusCode.OK,
-            "Hello World!"
-        )));
+        public async ValueTask<Result<HyperStatus>> RespondAsync(HyperContext context, CancellationToken cancellationToken = default)
+        {
+            await context.RespondAsync(HyperStatus.OK("Hello World!"), cancellationToken);
+            return Result.Success(default(HyperStatus));
+        }
     }
 }

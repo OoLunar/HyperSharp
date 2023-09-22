@@ -169,7 +169,7 @@ namespace HyperSharp.Benchmarks
                 }
 
                 hyperConfiguration.ListeningEndpoint = new IPEndPoint(address, configuration.GetValue("server:port", 8080));
-                hyperConfiguration.AddResponders(new[] { typeof(HelloWorldResponder) });
+                hyperConfiguration.AddResponders(new[] { typeof(HelloWorldValueTaskResponder) });
             });
 
             services.AddSingleton(services =>

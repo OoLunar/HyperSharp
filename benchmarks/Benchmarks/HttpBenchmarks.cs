@@ -76,7 +76,7 @@ namespace HyperSharp.Benchmarks.Cases
         }
 
         [WarmupCount(5), Benchmark(Baseline = true)]
-        public Task HyperTestAsync() => _client.GetAsync("http://localhost:8080/");
+        public Task HyperSharpTestAsync() => _client.GetAsync("http://localhost:8080/");
 
         [WarmupCount(5), Benchmark]
         public Task HttpListenerTestAsync() => _client.GetAsync("http://localhost:8081/");

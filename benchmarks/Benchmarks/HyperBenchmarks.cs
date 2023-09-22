@@ -32,7 +32,7 @@ namespace HyperSharp.Benchmarks.Cases
         public async Task CleanupAsync() => await _hyperServer.StopAsync();
 
         [WarmupCount(5), Benchmark]
-        public Task HttpClientTestAsync() => _client.GetAsync(_localhost);
+        public Task BaseTestAsync() => _client.GetAsync(_localhost);
 
         [WarmupCount(5), Benchmark(41)]
         public ValueTask<Result<HyperContext>> ParseHeadersTestAsync()
