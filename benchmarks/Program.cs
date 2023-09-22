@@ -178,7 +178,9 @@ namespace HyperSharp.Benchmarks
                 return new HttpClient()
                 {
                     BaseAddress = new Uri($"http://{hyperConfiguration.ListeningEndpoint}/"),
-                    DefaultRequestHeaders = { { "User-Agent", $"HyperSharp/{typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion} Github" } }
+                    DefaultRequestHeaders = { { "User-Agent", $"HyperSharp/{typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion} Github" } },
+                    DefaultRequestVersion = HttpVersion.Version11,
+                    DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower
                 };
             });
 

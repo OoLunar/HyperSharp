@@ -14,7 +14,7 @@ namespace HyperSharp.Benchmarks.Responders
 
         public ValueTask<Result<HyperStatus>> RespondAsync(HyperContext context, CancellationToken cancellationToken = default) => ValueTask.FromResult(Result.Success(new HyperStatus(
             HttpStatusCode.OK,
-            new Error("Hello World!")
+            "Hello World!"
         )));
     }
 }

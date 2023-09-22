@@ -5,8 +5,10 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../res/config.json" CopyToOutputDirectory="Always" />
+    <PackageReference Include="EmbedIO" Version="3.5.2" />
     <PackageReference Include="GenHTTP.Core" Version="7.0.0" />
-    <ProjectReference Include="../src/HyperSharp/HyperSharp.csproj" />
+    <PackageReference Include="NetCoreServer" Version="7.0.0" />
+    <ProjectReference Include="$(ProjectRoot)/src/HyperSharp/HyperSharp.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.13.7" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.4" />
