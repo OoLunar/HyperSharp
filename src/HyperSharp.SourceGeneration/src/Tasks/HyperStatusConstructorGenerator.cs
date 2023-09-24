@@ -102,7 +102,7 @@ namespace HyperSharp.Protocol
                 nuGetFrameworks.Add(NuGetFramework.Parse(targetFrameworkMoniker), (msBuildDependenciesJsonPath, targetFrameworkMoniker));
             }
 
-            foreach (KeyValuePair<NuGetFramework, (string, string)> kvp in nuGetFrameworks.OrderBy(framework => framework.Key, new NuGetFrameworkSorter()))
+            foreach (KeyValuePair<NuGetFramework, (string, string)> kvp in nuGetFrameworks.OrderByDescending(framework => framework.Key, new NuGetFrameworkSorter()))
             {
                 NuGetFramework nuGetFramework = kvp.Key;
                 string msBuildDependenciesJsonPath = kvp.Value.Item1;
@@ -112,11 +112,6 @@ namespace HyperSharp.Protocol
                 string[] httpStatuses = Enum.GetNames(assembly.GetType("System.Net.HttpStatusCode")!);
                 foreach (string httpStatus in httpStatuses)
                 {
-                    if (File.Exists($"{projectRoot}/Protocol/HyperStatus/HyperStatus.{httpStatus}.g.cs"))
-                    {
-                        continue;
-                    }
-
                     StringBuilder stringBuilder = new StringBuilder(CODE_TEMPLATE)
                         .Replace("{{Date}}", DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
                         .Replace("{{NetVersion}}", targetFrameworkMoniker.Replace('.', '_').ToUpperInvariant())

@@ -6,7 +6,7 @@ namespace HyperSharp.Protocol
 {
     public readonly partial record struct HyperStatus
     {
-        #if NET8_0_OR_GREATER
+        #if NET7_0_OR_GREATER
 
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.MovedPermanently" />
         public static HyperStatus MovedPermanently() => new(global::System.Net.HttpStatusCode.MovedPermanently, new HyperHeaderCollection(), null);

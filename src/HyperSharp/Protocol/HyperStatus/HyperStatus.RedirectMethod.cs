@@ -6,7 +6,7 @@ namespace HyperSharp.Protocol
 {
     public readonly partial record struct HyperStatus
     {
-        #if NET8_0_OR_GREATER
+        #if NET7_0_OR_GREATER
 
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.RedirectMethod" />
         public static HyperStatus RedirectMethod() => new(global::System.Net.HttpStatusCode.RedirectMethod, new HyperHeaderCollection(), null);

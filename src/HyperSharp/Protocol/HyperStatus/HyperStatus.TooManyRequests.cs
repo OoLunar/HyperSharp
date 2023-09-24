@@ -6,7 +6,7 @@ namespace HyperSharp.Protocol
 {
     public readonly partial record struct HyperStatus
     {
-        #if NET8_0_OR_GREATER
+        #if NET7_0_OR_GREATER
 
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.TooManyRequests" />
         public static HyperStatus TooManyRequests() => new(global::System.Net.HttpStatusCode.TooManyRequests, new HyperHeaderCollection(), null);
