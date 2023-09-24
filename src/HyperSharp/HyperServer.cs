@@ -134,7 +134,7 @@ namespace HyperSharp
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task HandleConnectionAsync(TcpClient client)
         {
-            HyperConnection connection = new(client, this);
+            HyperConnection connection = new(client.GetStream(), this);
             HyperLogging.ConnectionOpened(_logger, connection.Id, null);
 
             // Try to reuse an existing cancellation token source. If none are available, create a new one.
