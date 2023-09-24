@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.IO.Pipelines;
-using System.Net.Sockets;
 
 namespace HyperSharp.Protocol
 {
@@ -37,13 +36,6 @@ namespace HyperSharp.Protocol
         private Stream _baseStream { get; set; }
 
         private bool _isDisposed;
-
-        /// <summary>
-        /// Creates a new client connection to the Hyper server.
-        /// </summary>
-        /// <param name="client">The client that created the connection.</param>
-        /// <param name="server">The server that the connection is intended for.</param>
-        public HyperConnection(TcpClient client, HyperServer server) : this(client.GetStream(), server) { }
 
         /// <summary>
         /// Creates a new mock client connection to the Hyper server.
