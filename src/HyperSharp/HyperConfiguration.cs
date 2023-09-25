@@ -84,7 +84,7 @@ namespace HyperSharp
             {
                 throw new ArgumentException("The listening endpoint is invalid.", nameof(builder));
             }
-            else if (!HyperHeaderCollection.IsValidName(ServerName))
+            else if (!HyperHeaderCollection.IsValidName(builder.ServerName))
             {
                 throw new ArgumentException("The server name is invalid.", nameof(builder));
             }
