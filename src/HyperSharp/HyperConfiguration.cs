@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,6 +49,7 @@ namespace HyperSharp
         /// </summary>
         public ValueTaskResponderDelegate<HyperContext, HyperStatus> RespondersDelegate { get; init; }
 
+        internal byte[] _serverNameBytes { get; init; }
         internal Uri _host { get; init; }
 
         /// <summary>
@@ -82,8 +84,13 @@ namespace HyperSharp
             {
                 throw new ArgumentException("The listening endpoint is invalid.", nameof(builder));
             }
+            else if (!HyperHeaderCollection.IsValidName(ServerName))
+            {
+                throw new ArgumentException("The server name is invalid.", nameof(builder));
+            }
 
             _host = host;
+            _serverNameBytes = Encoding.ASCII.GetBytes(builder.ServerName);
             ServerName = builder.ServerName;
             MaxHeaderSize = builder.MaxHeaderSize;
             Timeout = builder.Timeout;

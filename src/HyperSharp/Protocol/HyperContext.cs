@@ -37,8 +37,12 @@ namespace HyperSharp.Protocol
 #else
         .ToImmutableDictionary();
 #endif
+
+        private static readonly byte[] _colonSpace = ": "u8.ToArray();
         private static readonly byte[] _newLine = "\r\n"u8.ToArray();
         private static readonly byte[] _emptyBody = Array.Empty<byte>();
+        private static readonly byte[] _contentTextEncoding = "text/plain; charset=utf-8"u8.ToArray();
+        private static readonly byte[] _contentJsonEncoding = "application/json; charset=utf-8"u8.ToArray();
 
         /// <summary>
         /// The HTTP method of the request.
@@ -123,13 +127,13 @@ namespace HyperSharp.Protocol
             // Write headers
             status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
             status.Headers.TryAdd("Content-Length", content.Length.ToString(CultureInfo.InvariantCulture));
-            status.Headers.UnsafeTryAdd("Content-Type", "text/plain; charset=utf-8"u8.ToArray());
-            status.Headers.TryAdd("Server", Connection.Server.Configuration.ServerName);
+            status.Headers.UnsafeTryAdd("Content-Type", _contentTextEncoding);
+            status.Headers.UnsafeTryAdd("Server", Connection.Server.Configuration._serverNameBytes);
 
             foreach ((string headerName, byte[] value) in status.Headers)
             {
                 Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(headerName));
-                Connection.StreamWriter.Write<byte>(": "u8.ToArray());
+                Connection.StreamWriter.Write<byte>(_colonSpace);
                 Connection.StreamWriter.Write<byte>(value);
                 Connection.StreamWriter.Write<byte>(_newLine);
             }
@@ -166,13 +170,13 @@ namespace HyperSharp.Protocol
             // Write headers
             status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
             status.Headers.TryAdd("Content-Length", content.Length.ToString(CultureInfo.InvariantCulture));
-            status.Headers.UnsafeTryAdd("Content-Type", "application/json; charset=utf-8"u8.ToArray());
-            status.Headers.TryAdd("Server", Connection.Server.Configuration.ServerName);
+            status.Headers.UnsafeTryAdd("Content-Type", _contentJsonEncoding);
+            status.Headers.UnsafeTryAdd("Server", Connection.Server.Configuration._serverNameBytes);
 
             foreach ((string headerName, byte[] value) in status.Headers)
             {
                 Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(headerName));
-                Connection.StreamWriter.Write<byte>(": "u8.ToArray());
+                Connection.StreamWriter.Write<byte>(_colonSpace);
                 Connection.StreamWriter.Write<byte>(value);
                 Connection.StreamWriter.Write<byte>(_newLine);
             }
