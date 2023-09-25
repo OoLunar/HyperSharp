@@ -82,7 +82,7 @@ namespace HyperSharp
             });
 
             _tcpListener.Start();
-            _ = ListenForConnectionsAsync(_tcpListener);
+            _ = Task.Run(ListenForConnectionsAsync, _mainCancellationTokenSource.Token);
             HyperLogging.ServerStarted(_logger, Configuration.ListeningEndpoint, null);
         }
 
@@ -116,25 +116,28 @@ namespace HyperSharp
         /// <summary>
         /// Listens for incoming connections asynchronously, accepting them and throwing them onto the async thread pool.
         /// </summary>
-        /// <param name="listener">The TCP listener instance to accept connections from.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        private async Task ListenForConnectionsAsync(TcpListener listener)
+        private async Task ListenForConnectionsAsync()
         {
+            _tcpListener!.Start();
+
+            TcpClient client;
             while (!_mainCancellationTokenSource!.IsCancellationRequested)
             {
                 // Throw the connection onto the async thread pool and wait for the next connection.
-                _openConnections.Push(HandleConnectionAsync(await listener.AcceptTcpClientAsync(_mainCancellationTokenSource.Token)));
+                client = await _tcpListener.AcceptTcpClientAsync(_mainCancellationTokenSource.Token);
+                _openConnections.Push(Task.Run(() => HandleConnectionAsync(client.GetStream())));
             }
         }
 
         /// <summary>
         /// Handles an incoming connection asynchronously, parsing the HTTP headers and executing any registered responders.
         /// </summary>
-        /// <param name="client">The connected TCP client.</param>
+        /// <param name="networkStream">The network stream for the incoming connection.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        private async Task HandleConnectionAsync(TcpClient client)
+        private async Task HandleConnectionAsync(NetworkStream networkStream)
         {
-            HyperConnection connection = new(client.GetStream(), this);
+            HyperConnection connection = new(networkStream, this);
             HyperLogging.ConnectionOpened(_logger, connection.Id, null);
 
             // Try to reuse an existing cancellation token source. If none are available, create a new one.
