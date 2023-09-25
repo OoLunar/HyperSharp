@@ -22,14 +22,26 @@ using BenchmarkDotNet.Jobs;
 
 namespace HyperSharp.Benchmarks
 {
-    public sealed class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
+            IConfiguration configuration = new ConfigurationBuilder().AddCommandLine(args).Build();
+            Type[] types = typeof(Program).Assembly.GetExportedTypes().Where(type => type.Namespace!.Equals("HyperSharp.Benchmarks.Cases", StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (configuration.GetSection("full").Get<bool>() is true)
+            {
+                // remove the --full argument so that BenchmarkDotNet doesn't complain
+                args = args.Where(arg => !arg.Equals("--full", StringComparison.OrdinalIgnoreCase)).ToArray();
+            }
+            else
+            {
+                types = types.Where(type => type.GetCustomAttribute<FullAttribute>() is null).ToArray();
+            }
+
 #if DEBUG
-            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly, ManualConfig.CreateMinimumViable().WithOptions(ConfigOptions.DisableOptimizationsValidator).AddJob(Job.Dry), args);
+            Summary[] summaries = BenchmarkRunner.Run(types, ManualConfig.CreateMinimumViable().WithOptions(ConfigOptions.DisableOptimizationsValidator).AddJob(Job.Dry), args: args);
 #else
-            Summary[] summaries = BenchmarkRunner.Run(typeof(Program).Assembly, args: args);
+            Summary[] summaries = BenchmarkRunner.Run(types, args: args);
 #endif
             Summary firstSummary = summaries[0];
             File.WriteAllText("benchmark-results.md", string.Empty);

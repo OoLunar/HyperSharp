@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HyperSharp.Benchmarks.Cases
 {
-    [JsonExporterAttribute.Brief]
+    [JsonExporterAttribute.Brief, Full]
     public class AsyncResponderBenchmarks
     {
         private readonly HyperContext _context;

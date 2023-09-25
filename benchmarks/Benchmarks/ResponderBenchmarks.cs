@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HyperSharp.Benchmarks.Cases
 {
-    [JsonExporterAttribute.Brief]
+    [JsonExporterAttribute.Brief, Full]
     public class ResponderBenchmarks
     {
         private readonly HyperContext _context;

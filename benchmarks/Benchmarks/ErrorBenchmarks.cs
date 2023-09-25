@@ -4,7 +4,7 @@ using HyperSharp.Results;
 
 namespace HyperSharp.Benchmarks.Cases
 {
-    [JsonExporterAttribute.Brief, SuppressMessage("Roslyn", "CA1822", Justification = "BenchmarkDotNet does not support static methods.")]
+    [JsonExporterAttribute.Brief, Full, SuppressMessage("Roslyn", "CA1822", Justification = "BenchmarkDotNet does not support static methods.")]
     public class ErrorBenchmarks
     {
         private readonly Error _subError = new("This is a test sub-error.");
