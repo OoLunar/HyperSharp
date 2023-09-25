@@ -172,7 +172,7 @@ namespace HyperSharp
                             _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
                         };
 
-                        await context.Value.RespondAsync(response, Configuration.JsonSerializerOptions, cancellationTokenSource.Token);
+                        await context.Value.RespondAsync(response, HyperSerializers.JsonAsync, cancellationTokenSource.Token);
                         HyperLogging.HttpResponded(_logger, connection.Id, response, null);
                     }
                 }
@@ -183,7 +183,7 @@ namespace HyperSharp
             }
             else
             {
-                await context.Value!.RespondAsync(HyperStatus.InternalServerError(), Configuration.JsonSerializerOptions);
+                await context.Value!.RespondAsync(HyperStatus.InternalServerError(), HyperSerializers.JsonAsync);
             }
 
             HyperLogging.ConnectionClosing(_logger, connection.Id, null);

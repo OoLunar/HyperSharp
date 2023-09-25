@@ -10,10 +10,8 @@ using System.IO.Pipelines;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Globalization;
 using Microsoft.Toolkit.HighPerformance;
 
 namespace HyperSharp.Protocol
@@ -40,9 +38,6 @@ namespace HyperSharp.Protocol
 
         private static readonly byte[] _colonSpace = ": "u8.ToArray();
         private static readonly byte[] _newLine = "\r\n"u8.ToArray();
-        private static readonly byte[] _emptyBody = Array.Empty<byte>();
-        private static readonly byte[] _contentTextEncoding = "text/plain; charset=utf-8"u8.ToArray();
-        private static readonly byte[] _contentJsonEncoding = "application/json; charset=utf-8"u8.ToArray();
 
         /// <summary>
         /// The HTTP method of the request.
@@ -109,27 +104,25 @@ namespace HyperSharp.Protocol
                 : new Uri(connection.Server.Configuration._host, route);
         }
 
+        /// <inheritdoc cref="RespondAsync(HyperStatus, HyperSerializerDelegate, CancellationToken)"/>
+        public Task RespondAsync(HyperStatus status, CancellationToken cancellationToken = default) => RespondAsync(status, HyperSerializers.JsonAsync, cancellationToken);
+
         /// <summary>
         /// Responds to the request with the specified status in plain text.
         /// </summary>
         /// <param name="status">The status to respond with.</param>
+        /// <param name="serializerDelegate">The <see cref="HyperSerializerDelegate"/> to use when serializing the body.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use when writing the response.</param>
-        public async Task RespondAsync(HyperStatus status, CancellationToken cancellationToken = default)
+        public async Task RespondAsync(HyperStatus status, HyperSerializerDelegate serializerDelegate, CancellationToken cancellationToken = default)
         {
             // Write request line
             Connection.StreamWriter.Write<byte>(_httpVersions[Version]);
             Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
             Connection.StreamWriter.Write<byte>(_newLine);
 
-            // Serialize body ahead of time due to headers
-            byte[] content = Encoding.UTF8.GetBytes(status.Body?.ToString() ?? "");
-
             // Write headers
             status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
-            status.Headers.TryAdd("Content-Length", content.Length.ToString(CultureInfo.InvariantCulture));
-            status.Headers.UnsafeTryAdd("Content-Type", _contentTextEncoding);
             status.Headers.UnsafeTryAdd("Server", Connection.Server.Configuration._serverNameBytes);
-
             foreach ((string headerName, byte[] value) in status.Headers)
             {
                 Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(headerName));
@@ -137,56 +130,9 @@ namespace HyperSharp.Protocol
                 Connection.StreamWriter.Write<byte>(value);
                 Connection.StreamWriter.Write<byte>(_newLine);
             }
-            Connection.StreamWriter.Write<byte>(_newLine);
 
             // Write body
-            if (content.Length != 0)
-            {
-                Connection.StreamWriter.Write<byte>(content);
-            }
-
-            HasResponded = true;
-            await Connection.StreamWriter.FlushAsync(cancellationToken);
-        }
-
-        /// <summary>
-        /// Responds to the request with the specified status, and serializes the body using the specified <see cref="JsonSerializerOptions"/>.
-        /// </summary>
-        /// <param name="status">The status to respond with.</param>
-        /// <param name="serializerOptions">The <see cref="JsonSerializerOptions"/> to use when serializing the body.</param>
-        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use when writing the response.</param>
-        public async Task RespondAsync(HyperStatus status, JsonSerializerOptions? serializerOptions = null, CancellationToken cancellationToken = default)
-        {
-            // Write request line
-            Connection.StreamWriter.Write<byte>(_httpVersions[Version]);
-            Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes($"{(int)status.Code} {status.Code}"));
-            Connection.StreamWriter.Write<byte>(_newLine);
-
-            // Serialize body ahead of time due to headers
-            byte[] content = status.Body is null
-                ? _emptyBody
-                : JsonSerializer.SerializeToUtf8Bytes(status.Body, serializerOptions ?? Connection.Server.Configuration.JsonSerializerOptions);
-
-            // Write headers
-            status.Headers.TryAdd("Date", DateTime.UtcNow.ToString("R"));
-            status.Headers.TryAdd("Content-Length", content.Length.ToString(CultureInfo.InvariantCulture));
-            status.Headers.UnsafeTryAdd("Content-Type", _contentJsonEncoding);
-            status.Headers.UnsafeTryAdd("Server", Connection.Server.Configuration._serverNameBytes);
-
-            foreach ((string headerName, byte[] value) in status.Headers)
-            {
-                Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(headerName));
-                Connection.StreamWriter.Write<byte>(_colonSpace);
-                Connection.StreamWriter.Write<byte>(value);
-                Connection.StreamWriter.Write<byte>(_newLine);
-            }
-            Connection.StreamWriter.Write<byte>(_newLine);
-
-            // Write body
-            if (content.Length != 0)
-            {
-                Connection.StreamWriter.Write<byte>(content);
-            }
+            await serializerDelegate(this, status, cancellationToken);
 
             HasResponded = true;
             await Connection.StreamWriter.FlushAsync(cancellationToken);

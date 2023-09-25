@@ -37,8 +37,11 @@ namespace HyperSharp.Setup
         public IPEndPoint ListeningEndpoint { get; set; } = new(IPAddress.Any, 8080);
 
         /// <summary>
-        /// A list of types that implement <see cref="IResponderBase"/>.
+        /// A list of types which will be executed when a new HTTP request is received.
         /// </summary>
+        /// <remarks>
+        /// All types implement <see cref="IResponderBase"/>.
+        /// </remarks>
         public List<Type> Responders { get; set; } = new();
 
         /// <summary>

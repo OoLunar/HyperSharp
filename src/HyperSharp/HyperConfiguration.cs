@@ -40,7 +40,7 @@ namespace HyperSharp
         public IPEndPoint ListeningEndpoint { get; init; }
 
         /// <summary>
-        /// The default JSON serializer options to use for <see cref="HyperContext.RespondAsync(HyperStatus, JsonSerializerOptions?, CancellationToken)"/>.
+        /// The default JSON serializer options to use for <see cref="HyperSerializers.JsonAsync(HyperContext, HyperStatus, CancellationToken)"/>.
         /// </summary>
         public JsonSerializerOptions JsonSerializerOptions { get; init; }
 

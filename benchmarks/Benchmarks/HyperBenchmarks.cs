@@ -38,9 +38,9 @@ namespace HyperSharp.Benchmarks.Cases
         public async Task CleanupAsync() => await _hyperServer.StopAsync();
 
         [WarmupCount(5), Benchmark]
-        public Task BaseTestAsync() => _client.GetAsync(_localhost);
+        public Task FullHttpRequest() => _client.GetAsync(_localhost);
 
-        [WarmupCount(5), Benchmark(45)]
+        [WarmupCount(5), Benchmark(47)]
         public ValueTask<Result<HyperContext>> ParseHeadersTestAsync()
         {
             HyperConnection connection = new(new MemoryStream(_headers), _hyperServer);

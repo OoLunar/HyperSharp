@@ -13,7 +13,7 @@ namespace HyperSharp.Benchmarks.Responders
 
         public async ValueTask<Result<HyperStatus>> RespondAsync(HyperContext context, CancellationToken cancellationToken = default)
         {
-            await context.RespondAsync(HyperStatus.OK("Hello World!"), cancellationToken);
+            await context.RespondAsync(HyperStatus.OK("Hello World!"), HyperSerializers.PlainTextAsync, cancellationToken);
             return Result.Success(default(HyperStatus));
         }
     }
