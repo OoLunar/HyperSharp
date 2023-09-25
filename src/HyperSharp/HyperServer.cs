@@ -181,7 +181,7 @@ namespace HyperSharp
             }
 
             HyperLogging.ConnectionClosing(_logger, connection.Id, null);
-            connection.Dispose();
+            await connection.DisposeAsync();
 
             _openConnections.TryPop(out Task? _);
             if (cancellationTokenSource.TryReset())

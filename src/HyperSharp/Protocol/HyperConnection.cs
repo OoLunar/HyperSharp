@@ -1,13 +1,14 @@
 using System;
 using System.IO;
 using System.IO.Pipelines;
+using System.Threading.Tasks;
 
 namespace HyperSharp.Protocol
 {
     /// <summary>
     /// Represents a client connection to the Hyper server.
     /// </summary>
-    public sealed record HyperConnection : IDisposable
+    public sealed record HyperConnection : IAsyncDisposable
     {
         /// <summary>
         /// The unique identifier of the connection, containing the timestamp of when the connection was created.
@@ -55,16 +56,16 @@ namespace HyperSharp.Protocol
         }
 
         /// <inheritdoc/>
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
             if (_isDisposed)
             {
                 return;
             }
 
-            StreamReader.Complete();
-            StreamWriter.Complete();
-            _baseStream.Dispose();
+            await StreamWriter.CompleteAsync();
+            await StreamReader.CompleteAsync();
+            await _baseStream.DisposeAsync();
             _isDisposed = true;
         }
     }
