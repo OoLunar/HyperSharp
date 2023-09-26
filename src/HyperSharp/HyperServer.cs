@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +29,7 @@ namespace HyperSharp
         /// <summary>
         /// Dictionary to store currently open connections by their unique IDs.
         /// </summary>
-        private readonly Dictionary<Ulid, Task> _openConnections = new();
+        private readonly ConcurrentDictionary<Ulid, Task> _openConnections = new();
 
         /// <summary>
         /// Stack of cancellation token sources for reuse in handling connections.
@@ -71,19 +70,9 @@ namespace HyperSharp
             }
 
             HyperLogging.ServerStarting(_logger, Configuration.ListeningEndpoint, null);
-            _tcpListener = new(Configuration.ListeningEndpoint);
             _mainCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            _mainCancellationTokenSource.Token.Register(() =>
-            {
-                HyperLogging.ServerStopping(_logger, Configuration.ListeningEndpoint, null);
-                if (_openConnections.Count != 0)
-                {
-                    HyperLogging.ConnectionsPending(_logger, _openConnections.Count, null);
-                }
-            });
-
-            _tcpListener.Start();
-            _ = Task.Run(ListenForConnectionsAsync, _mainCancellationTokenSource.Token);
+            _tcpListener = new(Configuration.ListeningEndpoint);
+            Task.Factory.StartNew(ListenForConnectionsAsync, _mainCancellationTokenSource.Token, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach | TaskCreationOptions.PreferFairness, TaskScheduler.Default);
             HyperLogging.ServerStarted(_logger, Configuration.ListeningEndpoint, null);
         }
 
@@ -99,11 +88,13 @@ namespace HyperSharp
                 throw new InvalidOperationException("The server is not running.");
             }
 
+            HyperLogging.ServerStopping(_logger, Configuration.ListeningEndpoint, null);
             _mainCancellationTokenSource.Cancel();
             _mainCancellationTokenSource.Dispose();
             _mainCancellationTokenSource = null;
-            while (_openConnections.Count != 0)
+            while (!_openConnections.IsEmpty)
             {
+                HyperLogging.ConnectionsPending(_logger, _openConnections.Count, null);
                 await Task.WhenAll(_openConnections.Values);
             }
 
@@ -120,15 +111,20 @@ namespace HyperSharp
         private async Task ListenForConnectionsAsync()
         {
             _tcpListener!.Start();
-
-            Ulid id;
-            TcpClient client;
             while (!_mainCancellationTokenSource!.IsCancellationRequested)
             {
-                // Throw the connection onto the async thread pool and wait for the next connection.
-                client = await _tcpListener.AcceptTcpClientAsync(_mainCancellationTokenSource.Token);
-                id = Ulid.NewUlid();
-                _openConnections.Add(id, Task.Run(() => HandleConnectionAsync(id, client.GetStream())));
+                // Wait for a new connection.
+                TcpClient client = await _tcpListener.AcceptTcpClientAsync(_mainCancellationTokenSource.Token);
+
+                // Regenerate the ID until we get a unique one.
+                Ulid id;
+                Task task;
+                do
+                {
+                    id = Ulid.NewUlid();
+                    task = new Task<Task>(() => HandleConnectionAsync(id, client.GetStream()), _mainCancellationTokenSource.Token);
+                } while (!_openConnections.TryAdd(id, task));
+                task.Start();
             }
         }
 
@@ -183,13 +179,14 @@ namespace HyperSharp
             }
             else
             {
-                await context.Value!.RespondAsync(HyperStatus.InternalServerError(), HyperSerializers.JsonAsync);
+                // Intentionally don't pass the cancellation token to RespondAsync, since we want to respond with a 500.
+                await context.Value!.RespondAsync(HyperStatus.InternalServerError(), HyperSerializers.JsonAsync, CancellationToken.None);
             }
 
             HyperLogging.ConnectionClosing(_logger, connection.Id, null);
             await connection.DisposeAsync();
 
-            _openConnections.Remove(id);
+            _openConnections.TryRemove(id, out Task? thisTask);
             if (cancellationTokenSource.TryReset())
             {
                 _cancellationTokenSources.Push(cancellationTokenSource);
