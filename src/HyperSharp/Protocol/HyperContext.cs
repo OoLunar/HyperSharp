@@ -105,7 +105,7 @@ namespace HyperSharp.Protocol
         }
 
         /// <inheritdoc cref="RespondAsync(HyperStatus, HyperSerializerDelegate, CancellationToken)"/>
-        public Task RespondAsync(HyperStatus status, CancellationToken cancellationToken = default) => RespondAsync(status, HyperSerializers.JsonAsync, cancellationToken);
+        public ValueTask RespondAsync(HyperStatus status, CancellationToken cancellationToken = default) => RespondAsync(status, HyperSerializers.JsonAsync, cancellationToken);
 
         /// <summary>
         /// Responds to the request with the specified status in plain text.
@@ -113,7 +113,7 @@ namespace HyperSharp.Protocol
         /// <param name="status">The status to respond with.</param>
         /// <param name="serializerDelegate">The <see cref="HyperSerializerDelegate"/> to use when serializing the body.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use when writing the response.</param>
-        public async Task RespondAsync(HyperStatus status, HyperSerializerDelegate serializerDelegate, CancellationToken cancellationToken = default)
+        public async ValueTask RespondAsync(HyperStatus status, HyperSerializerDelegate serializerDelegate, CancellationToken cancellationToken = default)
         {
             // Write request line
             Connection.StreamWriter.Write<byte>(_httpVersions[Version]);
