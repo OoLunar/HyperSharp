@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Deps
-xbps-install -Syu > /dev/null
-xbps-install -y ImageMagick yarn > /dev/null
+apt-get install ImageMagick yarn > /dev/null
 yarn global add svgo > /dev/null
 
 # Functions
