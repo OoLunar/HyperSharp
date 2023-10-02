@@ -56,7 +56,7 @@ jobs:
           omitBodyDuringUpdate: true # We don't want to update the body of the release.
   document_commit:
     name: Document Commit
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: publish_release
     permissions:
       pages: write
