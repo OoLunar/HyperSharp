@@ -9,7 +9,7 @@ namespace HyperSharp.Protocol
 {
     public static partial class HyperSerializers
     {
-        private static readonly byte[] _jsonEncodingHeader = "Content-Type: application/json; charset=utf-8\r\nContent-Length: "u8.ToArray();
+        private static readonly byte[] _contentTypeJsonEncodingHeader = "Content-Type: application/json; charset=utf-8\r\nContent-Length: "u8.ToArray();
 
         /// <summary>
         /// Serializes the body to the client as JSON using the <see cref="JsonSerializer.SerializeToUtf8Bytes{TValue}(TValue, JsonSerializerOptions?)"/> method with the <see cref="HyperConfiguration.JsonSerializerOptions"/> options.
@@ -24,11 +24,11 @@ namespace HyperSharp.Protocol
             ArgumentNullException.ThrowIfNull(status);
 
             // Write Content-Type header and beginning of Content-Length header
-            context.Connection.StreamWriter.Write<byte>(_jsonEncodingHeader);
+            context.Connection.StreamWriter.Write<byte>(_contentTypeJsonEncodingHeader);
             byte[] body = JsonSerializer.SerializeToUtf8Bytes(status.Body, context.Connection.Server.Configuration.JsonSerializerOptions);
 
             // Finish the Content-Length header
-            context.Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(body.Length.ToString())); // TODO: This could probably be done without allocating a string
+            context.Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(body.Length.ToString()));
             context.Connection.StreamWriter.Write<byte>(_newLine);
 
             // Write body
