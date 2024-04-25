@@ -3,7 +3,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Nullable>enable</Nullable>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
-    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <IsPackable>false</IsPackable>
@@ -25,6 +25,5 @@
     <EmbeddedResource Include="$(ProjectRoot)/res/*.png" Pack="true" PackagePath=""/>
     <EmbeddedResource Include="$(ProjectRoot)/LICENSE" Pack="true" PackagePath=""/>
     <EmbeddedResource Include="$(ProjectRoot)/README.md" Pack="true" PackagePath=""/>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
   </ItemGroup>
 </Project>
