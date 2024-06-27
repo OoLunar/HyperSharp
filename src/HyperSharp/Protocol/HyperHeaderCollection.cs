@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace HyperSharp.Protocol
@@ -16,7 +17,7 @@ namespace HyperSharp.Protocol
         /// <summary>
         /// Initializes a new instance of the <see cref="HyperHeaderCollection"/> class that is empty and has the default initial capacity.
         /// </summary>
-        public HyperHeaderCollection() => _headers = new();
+        public HyperHeaderCollection() => _headers = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HyperHeaderCollection"/> class that is empty and has the specified initial capacity.
@@ -29,6 +30,38 @@ namespace HyperSharp.Protocol
         /// </summary>
         /// <param name="headers">The collection whose elements are copied to the new list.</param>
         public HyperHeaderCollection(IEnumerable<KeyValuePair<string, byte[]>> headers) => _headers = new(headers);
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="HyperHeaderCollection"/> class from the specified <see cref="HttpRequestHeaders"/>.
+        /// </summary>
+        /// <param name="headers">The <see cref="HttpRequestHeaders"/> to create the collection from.</param>
+        public HyperHeaderCollection(HttpRequestHeaders headers)
+        {
+            _headers = [];
+            foreach (KeyValuePair<string, IEnumerable<string>> header in headers)
+            {
+                foreach (string value in header.Value)
+                {
+                    Add(header.Key, value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="HyperHeaderCollection"/> class from the specified <see cref="HttpResponseHeaders"/>.
+        /// </summary>
+        /// <param name="headers">The <see cref="HttpResponseHeaders"/> to create the collection from.</param>
+        public HyperHeaderCollection(HttpResponseHeaders headers)
+        {
+            _headers = [];
+            foreach (KeyValuePair<string, IEnumerable<string>> header in headers)
+            {
+                foreach (string value in header.Value)
+                {
+                    Add(header.Key, value);
+                }
+            }
+        }
 
         /// <inheritdoc />
         public KeyValuePair<string, byte[]> this[int index]
@@ -470,7 +503,7 @@ namespace HyperSharp.Protocol
             {
                 if (ReferenceEquals(header.Key, key))
                 {
-                    values ??= new();
+                    values ??= [];
                     values.Add(Encoding.ASCII.GetString(header.Value));
                 }
             }
@@ -498,7 +531,7 @@ namespace HyperSharp.Protocol
             {
                 if (ReferenceEquals(header.Key, key))
                 {
-                    values ??= new();
+                    values ??= [];
                     values.Add(header.Value);
                 }
             }
