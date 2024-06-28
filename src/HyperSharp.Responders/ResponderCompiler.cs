@@ -15,8 +15,8 @@ namespace HyperSharp.Responders
     /// </summary>
     public sealed class ResponderCompiler
     {
-        private readonly Dictionary<Type, ResponderBuilder> _resolvedResponders = new();
-        private readonly List<ResponderBuilder> _builders = new();
+        private readonly Dictionary<Type, ResponderBuilder> _resolvedResponders = [];
+        private readonly List<ResponderBuilder> _builders = [];
         private readonly ILogger<ResponderCompiler> _logger;
 
         /// <summary>
@@ -70,10 +70,10 @@ namespace HyperSharp.Responders
             }
 
             // Keep track of visited responders during DFS (depth-first search)
-            HashSet<Type> visited = new();
+            HashSet<Type> visited = [];
             foreach (ResponderBuilder responderBuilder in _resolvedResponders.Values)
             {
-                if (!visited.Contains(responderBuilder.Type) && HasCircularDependency(responderBuilder, visited, new HashSet<Type>()))
+                if (!visited.Contains(responderBuilder.Type) && HasCircularDependency(responderBuilder, visited, []))
                 {
                     _logger.LogError("Responder \"{ResponderName}\" has a circular dependency.", responderBuilder.Name);
                     return false;
@@ -147,7 +147,7 @@ namespace HyperSharp.Responders
             }
 
             // Compile the root responders
-            List<ResponderDelegate<TContext, TOutput>> rootRespondersDelegates = new();
+            List<ResponderDelegate<TContext, TOutput>> rootRespondersDelegates = [];
             foreach (ResponderBuilder builder in rootResponders)
             {
                 rootRespondersDelegates.Add(CompileDependency<TContext, TOutput>(serviceProvider, builder));
@@ -179,23 +179,21 @@ namespace HyperSharp.Responders
         private ResponderDelegate<TContext, TOutput> CompileDependency<TContext, TOutput>(IServiceProvider serviceProvider, ResponderBuilder builder)
         {
             // ActivatorUtilities throws an exception if the type has no constructors (structs)
-            IResponder<TContext, TOutput> responder = builder.Type.GetConstructors().Length == 0
-                ? (IResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
-                : (IResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
+            IResponder<TContext, TOutput> responder = (IResponder<TContext, TOutput>)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, builder.Type);
             ResponderDelegate<TContext, TOutput> responderDelegate = responder.Respond;
             if (builder.Dependencies.Count == 0)
             {
                 return responderDelegate;
             }
 
-            List<ResponderDelegate<TContext, TOutput>> dependencies = new();
+            List<ResponderDelegate<TContext, TOutput>> dependencies = [];
             foreach (Type dependency in builder.Dependencies)
             {
                 ResponderBuilder dependencyBuilder = _resolvedResponders[dependency];
                 dependencies.Add(CompileDependency<TContext, TOutput>(serviceProvider, dependencyBuilder));
             }
-            dependencies.Add(responderDelegate);
 
+            dependencies.Add(responderDelegate);
             return dependencies.Count switch
             {
                 1 => dependencies[0],
@@ -252,7 +250,7 @@ namespace HyperSharp.Responders
             }
 
             // Compile the root responders
-            List<ValueTaskResponderDelegate<TContext, TOutput>> rootRespondersDelegates = new();
+            List<ValueTaskResponderDelegate<TContext, TOutput>> rootRespondersDelegates = [];
             foreach (ResponderBuilder builder in rootResponders)
             {
                 rootRespondersDelegates.Add(CompileAsyncDependency<TContext, TOutput>(serviceProvider, builder));
@@ -287,18 +285,12 @@ namespace HyperSharp.Responders
             ValueTaskResponderDelegate<TContext, TOutput> responderDelegate;
             if (typeof(ITaskResponder).IsAssignableFrom(builder.Type))
             {
-                ITaskResponder<TContext, TOutput> taskResponder = builder.Type.GetConstructors().Length == 0
-                    ? (ITaskResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
-                    : (ITaskResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
-
+                ITaskResponder<TContext, TOutput> taskResponder = (ITaskResponder<TContext, TOutput>)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, builder.Type);
                 responderDelegate = async ValueTask<Result<TOutput>> (context, cancellationToken) => await taskResponder.RespondAsync(context, cancellationToken);
             }
             else
             {
-                IValueTaskResponder<TContext, TOutput> responder = builder.Type.GetConstructors().Length == 0
-                    ? (IValueTaskResponder<TContext, TOutput>)Activator.CreateInstance(builder.Type)!
-                    : (IValueTaskResponder<TContext, TOutput>)ActivatorUtilities.CreateInstance(serviceProvider, builder.Type);
-
+                IValueTaskResponder<TContext, TOutput> responder = (IValueTaskResponder<TContext, TOutput>)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, builder.Type);
                 responderDelegate = responder.RespondAsync;
             }
 
@@ -307,14 +299,14 @@ namespace HyperSharp.Responders
                 return responderDelegate;
             }
 
-            List<ValueTaskResponderDelegate<TContext, TOutput>> dependencies = new();
+            List<ValueTaskResponderDelegate<TContext, TOutput>> dependencies = [];
             foreach (Type dependency in builder.Dependencies)
             {
                 ResponderBuilder dependencyBuilder = _resolvedResponders[dependency];
                 dependencies.Add(CompileAsyncDependency<TContext, TOutput>(serviceProvider, dependencyBuilder));
             }
-            dependencies.Add(responderDelegate);
 
+            dependencies.Add(responderDelegate);
             return dependencies.Count switch
             {
                 1 => dependencies[0],
