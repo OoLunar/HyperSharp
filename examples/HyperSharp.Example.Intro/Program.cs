@@ -20,6 +20,8 @@ namespace HyperSharp.Examples.Intro
 
                 loggingBuilder.AddSerilog(configuration.CreateLogger());
             });
+
+            // Add HyperSharp to the service collection.
             services.AddHyperSharp();
 
             // Build the service provider and get the HyperServer instance.

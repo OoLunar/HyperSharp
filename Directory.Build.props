@@ -16,7 +16,7 @@
     <PackageProjectUrl>https://github.com/OoLunar/HyperSharp</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <ProjectRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), "HyperSharp.sln"))</ProjectRoot>
+    <ProjectRoot>$(MSBuildThisFileDirectory)</ProjectRoot>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/OoLunar/HyperSharp</RepositoryUrl>

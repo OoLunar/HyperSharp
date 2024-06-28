@@ -144,43 +144,43 @@ namespace HyperSharp
             {
                 cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_mainCancellationTokenSource!.Token);
             }
+
+            // Ensure all connections will close after the configured timeout.
             cancellationTokenSource.CancelAfter(Configuration.Timeout);
 
             // Start parsing the HTTP Headers.
             Result<HyperContext> context = await HyperHeaderParser.TryParseHeadersAsync(Configuration.MaxHeaderSize, connection, cancellationTokenSource.Token);
-            if (!cancellationTokenSource.IsCancellationRequested)
-            {
-                if (context.IsSuccess)
-                {
-                    // Execute any registered responders.
-                    HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
-                    Result<HyperStatus> status = await Configuration.RespondersDelegate(context.Value, cancellationTokenSource.Token);
-                    if (!context.Value.HasResponded)
-                    {
-                        HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
-                        HyperStatus response = status.Status switch
-                        {
-                            _ when cancellationTokenSource.IsCancellationRequested => HyperStatus.InternalServerError(),
-                            ResultStatus.IsSuccess | ResultStatus.HasValue => status.Value,
-                            ResultStatus.IsSuccess => HyperStatus.OK(),
-                            ResultStatus.HasValue => HyperStatus.InternalServerError(status.Value.Headers, status.Value.Body),
-                            ResultStatus.None => HyperStatus.InternalServerError(),
-                            _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
-                        };
-
-                        await context.Value.RespondAsync(response, HyperSerializers.JsonAsync, cancellationTokenSource.Token);
-                        HyperLogging.HttpResponded(_logger, connection.Id, response, null);
-                    }
-                }
-                else
-                {
-                    HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Errors, null);
-                }
-            }
-            else
+            if (cancellationTokenSource.IsCancellationRequested)
             {
                 // Intentionally don't pass the cancellation token to RespondAsync, since we want to respond with a 500.
                 await context.Value!.RespondAsync(HyperStatus.InternalServerError(), HyperSerializers.JsonAsync, CancellationToken.None);
+            }
+            else if (!context.IsSuccess)
+            {
+                // If the headers are invalid, log the errors and close the connection without responding.
+                HyperLogging.HttpInvalidHeaders(_logger, connection.Id, context.Errors, null);
+            }
+            else
+            {
+                // Execute any registered responders.
+                HyperLogging.HttpReceivedRequest(_logger, connection.Id, context.Value!.Route, null);
+                Result<HyperStatus> status = await Configuration.RespondersDelegate(context.Value, cancellationTokenSource.Token);
+                if (!context.Value.HasResponded)
+                {
+                    HyperLogging.HttpResponding(_logger, connection.Id, status.Value, null);
+                    HyperStatus response = status.Status switch
+                    {
+                        _ when cancellationTokenSource.IsCancellationRequested => HyperStatus.InternalServerError(),
+                        ResultStatus.IsSuccess | ResultStatus.HasValue => status.Value,
+                        ResultStatus.IsSuccess => HyperStatus.OK(),
+                        ResultStatus.HasValue => HyperStatus.InternalServerError(status.Value.Headers, status.Value.Body),
+                        ResultStatus.None => HyperStatus.InternalServerError(),
+                        _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
+                    };
+
+                    await context.Value.RespondAsync(response, HyperSerializers.JsonAsync, cancellationTokenSource.Token);
+                    HyperLogging.HttpResponded(_logger, connection.Id, response, null);
+                }
             }
 
             HyperLogging.ConnectionClosing(_logger, connection.Id, null);

@@ -12,7 +12,7 @@ namespace HyperSharp.Results
     [JsonConverter(typeof(ErrorJsonConverter))]
     public record Error
     {
-        private static readonly Error[] _empty = Array.Empty<Error>();
+        private static readonly Error[] _empty = [];
 
         /// <summary>
         /// A summary of the error.
@@ -56,7 +56,7 @@ namespace HyperSharp.Results
         public Error(string message, Error error)
         {
             Message = message;
-            Errors = new Error[1] { error };
+            Errors = [error];
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace HyperSharp.Results
         {
             Message = exception.Message;
             Exception = exception;
-            Errors = new Error[1] { error };
+            Errors = [error];
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace HyperSharp.Results
         {
             Message = message;
             Exception = exception;
-            Errors = new Error[1] { error };
+            Errors = [error];
         }
 
         /// <summary>

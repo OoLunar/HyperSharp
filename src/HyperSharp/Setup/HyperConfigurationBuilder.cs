@@ -42,7 +42,7 @@ namespace HyperSharp.Setup
         /// <remarks>
         /// All types implement <see cref="IResponderBase"/>.
         /// </remarks>
-        public List<Type> Responders { get; set; } = new();
+        public List<Type> Responders { get; set; } = [];
 
         /// <summary>
         /// Adds all responders in the specified assembly.

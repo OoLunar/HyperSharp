@@ -72,7 +72,7 @@ namespace HyperSharp.Benchmarks
                 fileStream.Write(Encoding.UTF8.GetBytes(GetHumanizedNanoSeconds(summary.TotalTime.TotalNanoseconds)));
 
                 // baseline first, then order by success, then by name
-                BenchmarkReport[] array = summary.Reports.OrderBy(report => !summary.IsBaseline(report.BenchmarkCase)).ThenBy(report => !report.Success).ThenBy(report => report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo).ToArray();
+                BenchmarkReport[] array = [.. summary.Reports.OrderBy(report => !summary.IsBaseline(report.BenchmarkCase)).ThenBy(report => !report.Success).ThenBy(report => report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo)];
                 for (int i = 0; i < array.Length; i++)
                 {
                     BenchmarkReport report = array[i];
@@ -181,7 +181,7 @@ namespace HyperSharp.Benchmarks
                 }
 
                 hyperConfiguration.ListeningEndpoint = new IPEndPoint(address, configuration.GetValue("server:port", 8080));
-                hyperConfiguration.AddResponders(new[] { typeof(HelloWorldValueTaskResponder) });
+                hyperConfiguration.AddResponders([typeof(HelloWorldValueTaskResponder)]);
             });
 
             services.AddSingleton(services =>

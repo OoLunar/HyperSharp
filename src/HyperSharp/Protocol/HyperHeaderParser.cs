@@ -28,8 +28,8 @@ namespace HyperSharp.Protocol
             {
                 throw new ArgumentOutOfRangeException(nameof(maxHeaderSize), "Max header size must be greater than zero.");
             }
-            ArgumentNullException.ThrowIfNull(connection);
 
+            ArgumentNullException.ThrowIfNull(connection);
             ReadResult readResult = await connection.StreamReader.ReadAsync(cancellationToken);
             if (readResult.IsCanceled)
             {
@@ -54,7 +54,7 @@ namespace HyperSharp.Protocol
             connection.StreamReader.AdvanceTo(sequencePosition);
             readResult = await connection.StreamReader.ReadAsync(cancellationToken);
 
-            HyperHeaderCollection headers = new();
+            HyperHeaderCollection headers = [];
             while (!readResult.IsCompleted && !readResult.IsCanceled)
             {
                 if (readResult.Buffer.Length > maxHeaderSize)

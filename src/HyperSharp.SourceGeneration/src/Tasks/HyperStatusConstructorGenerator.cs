@@ -22,8 +22,6 @@ namespace HyperSharp.Protocol
 {
     public readonly partial record struct HyperStatus
     {
-        #if {{NetVersion}}_OR_GREATER
-
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
         public static HyperStatus {{Code}}() => new(global::System.Net.HttpStatusCode.{{Code}}, new HyperHeaderCollection(), null);
 
@@ -39,8 +37,6 @@ namespace HyperSharp.Protocol
         /// <param name="headers">The headers of the response.</param>
         /// <param name="body">The body of the response.</param>
         public static HyperStatus {{Code}}(HyperHeaderCollection headers, object? body) => new(global::System.Net.HttpStatusCode.{{Code}}, headers, body);
-
-        #endif
     }
 }
 
@@ -64,7 +60,7 @@ namespace HyperSharp.Protocol
                 return false;
             }
 
-            Dictionary<NuGetFramework, (string, string)> nuGetFrameworks = new();
+            Dictionary<NuGetFramework, (string, string)> nuGetFrameworks = [];
             foreach (string sdkVersion in Directory.GetDirectories(Path.Combine(dotnetRoot, "shared/Microsoft.NETCore.App/")))
             {
                 string msBuildDependenciesJsonPath = Path.Combine(sdkVersion, "Microsoft.NETCore.App.runtimeconfig.json");
@@ -102,7 +98,7 @@ namespace HyperSharp.Protocol
                 nuGetFrameworks.Add(NuGetFramework.Parse(targetFrameworkMoniker), (msBuildDependenciesJsonPath, targetFrameworkMoniker));
             }
 
-            foreach (KeyValuePair<NuGetFramework, (string, string)> kvp in nuGetFrameworks.OrderByDescending(framework => framework.Key, new NuGetFrameworkSorter()))
+            foreach (KeyValuePair<NuGetFramework, (string, string)> kvp in nuGetFrameworks.OrderByDescending(framework => framework.Key, NuGetFrameworkSorter.Instance))
             {
                 NuGetFramework nuGetFramework = kvp.Key;
                 string msBuildDependenciesJsonPath = kvp.Value.Item1;

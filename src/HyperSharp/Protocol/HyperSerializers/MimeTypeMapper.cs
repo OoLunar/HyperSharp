@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance;
+using System.Linq;
 
 namespace HyperSharp.Protocol
 {
@@ -18,9 +19,9 @@ namespace HyperSharp.Protocol
     /// </summary>
     public static partial class HyperSerializers
     {
-        private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> _mimeTypes;
-        private static readonly IReadOnlyDictionary<string, Lazy<HyperSerializerDelegate>> _mimeTypeSerializers;
-        private static readonly IReadOnlyDictionary<string, Lazy<HyperSerializerDelegate>> _fileExtensionSerializers;
+        private static readonly FrozenDictionary<string, IReadOnlyList<string>> _mimeTypes;
+        private static readonly FrozenDictionary<string, Lazy<HyperSerializerDelegate>> _mimeTypeSerializers;
+        private static readonly FrozenDictionary<string, Lazy<HyperSerializerDelegate>> _fileExtensionSerializers;
 
         static HyperSerializers()
         {
@@ -94,7 +95,7 @@ namespace HyperSharp.Protocol
 
                     mimeTypeSerializers[mimeType] = serializer;
 
-                    List<string> fileExtensions = mimeTypes.TryGetValue(mimeType, out List<string>? extensions) ? extensions : new List<string>();
+                    List<string> fileExtensions = mimeTypes.TryGetValue(mimeType, out List<string>? extensions) ? extensions : [];
                     foreach (string fileExtension in parts[1..])
                     {
                         fileExtensionSerializers[fileExtension] = serializer;
@@ -103,13 +104,9 @@ namespace HyperSharp.Protocol
                 }
             }
 
-#if NET8_0_OR_GREATER
             _fileExtensionSerializers = fileExtensionSerializers.ToFrozenDictionary();
             _mimeTypeSerializers = mimeTypeSerializers.ToFrozenDictionary();
-#else
-            _fileExtensionSerializers = fileExtensionSerializers.ToImmutableDictionary();
-            _mimeTypeSerializers = mimeTypeSerializers.ToImmutableDictionary();
-#endif
+            _mimeTypes = mimeTypes.Select(x => (x.Key, (IReadOnlyList<string>)x.Value)).ToDictionary(x => x.Key, x => x.Item2).ToFrozenDictionary();
         }
 
         /// <summary>

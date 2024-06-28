@@ -67,7 +67,7 @@ namespace HyperSharp.Protocol
         /// <summary>
         /// Any metadata associated with the request, explicitly set by the registered responders.
         /// </summary>
-        public Dictionary<string, string> Metadata { get; init; } = new();
+        public Dictionary<string, string> Metadata { get; init; } = [];
 
         /// <summary>
         /// Whether or not the request has been responded to.

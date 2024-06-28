@@ -5,6 +5,6 @@
     <PackageId>OoLunar.HyperSharp.Routing</PackageId>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../HyperSharp/HyperSharp.csproj" />
+    <ProjectReference Include="$(ProjectRoot)/src/HyperSharp/HyperSharp.csproj" />
   </ItemGroup>
 </Project>

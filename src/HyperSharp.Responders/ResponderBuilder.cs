@@ -19,7 +19,7 @@ namespace HyperSharp.Responders
             Type = type;
             IsSyncronous = isSyncronous;
             Dependencies = new(dependencies);
-            RequiredBy = new();
+            RequiredBy = [];
         }
     }
 }
