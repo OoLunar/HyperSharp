@@ -179,7 +179,7 @@ namespace HyperSharp.Responders
         private ResponderDelegate<TContext, TOutput> CompileDependency<TContext, TOutput>(IServiceProvider serviceProvider, ResponderBuilder builder)
         {
             // ActivatorUtilities throws an exception if the type has no constructors (structs)
-            IResponder<TContext, TOutput> responder = (IResponder<TContext, TOutput>)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, builder.Type);
+            IResponder<TContext, TOutput> responder = (IResponder<TContext, TOutput>)GetOrCreateInstance(serviceProvider, builder.Type);
             ResponderDelegate<TContext, TOutput> responderDelegate = responder.Respond;
             if (builder.Dependencies.Count == 0)
             {
@@ -285,12 +285,12 @@ namespace HyperSharp.Responders
             ValueTaskResponderDelegate<TContext, TOutput> responderDelegate;
             if (typeof(ITaskResponder).IsAssignableFrom(builder.Type))
             {
-                ITaskResponder<TContext, TOutput> taskResponder = (ITaskResponder<TContext, TOutput>)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, builder.Type);
+                ITaskResponder<TContext, TOutput> taskResponder = (ITaskResponder<TContext, TOutput>)GetOrCreateInstance(serviceProvider, builder.Type);
                 responderDelegate = async ValueTask<Result<TOutput>> (context, cancellationToken) => await taskResponder.RespondAsync(context, cancellationToken);
             }
             else
             {
-                IValueTaskResponder<TContext, TOutput> responder = (IValueTaskResponder<TContext, TOutput>)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, builder.Type);
+                IValueTaskResponder<TContext, TOutput> responder = (IValueTaskResponder<TContext, TOutput>)GetOrCreateInstance(serviceProvider, builder.Type);
                 responderDelegate = responder.RespondAsync;
             }
 
@@ -336,6 +336,20 @@ namespace HyperSharp.Responders
                     return Result.Success<TOutput>();
                 }
             };
+        }
+
+        private static object GetOrCreateInstance(IServiceProvider serviceProvider, Type type)
+        {
+            object? instance = serviceProvider.GetService(type);
+            if (instance is not null)
+            {
+                return instance;
+            }
+
+            ConstructorInfo[] constructors = type.GetConstructors();
+            return constructors.Length == 0 || constructors.Any(constructor => constructor.GetParameters().Length == 0)
+                ? Activator.CreateInstance(type)!
+                : ActivatorUtilities.CreateInstance(serviceProvider, type);
         }
     }
 }
