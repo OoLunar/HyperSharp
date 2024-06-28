@@ -6,7 +6,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Net.Http.Headers" Version="8.0.4" />
-    <PackageReference Include="NuGet.Frameworks" Version="6.9.1" />
+    <PackageReference Include="Microsoft.Net.Http.Headers" Version="8.0.6" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.10.1" />
+    <PackageReference Include="ThisAssembly.Project" Version="1.4.3" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" PrivateAssets="all" />
+    <ProjectProperty Include="ProjectRoot" />
+    <ProjectProperty Include="TargetFramework" />
   </ItemGroup>
 </Project>

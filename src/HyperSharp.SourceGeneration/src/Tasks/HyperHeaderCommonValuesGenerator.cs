@@ -51,15 +51,15 @@ namespace HyperSharp.Protocol
 
                 headerNames.AppendLine(ENUM_VALUE_TEMPLATE
                     .Replace("{{HeaderName}}", headerName.Name)
-                    .Replace("{{HeaderValue}}", headerName.GetRawConstantValue()!.ToString()
+                    .Replace("{{HeaderValue}}", headerName.GetValue(null)!.ToString()
                 ));
             }
 
             string code = CODE_TEMPLATE
                 .Replace("{{Date}}", DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
                 .Replace("{{HeaderName}}", headerNames.ToString().TrimStart().TrimEnd('\n', ','));
-            string projectRoot = Directory.GetCurrentDirectory();
-            File.WriteAllText(Path.Combine(projectRoot, "Protocol", "HyperHeaderName.cs"), code);
+            string projectRoot = ThisAssembly.Project.ProjectRoot;
+            File.WriteAllText(Path.Combine(projectRoot, "src/HyperSharp/Protocol/HyperHeaderName.cs"), code);
 
             return true;
         }

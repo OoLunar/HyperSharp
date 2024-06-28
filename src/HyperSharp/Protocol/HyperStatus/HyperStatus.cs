@@ -28,20 +28,20 @@ namespace HyperSharp.Protocol
         /// <summary>
         /// Creates a new <see cref="HyperStatus"/>. The status code will be <see cref="HttpStatusCode.NoContent"/>, the headers will be empty, and the body will be null.
         /// </summary>
-        public HyperStatus() : this(HttpStatusCode.NoContent, new HyperHeaderCollection(), null) { }
+        public HyperStatus() : this(HttpStatusCode.NoContent, [], null) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperStatus"/> with the specified status code. The headers will be empty and the body will be null.
         /// </summary>
         /// <param name="code">The HTTP status code to respond with.</param>
-        public HyperStatus(HttpStatusCode code) : this(code, new HyperHeaderCollection(), null) { }
+        public HyperStatus(HttpStatusCode code) : this(code, [], null) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperStatus"/> with the specified status code and body. The headers will be empty.
         /// </summary>
         /// <param name="code">The HTTP status code to respond with.</param>
         /// <param name="body">The body to be serialized into the response.</param>
-        public HyperStatus(HttpStatusCode code, object? body) : this(code, new HyperHeaderCollection(), body) { }
+        public HyperStatus(HttpStatusCode code, object? body) : this(code, [], body) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperStatus"/> with the specified status code and headers. The body will be null.

@@ -44,15 +44,6 @@ namespace HyperSharp.Protocol
 
         public bool Execute(IConfiguration configuration)
         {
-            string projectRoot = Directory.GetCurrentDirectory();
-            string? targetFrameworks = configuration["TargetFrameworks"];
-            if (targetFrameworks is null)
-            {
-                Console.WriteLine("The 'TargetFrameworks' property is not set.");
-                return false;
-            }
-
-            string[] targetedFrameworks = targetFrameworks.Split(';');
             string? dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
             if (dotnetRoot is null)
             {
@@ -89,7 +80,7 @@ namespace HyperSharp.Protocol
                     Console.WriteLine($"Skipping '{sdkVersion}' because in '{Path.GetFileName(msBuildDependenciesJsonPath)}', the 'runtimeOptions.tfm' property contains a null value.");
                     continue;
                 }
-                else if (!targetedFrameworks.Any(framework => framework.StartsWith(targetFrameworkMoniker, StringComparison.OrdinalIgnoreCase)))
+                else if (!new string[] { ThisAssembly.Project.TargetFramework }.Any(framework => framework.StartsWith(targetFrameworkMoniker, StringComparison.OrdinalIgnoreCase)))
                 {
                     Console.WriteLine($"Skipping '{sdkVersion}' because in '{Path.GetFileName(msBuildDependenciesJsonPath)}' the 'runtimeOptions.tfm' property contains a value that is not targeted by the project.");
                     continue;
@@ -112,7 +103,8 @@ namespace HyperSharp.Protocol
                         .Replace("{{Date}}", DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
                         .Replace("{{NetVersion}}", targetFrameworkMoniker.Replace('.', '_').ToUpperInvariant())
                         .Replace("{{Code}}", httpStatus);
-                    File.WriteAllText($"{projectRoot}/Protocol/HyperStatus/HyperStatus.{httpStatus}.cs", stringBuilder.ToString());
+
+                    File.WriteAllText($"{ThisAssembly.Project.ProjectRoot}/src/HyperSharp/Protocol/HyperStatus/HyperStatus.{httpStatus}.cs", stringBuilder.ToString());
                 }
             }
 
