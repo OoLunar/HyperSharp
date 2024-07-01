@@ -25,7 +25,7 @@ namespace HyperSharp.Protocol
 
             // Write Content-Type header and beginning of Content-Length header
             context.Connection.StreamWriter.Write<byte>(_contentTypeJsonEncodingHeader);
-            byte[] body = JsonSerializer.SerializeToUtf8Bytes(status.Body, context.Connection.Server.Configuration.JsonSerializerOptions);
+            byte[] body = JsonSerializer.SerializeToUtf8Bytes(status.Body ?? new object(), context.Connection.Server.Configuration.JsonSerializerOptions);
 
             // Finish the Content-Length header
             context.Connection.StreamWriter.Write<byte>(Encoding.ASCII.GetBytes(body.Length.ToString()));

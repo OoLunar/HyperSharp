@@ -143,10 +143,12 @@ namespace HyperSharp.Responders
             IEnumerable<ResponderBuilder> rootResponders = _builders.Where(builder => builder.RequiredBy.Count == 0);
             if (!rootResponders.Any())
             {
+                _logger.LogWarning("No responders were found, returning an empty responder.");
                 return (context, cancellationToken) => Result.Success<TOutput>();
             }
 
             // Compile the root responders
+            _logger.LogInformation("Compiling {Count:N0} top-level responders.", rootResponders.Count());
             List<ResponderDelegate<TContext, TOutput>> rootRespondersDelegates = [];
             foreach (ResponderBuilder builder in rootResponders)
             {
@@ -160,13 +162,15 @@ namespace HyperSharp.Responders
                     foreach (ResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
                     {
                         Result<TOutput> result = responder(context, cancellationToken);
-                        if (!result.IsSuccess || result.HasValue)
+                        if (result.HasValue)
                         {
+                            _logger.LogTrace("Returning result: {Result}", result);
                             return result;
                         }
                     }
 
-                    return Result.Success<TOutput>();
+                    _logger.LogTrace("None of the {Count:N0} top-level responders returned a value.", rootRespondersDelegates.Count);
+                    return Result.Failure<TOutput>();
                 }
                 catch (Exception error)
                 {
@@ -246,10 +250,12 @@ namespace HyperSharp.Responders
             IEnumerable<ResponderBuilder> rootResponders = _builders.Where(builder => builder.RequiredBy.Count == 0);
             if (!rootResponders.Any())
             {
+                _logger.LogWarning("No responders were found, returning an empty responder.");
                 return (context, cancellationToken) => ValueTask.FromResult(Result.Success<TOutput>());
             }
 
             // Compile the root responders
+            _logger.LogInformation("Compiling {Count:N0} top-level responders.", rootResponders.Count());
             List<ValueTaskResponderDelegate<TContext, TOutput>> rootRespondersDelegates = [];
             foreach (ResponderBuilder builder in rootResponders)
             {
@@ -263,12 +269,15 @@ namespace HyperSharp.Responders
                     foreach (ValueTaskResponderDelegate<TContext, TOutput> responder in rootRespondersDelegates)
                     {
                         Result<TOutput> result = await responder(context, cancellationToken);
-                        if (!result.IsSuccess || result.HasValue)
+                        if (result.HasValue)
                         {
+                            _logger.LogTrace("Returning result: {Result}", result);
                             return result;
                         }
+
                     }
 
+                    _logger.LogTrace("None of the {Count:N0} top-level responders returned a value.", rootRespondersDelegates.Count);
                     return Result.Success<TOutput>();
                 }
                 catch (Exception error)

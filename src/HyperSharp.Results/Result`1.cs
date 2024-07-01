@@ -46,6 +46,13 @@ namespace HyperSharp.Results
             Status = ResultStatus.IsSuccess;
         }
 
+        internal Result(ResultStatus status)
+        {
+            Value = default;
+            Errors = Result._emptyErrors;
+            Status = status;
+        }
+
         internal Result(T? value)
         {
             Value = value;

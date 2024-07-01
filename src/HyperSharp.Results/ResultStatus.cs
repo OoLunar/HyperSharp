@@ -11,7 +11,7 @@ namespace HyperSharp.Results
         /// <summary>
         /// The result has failed and has no value.
         /// </summary>
-        None = 0 << 0,
+        None = 0,
 
         /// <summary>
         /// The result has succeeded.
@@ -21,6 +21,6 @@ namespace HyperSharp.Results
         /// <summary>
         /// The result does not contain a value.
         /// </summary>
-        HasValue = 1 << 1,
+        HasValue = 1 << 1
     }
 }

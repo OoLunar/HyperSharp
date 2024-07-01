@@ -48,6 +48,13 @@ namespace HyperSharp.Results
             Status = ResultStatus.IsSuccess;
         }
 
+        internal Result(ResultStatus status)
+        {
+            Value = null;
+            Errors = _emptyErrors;
+            Status = status;
+        }
+
         internal Result(object? value)
         {
             Value = value;
@@ -95,6 +102,11 @@ namespace HyperSharp.Results
         public static Result Success(object? value) => new(value);
 
         /// <summary>
+        /// Returns a failed result with no error.
+        /// </summary>
+        public static Result Failure() => new(ResultStatus.None);
+
+        /// <summary>
         /// Creates a failed result with an error.
         /// </summary>
         /// <param name="error">The error of the result.</param>
@@ -127,6 +139,9 @@ namespace HyperSharp.Results
 
         /// <inheritdoc cref="Success(object?)"/>
         public static Result<T> Success<T>(T value) => new(value);
+
+        /// <inheritdoc cref="Failure()"/>
+        public static Result<T> Failure<T>() => new(ResultStatus.None);
 
         /// <inheritdoc cref="Failure(string)"/>
         public static Result<T> Failure<T>(string error) => new(new Error(error));

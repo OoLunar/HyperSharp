@@ -78,8 +78,8 @@ namespace HyperSharp
         {
             ArgumentNullException.ThrowIfNull(serviceDescriptors, nameof(serviceDescriptors));
             ArgumentNullException.ThrowIfNull(builder, nameof(builder));
-            IServiceProvider serviceProvider = serviceDescriptors.BuildServiceProvider();
 
+            IServiceProvider serviceProvider = serviceDescriptors.BuildServiceProvider();
             if (!Uri.TryCreate($"http://{builder.ListeningEndpoint}/", UriKind.Absolute, out Uri? host))
             {
                 throw new ArgumentException("The listening endpoint is invalid.", nameof(builder));
