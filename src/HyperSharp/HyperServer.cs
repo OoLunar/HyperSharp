@@ -178,7 +178,7 @@ namespace HyperSharp
                         _ => throw new NotImplementedException("Unimplemented result status, please open a GitHub issue as this is a bug.")
                     };
 
-                    await context.Value.RespondAsync(response, HyperSerializers.JsonAsync, cancellationTokenSource.Token);
+                    await context.Value.RespondAsync(response, cancellationTokenSource.Token);
                     HyperLogging.HttpResponded(_logger, connection.Id, response, null);
                 }
             }

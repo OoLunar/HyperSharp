@@ -105,7 +105,7 @@ namespace HyperSharp.Protocol
         }
 
         /// <inheritdoc cref="RespondAsync(HyperStatus, HyperSerializerDelegate, CancellationToken)"/>
-        public ValueTask RespondAsync(HyperStatus status, CancellationToken cancellationToken = default) => RespondAsync(status, HyperSerializers.JsonAsync, cancellationToken);
+        public ValueTask RespondAsync(HyperStatus status, CancellationToken cancellationToken = default) => RespondAsync(status, status.Serializer, cancellationToken);
 
         /// <summary>
         /// Responds to the request with the specified status in plain text.

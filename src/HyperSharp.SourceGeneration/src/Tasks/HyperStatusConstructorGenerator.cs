@@ -23,20 +23,57 @@ namespace HyperSharp.Protocol
     public readonly partial record struct HyperStatus
     {
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
-        public static HyperStatus {{Code}}() => new(global::System.Net.HttpStatusCode.{{Code}}, new HyperHeaderCollection(), null);
+        public static HyperStatus {{Code}}() => new HyperStatus()
+        {
+            Code = global::System.Net.HttpStatusCode.{{Code}}
+        };
 
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
         /// <param name="body">The body of the response.</param>
-        public static HyperStatus {{Code}}(object? body) => new(global::System.Net.HttpStatusCode.{{Code}}, new HyperHeaderCollection(), body);
+        public static HyperStatus {{Code}}(object? body) => new HyperStatus()
+        {
+            Code = global::System.Net.HttpStatusCode.{{Code}},
+            Body = body
+        };
+
+        /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
+        /// <param name="body">The body of the response.</param>
+        /// <param name="serializer">Which serializer to use to serialize the body.</param>
+        public static HyperStatus {{Code}}(object? body, HyperSerializerDelegate serializer) => new HyperStatus()
+        {
+            Code = global::System.Net.HttpStatusCode.{{Code}},
+            Body = body,
+            Serializer = serializer
+        };
 
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
         /// <param name="headers">The headers of the response.</param>
-        public static HyperStatus {{Code}}(HyperHeaderCollection headers) => new(global::System.Net.HttpStatusCode.{{Code}}, headers, null);
+        public static HyperStatus {{Code}}(HyperHeaderCollection headers) => new HyperStatus()
+        {
+            Code = global::System.Net.HttpStatusCode.{{Code}},
+            Headers = headers
+        };
 
         /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
         /// <param name="headers">The headers of the response.</param>
         /// <param name="body">The body of the response.</param>
-        public static HyperStatus {{Code}}(HyperHeaderCollection headers, object? body) => new(global::System.Net.HttpStatusCode.{{Code}}, headers, body);
+        public static HyperStatus {{Code}}(HyperHeaderCollection headers, object? body) => new HyperStatus()
+        {
+            Code = global::System.Net.HttpStatusCode.{{Code}},
+            Headers = headers,
+            Body = body
+        };
+
+        /// <inheritdoc cref="global::System.Net.HttpStatusCode.{{Code}}" />
+        /// <param name="headers">The headers of the response.</param>
+        /// <param name="body">The body of the response.</param>
+        public static HyperStatus {{Code}}(HyperHeaderCollection headers, object? body, HyperSerializerDelegate serializer) => new HyperStatus()
+        {
+            Code = global::System.Net.HttpStatusCode.{{Code}},
+            Headers = headers,
+            Body = body,
+            Serializer = serializer
+        };
     }
 }
 

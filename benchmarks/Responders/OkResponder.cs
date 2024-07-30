@@ -11,6 +11,6 @@ namespace HyperSharp.Benchmarks.Responders
     {
         public static Type[] Needs => Type.EmptyTypes;
 
-        public Result<HyperStatus> Respond(HyperContext context, CancellationToken cancellationToken = default) => Result.Success(new HyperStatus(HttpStatusCode.OK));
+        public Result<HyperStatus> Respond(HyperContext context, CancellationToken cancellationToken = default) => Result.Success(HyperStatus.OK());
     }
 }

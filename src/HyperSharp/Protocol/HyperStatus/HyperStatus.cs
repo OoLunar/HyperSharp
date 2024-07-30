@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Net;
 
@@ -13,7 +12,7 @@ namespace HyperSharp.Protocol
         /// <summary>
         /// The HTTP status code to respond with.
         /// </summary>
-        public HttpStatusCode Code { get; init; }
+        public required HttpStatusCode Code { get; init; }
 
         /// <summary>
         /// The headers to be included in the response.
@@ -26,43 +25,17 @@ namespace HyperSharp.Protocol
         public object? Body { get; init; }
 
         /// <summary>
-        /// Creates a new <see cref="HyperStatus"/>. The status code will be <see cref="HttpStatusCode.NoContent"/>, the headers will be empty, and the body will be null.
+        /// Which serializer to use to serialize the body.
         /// </summary>
-        public HyperStatus() : this(HttpStatusCode.NoContent, [], null) { }
+        public HyperSerializerDelegate Serializer { get; init; }
 
         /// <summary>
-        /// Creates a new <see cref="HyperStatus"/> with the specified status code. The headers will be empty and the body will be null.
+        /// Creates a new <see cref="HyperStatus"/> with the specified status code.
         /// </summary>
-        /// <param name="code">The HTTP status code to respond with.</param>
-        public HyperStatus(HttpStatusCode code) : this(code, [], null) { }
-
-        /// <summary>
-        /// Creates a new <see cref="HyperStatus"/> with the specified status code and body. The headers will be empty.
-        /// </summary>
-        /// <param name="code">The HTTP status code to respond with.</param>
-        /// <param name="body">The body to be serialized into the response.</param>
-        public HyperStatus(HttpStatusCode code, object? body) : this(code, [], body) { }
-
-        /// <summary>
-        /// Creates a new <see cref="HyperStatus"/> with the specified status code and headers. The body will be null.
-        /// </summary>
-        /// <param name="code">The HTTP status code to respond with.</param>
-        /// <param name="headers">The headers to be included in the response.</param>
-        public HyperStatus(HttpStatusCode code, HyperHeaderCollection headers) : this(code, headers, null) { }
-
-        /// <summary>
-        /// Creates a new <see cref="HyperStatus"/> with the specified status code, headers, and body.
-        /// </summary>
-        /// <param name="code">The HTTP status code to respond with.</param>
-        /// <param name="headers">The headers to be included in the response.</param>
-        /// <param name="body">The body to be serialized into the response.</param>
-        public HyperStatus(HttpStatusCode code, HyperHeaderCollection headers, object? body)
+        public HyperStatus()
         {
-            ArgumentNullException.ThrowIfNull(headers, nameof(headers));
-
-            Code = code;
-            Headers = headers;
-            Body = body;
+            Headers = [];
+            Serializer = HyperSerializers.JsonAsync;
         }
 
         /// <inheritdoc />

@@ -12,25 +12,23 @@ namespace HyperSharp.Protocol
     /// </summary>
     public static partial class HyperSerializers
     {
-        private static readonly byte[] _newLine = "\r\n"u8.ToArray();
-        private static readonly byte[] _contentTypeTextEncodingHeader = "Content-Type: text/plain; charset=utf-8\r\nContent-Length: "u8.ToArray();
+        private static readonly byte[] _contentLengthHeader = "Content-Length: "u8.ToArray();
 
         /// <summary>
         /// Serializes the body to the client as plain text using the <see cref="object.ToString"/> method with the <see cref="Encoding.UTF8"/> encoding.
         /// </summary>
         /// <inheritdoc cref="HyperSerializerDelegate"/>
-        public static ValueTask<bool> PlainTextAsync(HyperContext context, HyperStatus status, CancellationToken cancellationToken = default)
+        public static ValueTask<bool> RawAsync(HyperContext context, HyperStatus status, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(context);
             ArgumentNullException.ThrowIfNull(status);
 
-            // Write Content-Type header and beginning of Content-Length header
-            context.Connection.StreamWriter.Write<byte>(_contentTypeTextEncodingHeader);
-
-            byte[] body = Encoding.UTF8.GetBytes(status.Body?.ToString() ?? "");
+            byte[] body = status.Body as byte[] ?? Encoding.UTF8.GetBytes(status.Body?.ToString() ?? "");
+            int bodyLength = body.Length;
 
             // Write Content-Length header
-            context.Connection.StreamWriter.Write<byte>(Encoding.UTF8.GetBytes(body.Length.ToString(CultureInfo.InvariantCulture)));
+            context.Connection.StreamWriter.Write<byte>(_contentLengthHeader);
+            context.Connection.StreamWriter.Write<byte>(Encoding.UTF8.GetBytes(bodyLength.ToString(CultureInfo.InvariantCulture)));
             context.Connection.StreamWriter.Write<byte>(_newLine);
 
             // Write body

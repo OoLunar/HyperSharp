@@ -55,31 +55,30 @@ namespace HyperSharp
         /// <summary>
         /// Creates a new <see cref="HyperConfiguration"/> with the default values.
         /// </summary>
-        public HyperConfiguration() : this(new ServiceCollection().AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance)).AddHyperSharp(), new HyperConfigurationBuilder()) { }
+        public HyperConfiguration() : this(new ServiceCollection().AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance)).AddHyperSharp().BuildServiceProvider(), new HyperConfigurationBuilder()) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperConfiguration"/> with the specified values.
         /// </summary>
         /// <param name="builder">The <see cref="HyperConfigurationBuilder"/> to use.</param>
-        public HyperConfiguration(HyperConfigurationBuilder builder) : this(new ServiceCollection().AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance)).AddHyperSharp(), builder) { }
+        public HyperConfiguration(HyperConfigurationBuilder builder) : this(new ServiceCollection().AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance)).AddHyperSharp().BuildServiceProvider(), builder) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperConfiguration"/> using the specified <see cref="IServiceCollection"/>.
         /// </summary>
         /// <param name="serviceDescriptors">The <see cref="IServiceCollection"/> to use when creating the responders.</param>
-        public HyperConfiguration(IServiceCollection serviceDescriptors) : this(serviceDescriptors, new HyperConfigurationBuilder()) { }
+        public HyperConfiguration(IServiceCollection serviceDescriptors) : this(serviceDescriptors.BuildServiceProvider(), new HyperConfigurationBuilder()) { }
 
         /// <summary>
         /// Creates a new <see cref="HyperConfiguration"/> using the specified <see cref="IServiceCollection"/> and <see cref="HyperConfigurationBuilder"/>.
         /// </summary>
-        /// <param name="serviceDescriptors">The <see cref="IServiceCollection"/> to use when creating the responders.</param>
+        /// <param name="serviceProvider">The <see cref="IServiceProvider"/> to use.</param>
         /// <param name="builder">The <see cref="HyperConfigurationBuilder"/> to use.</param>
-        public HyperConfiguration(IServiceCollection serviceDescriptors, HyperConfigurationBuilder builder)
+        public HyperConfiguration(IServiceProvider serviceProvider, HyperConfigurationBuilder builder)
         {
-            ArgumentNullException.ThrowIfNull(serviceDescriptors, nameof(serviceDescriptors));
+            ArgumentNullException.ThrowIfNull(serviceProvider, nameof(serviceProvider));
             ArgumentNullException.ThrowIfNull(builder, nameof(builder));
 
-            IServiceProvider serviceProvider = serviceDescriptors.BuildServiceProvider();
             if (!Uri.TryCreate($"http://{builder.ListeningEndpoint}/", UriKind.Absolute, out Uri? host))
             {
                 throw new ArgumentException("The listening endpoint is invalid.", nameof(builder));

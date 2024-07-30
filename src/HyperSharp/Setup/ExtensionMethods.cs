@@ -52,7 +52,7 @@ namespace HyperSharp.Setup
         public static IServiceCollection AddHyperSharp(this IServiceCollection services, HyperConfigurationBuilder builder)
         {
             services.AddSingleton<ResponderCompiler>();
-            services.AddSingleton(new HyperConfiguration(services, builder));
+            services.AddSingleton((serviceProvider) => new HyperConfiguration(serviceProvider, builder));
             services.AddSingleton<HyperServer>();
             return services;
         }

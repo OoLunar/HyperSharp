@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -10,6 +12,7 @@ namespace HyperSharp.Protocol
     /// <summary>
     /// Represents a collection of headers with string keys and lists of string values.
     /// </summary>
+    [DebuggerDisplay("{ToString(),nq}")]
     public sealed partial class HyperHeaderCollection : IList<KeyValuePair<string, byte[]>>
     {
         private readonly List<KeyValuePair<string, byte[]>> _headers;
@@ -548,5 +551,19 @@ namespace HyperSharp.Protocol
         /// <inheritdoc />
         public IEnumerator<KeyValuePair<string, byte[]>> GetEnumerator() => _headers.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => _headers.GetEnumerator();
+
+        public override string ToString()
+        {
+            StringBuilder stringBuilder = new();
+            foreach (KeyValuePair<string, byte[]> header in _headers.OrderBy(x => x.Key))
+            {
+                stringBuilder.Append(header.Key);
+                stringBuilder.Append(": ");
+                stringBuilder.Append(Encoding.ASCII.GetString(header.Value));
+                stringBuilder.Append("\r\n");
+            }
+
+            return stringBuilder.ToString();
+        }
     }
 }
