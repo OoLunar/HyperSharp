@@ -8,7 +8,7 @@ using BenchmarkDotNet.Attributes;
 using EmbedIO;
 using GenHTTP.Api.Infrastructure;
 using GenHTTP.Api.Protocol;
-using GenHTTP.Engine;
+using GenHTTP.Engine.Internal;
 using GenHTTP.Modules.IO.Providers;
 using GenHTTP.Modules.IO.Strings;
 using GenHTTP.Modules.Practices;
@@ -69,7 +69,8 @@ namespace HyperSharp.Benchmarks.Cases
                     context.Response.Close(helloWorld, false);
                 }
             });
-            _genHttpServer.Start();
+
+            _genHttpServer.StartAsync().AsTask().GetAwaiter().GetResult();
             _embedIoServer.Start();
             _httpCoreServer.Start();
             // _aspnetServer.Start();
@@ -95,7 +96,7 @@ namespace HyperSharp.Benchmarks.Cases
         {
             await _hyperServer.StopAsync();
             _httpListener.Stop();
-            _genHttpServer.Stop();
+            await _genHttpServer.StopAsync();
             _embedIoServer.Dispose();
             _httpCoreServer.Stop();
             // _aspnetServer.Stop();

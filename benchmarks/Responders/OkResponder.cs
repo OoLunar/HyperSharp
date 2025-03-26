@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using System.Threading;
 using HyperSharp.Protocol;
 using HyperSharp.Responders;
