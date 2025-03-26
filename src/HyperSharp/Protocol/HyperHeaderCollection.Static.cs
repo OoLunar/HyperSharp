@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Microsoft.Toolkit.HighPerformance.Buffers;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace HyperSharp.Protocol
 {
